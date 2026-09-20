@@ -121,10 +121,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     const track = document.querySelector('.testimonios-track');
     if (!track || !viewport) return;
 
-    // Cargar reseñas desde js/resenas.json (generado por Google Sheets)
-    // - Array no vacío: datos de la planilla
+    // Cargar reseñas (Supabase primero, fallback a js/resenas.json).
+    // - Array no vacío: reseñas activas de la BD
     // - null (red/cache caída): fallback estático
-    // - [] (hoja vacía): ocultar la sección
+    // - [] (sin reseñas activas): ocultar la sección
     const resenas = await obtenerResenas();
     if (resenas && resenas.length === 0) {
         viewport.closest('.testimonios-carousel').style.display = 'none';

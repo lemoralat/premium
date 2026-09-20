@@ -1,10 +1,23 @@
-// Proxy serverless de Vercel para pedidos.
-// Mantiene la WEB_API_KEY del backend de Apps Script fuera del frontend:
-// se lee desde la variable de entorno WEB_API_KEY configurada en Vercel.
-// El frontend solo conoce /api/pedido (misma origin).
+// ============================================================================
+// api/pedido.js — Función serverless de Vercel para registrar pedidos.
+//
+// REEMPLAZA el comportamiento anterior (proxy a Google Apps Script) por una
+// escritura directa en Supabase:
+//   - Usa la SERVICE ROLE key SOLO del lado servidor (variable de entorno).
+//   - Delega toda la sincronización/business logic a la función RPC
+//     `insertar_pedido` (transacción única: valida stock, recalcula montos con
+//     precios de la BD, aplica descuento/cupón, descuenta stock e inserta).
+//   - El frontend NO cambió: sigue POSTeando a /api/pedido y esperando
+//     { status: 'success' } o { status: 'error', message }.
+//
+// Variables de entorno requeridas en Vercel:
+//   SUPABASE_URL
+//   SUPABASE_SERVICE_ROLE_KEY
+// ============================================================================
 
-const GOOGLE_SCRIPT_URL =
-    'https://script.google.com/macros/s/AKfycbw4Z7_WaH7BBOwx4i_stMskzBx5h3yYs3TnzO3l4cUNHO8FB8Qv2-ryhMRLK-BVwEzV/exec';
+const { createClient } = require('@supabase/supabase-js');
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 module.exports = async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
@@ -13,10 +26,14 @@ module.exports = async function handler(request, response) {
         return response.status(405).json({ status: 'error', message: 'Método no permitido.' });
     }
 
-    const apiKey = process.env.WEB_API_KEY;
-    if (!apiKey) {
-        console.error('WEB_API_KEY no configurada en las variables de entorno de Vercel.');
-        return response.status(500).json({ status: 'error', message: 'El servidor no está configurado correctamente.' });
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
+        console.error('Faltan SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY en las variables de entorno de Vercel.');
+        return response.status(500).json({
+            status: 'error',
+            message: 'El servidor no está configurado correctamente.'
+        });
     }
 
     const body = request.body;
@@ -24,26 +41,39 @@ module.exports = async function handler(request, response) {
         return response.status(400).json({ status: 'error', message: 'Estructura de pedido inválida.' });
     }
 
-    const pedido = { ...body, apiKey };
+    const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
 
     try {
-        const upstream = await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(pedido)
-        });
+        const items = body.productos.map((item) => ({
+            product_id: Number(item.id),
+            quantity: Number(item.quantity),
+            variante_texto: typeof item.varianteTexto === 'string' ? String(item.varianteTexto).slice(0, 500) : ''
+        }));
 
-        const texto = await upstream.text();
-        let resultado;
-        try {
-            resultado = JSON.parse(texto);
-        } catch {
-            resultado = { status: 'error', message: 'Respuesta inválida del backend de pedidos.' };
+        if (items.some(i => !Number.isInteger(i.product_id) || !Number.isInteger(i.quantity) || i.quantity <= 0)) {
+            return response.status(400).json({ status: 'error', message: 'Datos de productos inválidos.' });
         }
 
-        return response.status(upstream.ok ? 200 : 502).json(resultado);
+        const payload = {
+            p_cliente: body.cliente,
+            p_items: items,
+            p_cupon: (body.cupon && body.cupon !== 'NINGUNO') ? String(body.cupon).slice(0, 50) : null,
+            p_token: (typeof body.token === 'string' && UUID_REGEX.test(body.token)) ? body.token : null
+        };
+
+        const { data, error } = await supabase.rpc('insertar_pedido', payload);
+
+        if (error) throw new Error(error.message);
+        if (!data || data.status !== 'success') {
+            throw new Error(data?.message || 'El backend rechazó el pedido.');
+        }
+
+        return response.status(200).json(data);
     } catch (error) {
-        console.error('Error contactando Google Apps Script:', error);
-        return response.status(502).json({ status: 'error', message: 'No se pudo contactar el backend de pedidos.' });
+        const mensaje = String(error.message || 'No se pudo registrar el pedido.');
+        // Errores de negocio esperados: stock insuficiente, producto inactivo, cantidades.
+        const conflicto = /stock insuficiente|cantidad inválida|producto/i.test(mensaje);
+        console.error('❌ Error registrando pedido en Supabase:', mensaje);
+        return response.status(conflicto ? 409 : 500).json({ status: 'error', message: mensaje });
     }
 };

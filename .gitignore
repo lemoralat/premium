@@ -1,0 +1,19 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (NUNCA subir claves a Git)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Vercel
+.vercel/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Nota: js/env.generated.js NO se ignora a propósito: se commitea como plantilla
+# con valores vacíos y se regenera en build desde las variables de entorno.
+# Contiene únicamente valores públicos (URL del proyecto + anon key).

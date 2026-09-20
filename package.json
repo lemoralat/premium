@@ -1,0 +1,14 @@
+{
+  "name": "lemora-tienda",
+  "private": true,
+  "version": "1.1.0",
+  "description": "Tienda Lemora — frontend estático + Supabase (PostgreSQL + Auth + Storage)",
+  "scripts": {
+    "build:env": "node scripts/build-env.mjs",
+    "build": "npm run build:env",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}

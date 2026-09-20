@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, obtenerProductos, obtenerNombreSitio, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada } from './utils.js';
 
 // Renderizar Header
 function renderHeader(activePage = '', categorias = []) {
@@ -19,9 +19,9 @@ function renderHeader(activePage = '', categorias = []) {
     header.innerHTML = `
         <div class="redes">
             <div class="contenedor">
-                <a href="https://www.facebook.com/p/" target="_blank" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                <a href="https://www.instagram.com/" target="_blank" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                <a href="https://www.tiktok.com/@" target="_blank" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                <a href="${escaparHtml(CONFIG_APP.socialFacebook)}" target="_blank" aria-label="Facebook" rel="noopener"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="${escaparHtml(CONFIG_APP.socialInstagram)}" target="_blank" aria-label="Instagram" rel="noopener"><i class="fa-brands fa-instagram"></i></a>
+                <a href="${escaparHtml(CONFIG_APP.socialTiktok)}" target="_blank" aria-label="TikTok" rel="noopener"><i class="fa-brands fa-tiktok"></i></a>
             </div>
         </div>
         <nav class="navbar" aria-label="Menú principal">
@@ -145,6 +145,10 @@ function initMarquee() {
 // Inicializar template
 async function initTemplate(activePage = '') {
     const body = document.body;
+
+    // Aplicar configuración remota (settings de Supabase): nombre del sitio,
+    // WhatsApp, descuentos, transferencia y redes — antes de renderizar el template.
+    await cargarConfiguracionGlobal();
 
     // Obtener categorías dinámicas
     let categorias = [];

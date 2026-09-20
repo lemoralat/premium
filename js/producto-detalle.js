@@ -152,7 +152,7 @@ function renderizarDetalleProducto(producto) {
             </div>
             
             <div class="product-detail-info">
-                <span class="product-category">${producto.categoria}</span>
+                <span class="product-category">${escaparHtml(producto.categoria)}</span>
                 <div class="product-title-row">
                     <h1 class="product-detail-title">${recortarTexto(producto.nombre)}</h1>
                     <button class="btn-favorito ${esFavorito(producto.id) ? 'active' : ''}" 
@@ -167,13 +167,13 @@ function renderizarDetalleProducto(producto) {
                 
                 <p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
                 
-                <p class="product-detail-description">${recortarTexto(producto.descripcionDetallada, 400)}</p>
+                <p class="product-detail-description">${escaparHtml(recortarTexto(producto.descripcionDetallada, 400))}</p>
                 
                 <div class="product-features">
                     <h3>Características:</h3>
                     <ul>
                         ${(producto.caracteristicas || []).slice(0, 10).map(caracteristica => `
-                            <li>${caracteristica}</li>
+                            <li>${escaparHtml(caracteristica)}</li>
                         `).join('')}
                     </ul>
                 </div>

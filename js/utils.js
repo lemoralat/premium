@@ -1,6 +1,13 @@
 // utils.js
 
-// Configuración de descuentos
+// Capa de datos: Supabase como fuente de verdad, con fallback a los JSON locales
+// (modo dual controlado) para que la tienda siga funcionando si Supabase no
+// está configurado o hay un corte de red.
+import {
+    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion
+} from './supabase.js';
+
+// Configuración de descuentos (se refresca desde Supabase settings)
 export const CONFIG_DESCUENTO = {
     UMBRAL: 100000, // Monto mínimo para aplicar descuento (ej. $100.000)
     PORCENTAJE: 10  // Porcentaje de descuento (ej. 10%)
@@ -15,9 +22,56 @@ export const WHATSAPP_CONFIG = {
     defaultMessage: 'Hola, quería consultar '
 };
 
-// Nombre del sitio (modificar acá para cambiar en todo el footer)
+// Configuración general de la tienda (branding, contacto, redes, transferencia).
+// Se completa con la fila "settings" de Supabase cuando está disponible.
+export const CONFIG_APP = {
+    siteName: 'Mi Tienda Online',
+    whatsappNumber: '543515957014',
+    whatsappMessage: 'Hola, quería consultar ',
+    transferAlias: 'hola.mundo.2023',
+    transferEntity: 'Mercado Pago',
+    transferHolder: 'Nombre completo',
+    emailContact: '',
+    address: '',
+    socialFacebook: 'https://www.facebook.com/p/',
+    socialInstagram: 'https://www.instagram.com/',
+    socialTiktok: 'https://www.tiktok.com/@'
+};
+
+export let configuracionCargada = false;
+
+// Aplicar la configuración remota (settings) sobre CONFIG_APP / WHATSAPP_CONFIG / CONFIG_DESCUENTO.
+// Llamar una vez al inicio (template.js) y antes de calcular totales (formulario).
+export async function cargarConfiguracionGlobal() {
+    try {
+        const r = await cargarConfiguracion();
+        if (r.ok && r.datos) {
+            const c = r.datos;
+            CONFIG_APP.siteName = c.site_name || CONFIG_APP.siteName;
+            WHATSAPP_CONFIG.number = c.whatsapp_number || WHATSAPP_CONFIG.number;
+            WHATSAPP_CONFIG.defaultMessage = c.whatsapp_default_message || WHATSAPP_CONFIG.defaultMessage;
+            CONFIG_APP.whatsappNumber = WHATSAPP_CONFIG.number;
+            CONFIG_APP.whatsappMessage = WHATSAPP_CONFIG.defaultMessage;
+            CONFIG_DESCUENTO.UMBRAL = Number(c.discount_threshold) || CONFIG_DESCUENTO.UMBRAL;
+            CONFIG_DESCUENTO.PORCENTAJE = Number(c.discount_percent) || CONFIG_DESCUENTO.PORCENTAJE;
+            CONFIG_APP.transferAlias = c.transfer_alias || CONFIG_APP.transferAlias;
+            CONFIG_APP.transferEntity = c.transfer_entity || CONFIG_APP.transferEntity;
+            CONFIG_APP.transferHolder = c.transfer_holder || CONFIG_APP.transferHolder;
+            CONFIG_APP.emailContact = c.email_contact || '';
+            CONFIG_APP.address = c.address || '';
+            CONFIG_APP.socialFacebook = c.social_facebook || '';
+            CONFIG_APP.socialInstagram = c.social_instagram || '';
+            CONFIG_APP.socialTiktok = c.social_tiktok || '';
+            configuracionCargada = true;
+        }
+    } catch (error) {
+        console.warn('No se pudo aplicar la configuración remota:', error);
+    }
+}
+
+// Nombre del sitio (configurable desde supabase settings)
 export function obtenerNombreSitio() {
-    return 'Mi Tienda Online';
+    return CONFIG_APP.siteName;
 }
 
 // Construir URL de WhatsApp con el número centralizado
@@ -29,7 +83,7 @@ export function obtenerUrlWhatsApp(mensaje = '') {
 export function calcularTotales(cart, codigoCupon = null) {
     const subtotal = cart.reduce((sum, item) => sum + (item.precio * item.quantity), 0);
     let descuentoAuto = 0;
-    
+
     if (subtotal >= CONFIG_DESCUENTO.UMBRAL) {
         descuentoAuto = subtotal * (CONFIG_DESCUENTO.PORCENTAJE / 100);
     }
@@ -38,55 +92,72 @@ export function calcularTotales(cart, codigoCupon = null) {
     let porcentajeAplicado = CONFIG_DESCUENTO.PORCENTAJE;
 
     const cuponData = codigoCupon ? CONFIG_CUPONES[codigoCupon.toUpperCase()] : null;
-    
+
     if (cuponData) {
         const hoy = new Date();
         const fechaExp = new Date(cuponData.expira);
-        
+
         // Solo aplicar si no ha expirado (comparando solo fechas a medianoche local)
-        if (hoy.setHours(0,0,0,0) <= fechaExp.setHours(0,0,0,0)) {
+        if (hoy.setHours(0, 0, 0, 0) <= fechaExp.setHours(0, 0, 0, 0)) {
             const porcentajeCupon = cuponData.porcentaje;
             descuentoCupon = subtotal * (porcentajeCupon / 100);
             porcentajeAplicado = porcentajeCupon;
         }
     }
-    
+
     // Aplicamos el mayor de los dos descuentos (no acumulables)
     const descuentoFinal = Math.max(descuentoAuto, descuentoCupon);
     const total = subtotal - descuentoFinal;
 
-    return { 
-        subtotal, 
-        descuento: descuentoFinal, 
+    return {
+        subtotal,
+        descuento: descuentoFinal,
         total,
         esCupon: descuentoCupon > descuentoAuto,
         porcentaje: descuentoFinal > 0 ? (descuentoCupon > descuentoAuto ? porcentajeAplicado : CONFIG_DESCUENTO.PORCENTAJE) : 0
     };
 }
 
-// Cargar productos con caché de sesión para evitar múltiples peticiones de red
+// Transformar lista [{codigo, porcentaje, expira}] → objeto por código (MAYÚSCULAS)
+function transformarCupones(cuponesArray) {
+    const transformado = {};
+    cuponesArray.forEach(c => {
+        if (c.codigo && c.porcentaje != null) {
+            transformado[c.codigo.toUpperCase().trim()] = {
+                porcentaje: parseInt(c.porcentaje),
+                expira: c.expira // Formato YYYY-MM-DD
+            };
+        }
+    });
+    return transformado;
+}
+
+// ================= PRODUCTOS =================
 export async function obtenerProductos() {
+    const remoto = await cargarProductos();
+    if (remoto.ok) {
+        return remoto.datos;
+    }
+    return productosDesdeJSON();
+}
+
+// Cargar productos desde JSON (fallback del mecanismo original con caché)
+async function productosDesdeJSON() {
     const cachedData = sessionStorage.getItem('cache_productos');
     const cachedVersion = sessionStorage.getItem('cache_version');
 
     try {
-        // Opcional: Podrías disparar un evento de 'loading-start' aquí
-        
-        // Consultamos la cabecera Last-Modified o ETag para ver si el archivo cambió en el servidor
         const headResponse = await fetch('js/productos.json', { method: 'HEAD' });
         const serverVersion = headResponse.headers.get('Last-Modified') || headResponse.headers.get('ETag');
 
-        // Si el cache existe y coincide con la versión del servidor, lo usamos
         if (cachedData && cachedVersion === serverVersion) {
             return JSON.parse(cachedData);
         }
 
-        // Si no hay cache o la versión es distinta (servidor más nuevo), descargamos el archivo completo
         const response = await fetch('js/productos.json');
         if (!response.ok) throw new Error('Error al cargar productos');
         const productos = await response.json();
 
-        // Guardamos en cache los datos y la versión (timestamp de modificación)
         sessionStorage.setItem('cache_productos', JSON.stringify(productos));
         if (serverVersion) {
             sessionStorage.setItem('cache_version', serverVersion);
@@ -94,14 +165,27 @@ export async function obtenerProductos() {
 
         return productos;
     } catch (error) {
-        if (cachedData) return JSON.parse(cachedData); // Fallback al cache si falla la red
+        if (cachedData) return JSON.parse(cachedData);
         mostrarNotificacion('No pudimos cargar el catálogo. Por favor, recarga la página.', 'error');
         return [];
     }
 }
 
-// Cargar cupones desde JSON dinámico
+// ================= CUPONES =================
 export async function obtenerCupones() {
+    // Los cupones y la configuración de descuentos deben estar sincronizados
+    await cargarConfiguracionGlobal();
+
+    const remoto = await cargarCupones();
+    if (remoto.ok) {
+        CONFIG_CUPONES = transformarCupones(remoto.datos);
+        return CONFIG_CUPONES;
+    }
+    return cuponesDesdeJSON();
+}
+
+// Cargar cupones desde JSON dinámico (fallback)
+async function cuponesDesdeJSON() {
     const cachedData = sessionStorage.getItem('cache_cupones');
     const cachedVersion = sessionStorage.getItem('cache_cupones_version');
 
@@ -118,17 +202,7 @@ export async function obtenerCupones() {
         if (!response.ok) throw new Error('Error al cargar cupones');
         const cuponesArray = await response.json();
 
-        // Transformar array de Sheets [{codigo, porcentaje, expira}] a objeto de configuración
-        const transformado = {};
-        cuponesArray.forEach(c => {
-            if (c.codigo && c.porcentaje) {
-                transformado[c.codigo.toUpperCase().trim()] = {
-                    porcentaje: parseInt(c.porcentaje),
-                    expira: c.expira // Espera formato YYYY-MM-DD
-                };
-            }
-        });
-
+        const transformado = transformarCupones(cuponesArray);
         CONFIG_CUPONES = transformado;
         sessionStorage.setItem('cache_cupones', JSON.stringify(transformado));
         if (serverVersion) sessionStorage.setItem('cache_cupones_version', serverVersion);
@@ -140,8 +214,17 @@ export async function obtenerCupones() {
     }
 }
 
-// Cargar reseñas desde JSON dinámico (generado por Google Sheets + Drive)
+// ================= RESEÑAS =================
 export async function obtenerResenas() {
+    const remoto = await cargarResenas();
+    if (remoto.ok) {
+        return remoto.datos;
+    }
+    return resenasDesdeJSON();
+}
+
+// Cargar reseñas desde JSON dinámico (fallback)
+async function resenasDesdeJSON() {
     const cachedData = sessionStorage.getItem('cache_resenas');
     const cachedVersion = sessionStorage.getItem('cache_resenas_version');
 
@@ -167,8 +250,17 @@ export async function obtenerResenas() {
     }
 }
 
-// Cargar slides del hero desde JSON dinámico (generado por Google Sheets + Drive)
+// ================= SLIDER =================
 export async function obtenerSlider() {
+    const remoto = await cargarSlider();
+    if (remoto.ok) {
+        return remoto.datos;
+    }
+    return sliderDesdeJSON();
+}
+
+// Cargar slides del hero desde JSON dinámico (fallback)
+async function sliderDesdeJSON() {
     const cachedData = sessionStorage.getItem('cache_slider');
     const cachedVersion = sessionStorage.getItem('cache_slider_version');
 
@@ -194,7 +286,7 @@ export async function obtenerSlider() {
     }
 }
 
-// Escapa texto administrador (Sheets) antes de interpolarlo en HTML
+// Escapa texto administrado antes de interpolarlo en HTML
 export function escaparHtml(texto) {
     return String(texto ?? '')
         .replaceAll('&', '&amp;')
@@ -204,9 +296,17 @@ export function escaparHtml(texto) {
         .replaceAll("'", '&#039;');
 }
 
-// Cargar banners dinámicos desde JSON generado por Google Sheets + Drive.
-// [] => la web no renderiza ninguna sección de banners. null (error sin caché) => ídem.
+// ================= BANNERS =================
+// Cargar banners dinámicos. [] => la web no renderiza secciones de banners.
 export async function obtenerBanners() {
+    const remoto = await cargarBanners();
+    if (remoto.ok) {
+        return remoto.datos;
+    }
+    return bannersDesdeJSON();
+}
+
+async function bannersDesdeJSON() {
     const cachedData = sessionStorage.getItem('cache_banners');
     const cachedVersion = sessionStorage.getItem('cache_banners_version');
 
@@ -330,7 +430,8 @@ export function recortarTexto(texto, max = 60) {
 }
 
 // Fuerza al CDN de Google a entregar WebP (sufijo "-rw") sin cambiar el tamaño pedido.
-// Solo toca URLs de Drive (lh3.googleusercontent.com); deja intactas las rutas locales.
+// Solo toca URLs de Drive (lh3.googleusercontent.com); deja intactas las rutas locales
+// y las de Supabase Storage.
 export function imagenOptimizada(url) {
     const u = String(url ?? '');
     if (!u.includes('lh3.googleusercontent.com')) return u;
@@ -360,8 +461,3 @@ export function normalizarTexto(texto) {
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
 }
-
-// Estilos de animación para notificaciones (se pueden mover a styles.css si se prefiere)
-// Para mantenerlo autocontenido con la función, lo dejamos aquí por ahora.
-// Asegúrate de que estos estilos no se dupliquen si ya están en styles.css
-// (En tu styles.css ya están, así que esta parte se eliminaría de aquí y se mantendría en styles.css)

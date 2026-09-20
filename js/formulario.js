@@ -4,9 +4,9 @@ import { formatearPrecio, mostrarNotificacion, calcularTotales, obtenerCupones, 
 
 // ============ CONFIGURACIÓN ============
 const CONFIG_PEDIDOS = {
-    // Proxy serverless en Vercel (api/pedido.js).
-    // Inyecta la WEB_API_KEY desde la variable de entorno de Vercel:
-    // la clave nunca viaja ni se almacena en el frontend.
+    // El nombre de la clave conserva el legado (era un proxy a Google Apps
+    // Script), pero api/pedido.js ahora registra el pedido en Supabase con la
+    // service role key del lado servidor: el frontend sigue sin manejar claves.
     GOOGLE_SCRIPT_URL: '/api/pedido'
 };
 
@@ -154,7 +154,7 @@ async function enviarPedidoWhatsApp(e) {
     }
 }
 
-// ============ ENVIAR PEDIDO A GOOGLE SHEETS ============
+// ============ ENVIAR PEDIDO ============
 async function enviarPedidoGoogleSheets(pedido) {
     try {
         const response = await fetch(CONFIG_PEDIDOS.GOOGLE_SCRIPT_URL, {
@@ -168,7 +168,7 @@ async function enviarPedidoGoogleSheets(pedido) {
         const resultado = await response.json();
 
         if (resultado.status === 'success') {
-            console.log('✅ Pedido registrado en Google Sheets');
+            console.log('✅ Pedido registrado');
         } else {
             console.warn('⚠️ El backend rechazó el pedido:', resultado.message);
             mostrarNotificacion(`❌ ${resultado.message || 'No se pudo registrar el pedido.'}`, 'error');
@@ -177,8 +177,8 @@ async function enviarPedidoGoogleSheets(pedido) {
     } catch (error) {
         console.error('❌ Error al registrar el pedido:', error);
         mostrarNotificacion('❌ Error al registrar el pedido. Por favor, inténtalo de nuevo o contáctanos por WhatsApp.', 'error');
-        // No bloqueamos el proceso si falla Google Sheets
-        // El pedido se enviará igualmente por WhatsApp
+        // No bloqueamos el proceso si falla el registro en Supabase:
+        // el pedido se enviará igualmente por WhatsApp
     }
 }
 

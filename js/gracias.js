@@ -1,10 +1,14 @@
 // Página de agradecimiento - mostrar monto total y funcionalidad de copiar alias
+// Los datos de transferencia (entidad, titular, alias) salen de la configuración
+// de Supabase (tabla settings) con los valores actuales como respaldo.
 
-import { formatearPrecio } from './utils.js';
+import { formatearPrecio, CONFIG_APP, cargarConfiguracionGlobal } from './utils.js';
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function () {
+    await cargarConfiguracionGlobal();
     validarToken();
     mostrarMontoTotal();
+    cargarDatosTransferencia();
 });
 
 // Validar que el acceso sea legítimo (vía token desde formulario.js)
@@ -24,12 +28,12 @@ function validarToken() {
 // Mostrar el monto total del pedido
 function mostrarMontoTotal() {
     const totalAmountElement = document.getElementById('totalAmount');
-    
+
     if (!totalAmountElement) return;
-    
+
     // Obtener el total del localStorage (guardado desde el formulario)
     const orderTotal = localStorage.getItem('orderTotal');
-    
+
     if (orderTotal) {
         const total = parseFloat(orderTotal);
         totalAmountElement.textContent = `$${formatearPrecio(total)}`;
@@ -41,11 +45,25 @@ function mostrarMontoTotal() {
     }
 }
 
+// Completar la tabla "Datos para Realizar la Transferencia" con la configuración
+// remota. Antes el alias mostrado (alias.o.cbu) y el copiado (hola.mundo.2023)
+// no coincidían; ahora ambos salen de la misma fuente (settings).
+function cargarDatosTransferencia() {
+    const entidad = document.getElementById('transferEntity');
+    if (entidad) entidad.textContent = CONFIG_APP.transferEntity || 'Mercado Pago';
+
+    const titular = document.getElementById('transferHolder');
+    if (titular) titular.textContent = CONFIG_APP.transferHolder || '';
+
+    const alias = document.getElementById('transferAlias');
+    if (alias) alias.textContent = CONFIG_APP.transferAlias;
+}
+
 // Exponer a window para el onclick del HTML
-window.copiarAlias = function() {
-    const alias = 'hola.mundo.2023';
+window.copiarAlias = function () {
+    const alias = CONFIG_APP.transferAlias || 'hola.mundo.2023';
     const copyBtn = document.querySelector('.copy-btn');
-    
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(alias)
             .then(() => mostrarExitoCopia(copyBtn))
@@ -63,14 +81,14 @@ function copiarConFallback(text, btn) {
     textArea.style.left = '-999999px';
     document.body.appendChild(textArea);
     textArea.select();
-    
+
     try {
         document.execCommand('copy');
         mostrarExitoCopia(btn);
     } catch (err) {
         alert('No se pudo copiar el alias. Por favor, cópialo manualmente: ' + text);
     }
-    
+
     document.body.removeChild(textArea);
 }
 
@@ -79,7 +97,7 @@ function mostrarExitoCopia(btn) {
     const originalText = btn.textContent;
     btn.textContent = '¡Copiado!';
     btn.classList.add('copied');
-    
+
     setTimeout(() => {
         btn.textContent = originalText;
         btn.classList.remove('copied');
