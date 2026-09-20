@@ -2,7 +2,7 @@
 
 > **Proyecto:** tienda Lemora (frontend estático vanilla HTML/CSS/JS + funciones serverless en Vercel)
 > **Estado:** migración implementada (pendiente de cargar credenciales y desplegar)
-> **Dominio de producción:** `https://planluxury.lemora.lat`
+> **Dominio de producción:** `https://supabase.lemora.lat`
 
 Esta documentación reemplaza el funcionamiento basado en **Google Sheets + Apps Script + Google Drive** por una arquitectura **Supabase** de un solo tenant (una tienda = un proyecto Supabase). Incluye arquitectura, modelo de datos, políticas de seguridad, Storage, variables de entorno, pasos de despliegue, panel de administración, riesgos y el reporte de baja de Google.
 
@@ -238,7 +238,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **Caché en memoria (60s / 5min en configuración)**: cambios del admin se ven en la tienda en hasta ~1 minuto. Es intencional para no golpear Supabase en cada render.
 - **Fallback JSON**: si no hay configuración o Supabase está caído, la tienda usa los JSON locales (`js/*.json`). Controlado por cada `obtener*`.
 - **`GOOGLE_SCRIPT_URL` conserva el nombre** en `js/formulario.js` (legado): evita tocar puntos ciegos del frontend; el destino `/api/pedido` ya no proxea a Google.
-- **Metas SEO**: se corrigieron los placeholders `tusitio.com` → `planluxury.lemora.lat` en los 8 HTML.
+- **Metas SEO**: se corrigieron los placeholders `tusitio.com` → `supabase.lemora.lat` en los 8 HTML.
 - **Panel en español y sin `alert()` como mecanismo principal de UX** (solo usa `confirm` para borrados irrecuperables).
 - **`sale10` quedó inactivo** (vencido el 2026-08-30) respetando la realidad de la planilla.
 

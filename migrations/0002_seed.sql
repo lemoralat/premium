@@ -277,25 +277,25 @@ select * from (values
 ('https://lh3.googleusercontent.com/d/1iGHNrNwm7EmYIwnz7W3K7jiUDC31OlCx=s1200-rw',
  'https://lh3.googleusercontent.com/d/1MSIaEOo1DUlkJKox3ssA687CJmrHnEoF=s240-rw',
  'Promociona', 'Producto destacado', 'Ver producto',
- 'https://planluxury.lemora.lat/producto.html?id=2', 0, true),
+ 'https://supabase.lemora.lat/producto.html?id=2', 0, true),
 
 ('https://lh3.googleusercontent.com/d/1jGefjHB-Dfgvs3kJGNr3Lca02xH-uOmf=s1200-rw',
  'https://lh3.googleusercontent.com/d/165MhCr5wFsx6rzSRR9Nzh_FbpzUuJQLB=s240-rw',
  'Promociona', 'Producto destacado', 'Ver producto',
- 'https://planluxury.lemora.lat/producto.html?id=2', 1, true),
+ 'https://supabase.lemora.lat/producto.html?id=2', 1, true),
 
 ('https://lh3.googleusercontent.com/d/1vTXk1ssQ6JvB5lgQgzdFmUGVHERG8_9V=s1200-rw',
  'https://lh3.googleusercontent.com/d/1iMGaXcjO1fs3NYidCh5MM4YBl-1QXtaI=s240-rw',
  'Promociona', 'Producto destacado', 'Ver producto',
- 'https://planluxury.lemora.lat/producto.html?id=9', 2, true),
+ 'https://supabase.lemora.lat/producto.html?id=9', 2, true),
 
 ('https://lh3.googleusercontent.com/d/1wBBfRuFVHx3tQYlREsmztDab8ZGANisu=s1200-rw',
  '', 'Promociona', 'Ofertas o promociones en la tienda con banners', 'Ver producto',
- 'https://planluxury.lemora.lat/producto.html?id=16', 3, true),
+ 'https://supabase.lemora.lat/producto.html?id=16', 3, true),
 
 ('https://lh3.googleusercontent.com/d/1RVlmPcd8SsV8S_KYgdCzfknadfJSoOck=s1200-rw',
  '', 'Aprovecha', 'Pagando con tarjeta VISA hasta 3 cuotas sin interés', 'Ver producto',
- 'https://planluxury.lemora.lat/producto.html?id=16', 4, true)
+ 'https://supabase.lemora.lat/producto.html?id=16', 4, true)
 ) as v(imagen_url, logo_url, badge, titulo, boton, link, position, activo)
 where not exists (select 1 from public.banners);
 
