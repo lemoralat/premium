@@ -156,6 +156,12 @@ html {
     }
 }
 
+/* Contenedor angosto (formularios de checkout, etc.) */
+.container-sg {
+    max-width: var(--container-sm);
+    margin: 0 auto;
+}
+
 /* =========================
    Banner productos
    ========================= */
@@ -1550,6 +1556,7 @@ span {
     border-radius: 8px;
     padding: 2rem;
     box-shadow: var(--shadow);
+    margin-bottom: 2rem;
 }
 
 .checkout-form.hidden {
@@ -1558,6 +1565,28 @@ span {
 
 .checkout-form h2 {
     margin-bottom: 1.5rem;
+}
+
+/* Formulario de checkout en dos columnas */
+#shippingForm {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 1.5rem;
+}
+
+#shippingForm .form-group {
+    margin-bottom: 1.5rem;
+}
+
+#shippingForm .submit-btn,
+#shippingForm .seguro {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    #shippingForm {
+        grid-template-columns: 1fr;
+    }
 }
 
 .form-group {
