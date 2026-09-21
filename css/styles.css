@@ -2457,9 +2457,6 @@ footer p {
 .btn-go-cart {
     flex: 1;
     padding: 1rem 2rem;
-    background: var(--primary-color);
-    color: white;
-    border: none;
     font-size: var(--fs-button);
     line-height: 1.2;
     cursor: pointer;
@@ -2472,11 +2469,33 @@ footer p {
     gap: 0.5rem;
 }
 
+/* Primario: con fondo */
+.btn-add-cart {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+/* Secundario: con borde (outline) */
+.btn-go-cart {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
 .btn-add-cart:hover,
 .btn-go-cart:hover {
-    background: var(--primary-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+}
+
+.btn-add-cart:hover {
+    background: var(--primary-hover);
+}
+
+.btn-go-cart:hover {
+    background: var(--primary-color);
+    color: #fff;
 }
 
 .btn-add-cart:disabled {
