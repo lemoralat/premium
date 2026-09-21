@@ -53,7 +53,7 @@ function filas() {
                 </div>
             </td>
             <td><span style="color:var(--warning);">${'★'.repeat(r.valoracion)}${'☆'.repeat(5 - r.valoracion)}</span></td>
-            <td style="max-width:320px;">${esc(recCorto(r.resena, 90))}</td>
+            <td style="max-width:320px;">${esc(recCorto(r.resena))}</td>
             <td>${esc(String(r.fecha || ''))}</td>
             <td>${r.activo
                 ? '<span class="estado-badge estado-entregado">Activa</span>'
@@ -66,9 +66,8 @@ function filas() {
     `).join('');
 }
 
-function recCorto(texto, max = 90) {
-    const t = String(texto || '');
-    return t.length > max ? t.slice(0, max - 3).trimEnd() + '…' : t;
+function recCorto(texto) {
+    return String(texto || '');
 }
 
 function abrirModalResena(idExistente) {

@@ -51,7 +51,7 @@ function filas() {
             </td>
             <td>
                 <strong>${esc(s.titulo)}</strong>
-                ${s.texto_soporte ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(recCorto(s.texto_soporte, 70))}</span>` : ''}
+                ${s.texto_soporte ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(recCorto(s.texto_soporte))}</span>` : ''}
             </td>
             <td>${esc(s.position)}</td>
             <td>${s.activo
@@ -65,9 +65,8 @@ function filas() {
     `).join('');
 }
 
-function recCorto(texto, max = 70) {
-    const t = String(texto || '');
-    return t.length > max ? t.slice(0, max - 3).trimEnd() + '…' : t;
+function recCorto(texto) {
+    return String(texto || '');
 }
 
 function abrirModalSlide(idExistente) {

@@ -73,7 +73,7 @@ class HeroSlider {
                     <div class="slider-content">
                         <div class="slider-text">
                             <h1>${recortarTexto(slide.titulo)}</h1>
-                            ${slide.textoSoporte ? `<p>${recortarTexto(slide.textoSoporte, 120)}</p>` : ''}
+                            ${slide.textoSoporte ? `<p>${recortarTexto(slide.textoSoporte)}</p>` : ''}
                         </div>
                     </div>
             `;

@@ -167,7 +167,7 @@ function renderizarDetalleProducto(producto) {
                 
                 <p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
                 
-                <p class="product-detail-description">${escaparHtml(recortarTexto(producto.descripcionDetallada, 400))}</p>
+                <p class="product-detail-description">${escaparHtml(recortarTexto(producto.descripcionDetallada))}</p>
                 
                 <div class="product-features">
                     <h3>Características:</h3>

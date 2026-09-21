@@ -47,7 +47,7 @@ module.exports = async function handler(request, response) {
         const items = body.productos.map((item) => ({
             product_id: Number(item.id),
             quantity: Number(item.quantity),
-            variante_texto: typeof item.varianteTexto === 'string' ? String(item.varianteTexto).slice(0, 500) : ''
+            variante_texto: typeof item.varianteTexto === 'string' ? String(item.varianteTexto) : ''
         }));
 
         if (items.some(i => !Number.isInteger(i.product_id) || !Number.isInteger(i.quantity) || i.quantity <= 0)) {
@@ -57,7 +57,7 @@ module.exports = async function handler(request, response) {
         const payload = {
             p_cliente: body.cliente,
             p_items: items,
-            p_cupon: (body.cupon && body.cupon !== 'NINGUNO') ? String(body.cupon).slice(0, 50) : null,
+            p_cupon: (body.cupon && body.cupon !== 'NINGUNO') ? String(body.cupon) : null,
             p_token: (typeof body.token === 'string' && UUID_REGEX.test(body.token)) ? body.token : null
         };
 

@@ -383,7 +383,7 @@ export function generarHTMLTarjetaProducto(producto, opciones = {}) {
             </div>
             <div class="product-info">
                 <h3 class="product-title">${recortarTexto(producto.nombre)}</h3>
-                ${soloNombrePrecio ? '' : `<p class="product-description">${recortarTexto(producto.descripcion, 100)}</p>`}
+                ${soloNombrePrecio ? '' : `<p class="product-description">${recortarTexto(producto.descripcion)}</p>`}
                 <p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
             </div>
         </a>
@@ -423,10 +423,10 @@ export function formatearPrecio(precio) {
     });
 }
 
-// Recortar texto a un máximo de caracteres (con puntos suspensivos sin superar el máximo)
-export function recortarTexto(texto, max = 60) {
-    const t = String(texto ?? '');
-    return t.length > max ? t.slice(0, max - 3).trimEnd() + '...' : t;
+// Muestra el texto completo, sin límite de caracteres (se mantiene la función
+// por compatibilidad con todos sus llamadores).
+export function recortarTexto(texto) {
+    return String(texto ?? '');
 }
 
 // Fuerza al CDN de Google a entregar WebP (sufijo "-rw") sin cambiar el tamaño pedido.
