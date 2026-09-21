@@ -28,7 +28,7 @@ const secciones = {
     slider:        { ...slider,        titulo: 'Slider' },
     banners:       { ...banners,       titulo: 'Banners' },
     resenas:       { ...resenas,       titulo: 'Reseñas' },
-    iconosPie:     { ...iconosPie,     titulo: 'Iconos' },
+    'iconos-pie':  { ...iconosPie,     titulo: 'Iconos' },
     configuracion: { ...configuracion, titulo: 'Configuración' },
     cuenta:        { ...cuenta,        titulo: 'Mi cuenta' }
 };
