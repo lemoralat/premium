@@ -52,6 +52,7 @@ function filas() {
             <td>
                 <strong>${esc(s.titulo)}</strong>
                 ${s.texto_soporte ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(recCorto(s.texto_soporte))}</span>` : ''}
+                ${s.link ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(s.link)}</span> ${s.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
             </td>
             <td>${esc(s.position)}</td>
             <td>${s.activo
@@ -113,6 +114,13 @@ function abrirModalSlide(idExistente) {
                     <input type="url" id="sldLink" value="${esc(slide?.link || '')}" placeholder="https://…">
                 </div>
                 <div class="admin-field">
+                    <label for="sldTarget">Comportamiento del enlace</label>
+                    <select id="sldTarget">
+                        <option value="interno" ${slide?.target === 'externo' ? '' : 'selected'}>Interno (misma pestaña)</option>
+                        <option value="externo" ${slide?.target === 'externo' ? 'selected' : ''}>Externo (nueva pestaña)</option>
+                    </select>
+                </div>
+                <div class="admin-field">
                     <label for="sldPosition">Orden</label>
                     <input type="number" id="sldPosition" min="0" step="1" value="${esc(slide?.position ?? (slides.length + 1))}">
                 </div>
@@ -161,6 +169,7 @@ function abrirModalSlide(idExistente) {
             titulo: $('#sldTitulo').value.trim(),
             texto_soporte: $('#sldTextoSoporte').value.trim(),
             link: $('#sldLink').value.trim(),
+            target: $('#sldTarget').value,
             position: parseInt($('#sldPosition').value) || 0,
             activo: $('#sldActivo').checked
         };

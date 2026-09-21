@@ -1,5 +1,5 @@
 // Renderizar productos por categorías en el index
-import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
 
 let productos = [];
 
@@ -87,7 +87,7 @@ function generarHTMLBannerSoloImagen(banner) {
     return `
         <section class="banner-intercalado">
             <div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">
-                ${banner.link ? `<a href="${link}" target="_self" ${etiqueta}></a>` : ''}
+                ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}
             </div>
         </section>
     `;
@@ -104,7 +104,7 @@ function generarHTMLBannerDinamico(banner) {
         <section class="banner-intercalado">
             <div class="banner banner-border">
                 <div class="banner_imagen">
-                    ${banner.link ? `<a href="${link}" target="_self">` : ''}
+                    ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)}>` : ''}
                         <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">
                     ${banner.link ? '</a>' : ''}
                 </div>
@@ -119,7 +119,7 @@ function generarHTMLBannerDinamico(banner) {
                     <div class="banner_info_copy">
                         ${banner.badge ? `<span>${escaparHtml(recortarTexto(banner.badge))}</span>` : ''}
                         <h2>${escaparHtml(recortarTexto(banner.titulo))}</h2>
-                        ${tieneBoton ? `<a href="${link}" target="_self">${escaparHtml(recortarTexto(banner.boton))} <i class="fa-solid fa-chevron-right"></i></a>` : ''}
+                        ${tieneBoton ? `<a href="${link}" ${atributosEnlace(banner)}>${escaparHtml(recortarTexto(banner.boton))} <i class="fa-solid fa-chevron-right"></i></a>` : ''}
                     </div>
                 </div>
             </div>

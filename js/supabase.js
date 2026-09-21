@@ -235,7 +235,7 @@ export async function cargarSlider() {
     try {
         const { data, error } = await sb
             .from('sliders')
-            .select('id, titulo, texto_soporte, storage_path, external_url, link')
+            .select('id, titulo, texto_soporte, storage_path, external_url, link, target')
             .eq('activo', true)
             .order('position', { ascending: true });
 
@@ -245,7 +245,8 @@ export async function cargarSlider() {
             titulo: s.titulo || '',
             textoSoporte: s.texto_soporte || '',
             imagen: urlImagen(s) || 'img/sliders/slider1.jpg',
-            link: s.link || ''
+            link: s.link || '',
+            target: s.target === 'externo' ? 'externo' : 'interno'
         }));
 
         cachear('slider', slides);
@@ -269,7 +270,7 @@ export async function cargarBanners() {
     try {
         const { data, error } = await sb
             .from('banners')
-            .select('id, imagen_path, imagen_url, logo_path, logo_url, badge, titulo, boton, link')
+            .select('id, imagen_path, imagen_url, logo_path, logo_url, badge, titulo, boton, link, target')
             .eq('activo', true)
             .order('position', { ascending: true });
 
@@ -281,7 +282,8 @@ export async function cargarBanners() {
             badge: b.badge || '',
             titulo: b.titulo || '',
             boton: b.boton || '',
-            link: b.link || ''
+            link: b.link || '',
+            target: b.target === 'externo' ? 'externo' : 'interno'
         }));
 
         cachear('banners', banners);

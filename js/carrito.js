@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
 
 let productosGlobales = [];
 
@@ -268,7 +268,7 @@ function renderizarBannerCarrito(banners) {
         const etiqueta = banner.link ? `aria-label="${escaparHtml(banner.titulo || 'Banner')}" ` : '';
         contenedor.innerHTML = `
             <div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">
-                ${banner.link ? `<a href="${link}" target="_self" ${etiqueta}></a>` : ''}
+                ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}
             </div>
         `;
         contenedor.hidden = false;
@@ -282,7 +282,7 @@ function renderizarBannerCarrito(banners) {
     contenedor.innerHTML = `
         <div class="banner banner-border">
             <div class="banner_imagen">
-                ${banner.link ? `<a href="${link}" target="_self">` : ''}
+                ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)}>` : ''}
                     <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">
                 ${banner.link ? '</a>' : ''}
             </div>
@@ -296,7 +296,7 @@ function renderizarBannerCarrito(banners) {
                 <div class="banner_info_copy">
                     ${banner.badge ? `<span>${escaparHtml(recortarTexto(banner.badge))}</span>` : ''}
                     <h2>${escaparHtml(recortarTexto(banner.titulo))}</h2>
-                    ${tieneBoton ? `<a href="${link}" target="_self">${escaparHtml(recortarTexto(banner.boton))} <i class="fa-solid fa-chevron-right"></i></a>` : ''}
+                    ${tieneBoton ? `<a href="${link}" ${atributosEnlace(banner)}>${escaparHtml(recortarTexto(banner.boton))} <i class="fa-solid fa-chevron-right"></i></a>` : ''}
                 </div>
             </div>
         </div>

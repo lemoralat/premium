@@ -74,8 +74,8 @@ Reglas de oro:
 | `product_option_values` | Valores de variante (p. ej. "40, 41, 42") | FK → product_options, cascada |
 | `product_images` | Imágenes (1 principal + galería) | `storage_path` **o** `external_url` (restricción `num_nonnulls <= 1`), `es_principal`, `position`, FK cascada |
 | `coupons` | Cupones manuales | `codigo`, `porcentaje`, `expira` (date), `activo` |
-| `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`/`external_url`, `link`, `position`, `activo` |
-| `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `position`, `activo` |
+| `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`/`external_url`, `link`, `target` (`interno` default / `externo`), `position`, `activo` |
+| `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `target` (`interno` default / `externo`), `position`, `activo` |
 | `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`/`external_url`, `position`, `activo` |
 | `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo` |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
@@ -211,6 +211,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0002_seed.sql` (datos reales)
    - `migrations/0003_storage.sql` (buckets y políticas)
    - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
+   - `migrations/0005_enlace_target.sql` (columna `target` en `sliders` y `banners`: `interno` → `_self` default, `externo` → `_blank`)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).

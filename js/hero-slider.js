@@ -2,7 +2,7 @@
 // Slides dinámicos desde la hoja "Slider" (js/slider.json).
 // Sin slides => la sección se mantiene oculta (hidden en el HTML).
 
-import { obtenerSlider, recortarTexto, imagenOptimizada } from './utils.js';
+import { obtenerSlider, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
 
 class HeroSlider {
     constructor() {
@@ -79,7 +79,7 @@ class HeroSlider {
             `;
             return `
                 <div class="slider-slide${i === 0 ? ' active' : ''}">
-                    ${slide.link ? `<a href="${slide.link}" target="_self" class="slider-link">${contenido}</a>` : contenido}
+                    ${slide.link ? `<a href="${slide.link}" ${atributosEnlace(slide)} class="slider-link">${contenido}</a>` : contenido}
                 </div>
             `;
         }).join('');

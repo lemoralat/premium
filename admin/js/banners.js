@@ -55,7 +55,7 @@ function filas() {
                 ${soloImagen
                     ? '<span class="estado-badge estado-procesando" style="margin-bottom:0.3rem;">Solo imagen</span>'
                     : `<strong>${esc(b.titulo)}</strong>${b.badge ? ` · <span class="estado-badge estado-entregado">${esc(b.badge)}</span>` : ''}`}
-                ${b.link ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(b.link)}</span>` : ''}
+                ${b.link ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(b.link)}</span> ${b.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
             </td>
             <td>${esc(b.position)}</td>
             <td>${b.activo
@@ -133,6 +133,13 @@ function abrirModalBanner(idExistente) {
                     <input type="url" id="bnrLink" value="${esc(banner?.link || '')}" placeholder="https://…">
                 </div>
                 <div class="admin-field">
+                    <label for="bnrTarget">Comportamiento del enlace</label>
+                    <select id="bnrTarget">
+                        <option value="interno" ${banner?.target === 'externo' ? '' : 'selected'}>Interno (misma pestaña)</option>
+                        <option value="externo" ${banner?.target === 'externo' ? 'selected' : ''}>Externo (nueva pestaña)</option>
+                    </select>
+                </div>
+                <div class="admin-field">
                     <label for="bnrPosition">Orden</label>
                     <input type="number" id="bnrPosition" min="0" step="1" value="${esc(banner?.position ?? (banners.length + 1))}">
                 </div>
@@ -179,6 +186,7 @@ function abrirModalBanner(idExistente) {
             titulo: $('#bnrTitulo').value.trim(),
             boton: $('#bnrBoton').value.trim(),
             link: $('#bnrLink').value.trim(),
+            target: $('#bnrTarget').value,
             position: parseInt($('#bnrPosition').value) || 0,
             activo: $('#bnrActivo').checked
         };

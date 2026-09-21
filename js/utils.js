@@ -368,6 +368,14 @@ async function iconosPieDesdeJSON() {
     }
 }
 
+// Comportamiento de enlace de banners/sliders:
+// "interno" (default) → misma pestaña (_self); "externo" → nueva pestaña (_blank).
+// Devuelve los atributos listos para interpolar en un <a> (target + rel noopener).
+export function atributosEnlace(entidad) {
+    const externo = (entidad && entidad.target === 'externo') ? true : false;
+    return externo ? 'target="_blank" rel="noopener"' : 'target="_self"';
+}
+
 // Banner "solo imagen": tiene imagen y ningún otro contenido publicado
 // (sin logo, badge, título ni botón). Se renderiza a ancho completo con cover.
 export function esBannerSoloImagen(banner) {
