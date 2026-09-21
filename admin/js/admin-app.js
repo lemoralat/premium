@@ -15,6 +15,7 @@ import * as cupones from './cupones.js';
 import * as slider from './slider.js';
 import * as banners from './banners.js';
 import * as resenas from './resenas.js';
+import * as iconosPie from './iconos-pie.js';
 import * as configuracion from './configuracion.js';
 import * as cuenta from './cuenta.js';
 
@@ -27,6 +28,7 @@ const secciones = {
     slider:        { ...slider,        titulo: 'Slider' },
     banners:       { ...banners,       titulo: 'Banners' },
     resenas:       { ...resenas,       titulo: 'Reseñas' },
+    iconosPie:     { ...iconosPie,     titulo: 'Iconos' },
     configuracion: { ...configuracion, titulo: 'Configuración' },
     cuenta:        { ...cuenta,        titulo: 'Mi cuenta' }
 };

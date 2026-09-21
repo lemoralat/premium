@@ -77,6 +77,7 @@ Reglas de oro:
 | `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`/`external_url`, `link`, `position`, `activo` |
 | `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `position`, `activo` |
 | `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`/`external_url`, `position`, `activo` |
+| `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo` |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
 | `order_items` | Líneas de pedido | `product_id` (ON DELETE SET NULL: el pedido histórico sobrevive al borrado del producto), `nombre` (congelado al momento de la compra), `variante_texto`, `quantity`, `precio_unitario` |
 | `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address`, redes sociales |
@@ -106,11 +107,12 @@ Se migraron todos los datos reales actuales, respetando los ids originales del J
 - **48 imágenes** de producto apuntando a Google Drive (`external_url`) para que el catálogo se vea idéntico al momento de migrar. El admin puede re-subirlas a Storage desde el panel (se irán usando `storage_path`).
 - **3 cupones**: `sale10` (10%, **inactivo** por estar vencido), `black20` (20%, activo hasta 2026-12-31), `navidad` (25%, activo hasta 2026-12-31).
 - **6 slides** de hero, **5 banners**, **12 reseñas**, todos con orden y estado reales.
+- **3 iconos del pie** (`0004`): pagos, envíos y stock, con sus rutas locales `img/icons/*.png` como `external_url` (idéntico al HTML original).
 - **Configuración** con los valores que estaban hardcodeados en el código: WhatsApp `543515957014`, umbral 100000 → 10%, alias `hola.mundo.2023`, etc.
 
 ---
 
-## 4. Políticas RLS (`0001_schema.sql` + `0003_storage.sql`)
+## 4. Políticas RLS (`0001_schema.sql` + `0003_storage.sql` + `0004_iconos_pie.sql`)
 
 Todas las tablas tienen **row level security habilitada**. Resumen:
 
@@ -193,7 +195,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
   - **categorias** — CRUD con orden y estado.
   - **pedidos** — filtros por estado, búsqueda, detalle del pedido (productos, descuentos, datos del cliente) y **cambio de estado** inline.
   - **cupones** — CRUD con vencimiento y vigencia.
-  - **slider / banners / resenas** — CRUD con preview y subida de imágenes.
+  - **slider / banners / resenas / iconos-pie** — CRUD con preview y subida de imágenes.
   - **configuracion** — WhatsApp, descuentos, transferencia y redes (los cambios se reflejan en la tienda en ≤ 1 min por la caché).
   - **cuenta** — perfil, cambio de contraseña y cierre de sesión.
 - **Estilo**: `admin/css/admin.css` usa los tokens visuales de la tienda (primario `#2563eb`, éxito `#00a650`, peligro `#ef4444`).
@@ -208,6 +210,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0001_schema.sql` (esquema + RLS + funciones)
    - `migrations/0002_seed.sql` (datos reales)
    - `migrations/0003_storage.sql` (buckets y políticas)
+   - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).

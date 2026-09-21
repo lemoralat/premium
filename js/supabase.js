@@ -293,6 +293,39 @@ export async function cargarBanners() {
 }
 
 // ============================================================================
+// ICONOS DEL PIE (sección iconos-pie del home)
+// ============================================================================
+export async function cargarIconosPie() {
+    const sb = await obtenerClienteSupabase();
+    if (!sb) return { ok: false };
+
+    const cacheado = leerCache('iconos-pie');
+    if (cacheado) return { ok: true, datos: cacheado };
+
+    try {
+        const { data, error } = await sb
+            .from('iconos_pie')
+            .select('id, titulo, descripcion, storage_path, external_url')
+            .eq('activo', true)
+            .order('position', { ascending: true });
+
+        if (error) throw error;
+
+        const iconos = (data || []).map(i => ({
+            titulo: i.titulo || '',
+            descripcion: i.descripcion || '',
+            imagen: urlImagen(i) || ''
+        }));
+
+        cachear('iconos-pie', iconos);
+        return { ok: true, datos: iconos };
+    } catch (error) {
+        console.warn('⚠️ Supabase: no se pudieron cargar los iconos del pie, usando fallback JSON.', error);
+        return { ok: false, error };
+    }
+}
+
+// ============================================================================
 // CONFIGURACIÓN GLOBAL (settings de fila única)
 // ============================================================================
 export async function cargarConfiguracion() {
