@@ -462,6 +462,15 @@ span {
     z-index: var(--z-nav);
 }
 
+/* Header completo (barra de redes + navbar) fijo al scrollear, en todos los breakpoints.
+   Antes el navbar quedaba pegado solo en móvil porque su contenedor (.header-wrapper)
+   era un bloque corto y, en desktop, el sticky no podía exceder ese contenedor. */
+.header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-nav);
+}
+
 .nav-container {
     display: flex;
     justify-content: space-between;
