@@ -360,9 +360,11 @@ html {
     color: white;
 }
 
+/* Botón secundario: estilo outline (solo borde, sin fondo) */
 .btn-secondary {
-    background-color: var(--success-color);
-    color: white;
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
 }
 
 @media (max-width: 768px) {
@@ -2180,12 +2182,14 @@ footer p {
 }
 
 .btn-secondary {
-    background: var(--success-color);
-    color: white;
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
 }
 
 .btn-secondary:hover {
-    background: #00a650;
+    background: var(--primary-color);
+    color: white;
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
@@ -3042,12 +3046,14 @@ body.searching .products-section {
 }
 
 .faq-cta .btn-secondary {
-    background: var(--success-color);
-    color: white;
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
 }
 
 .faq-cta .btn-secondary:hover {
-    background: #00a650;
+    background: var(--primary-color);
+    color: white;
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
