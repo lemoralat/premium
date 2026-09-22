@@ -984,8 +984,20 @@ body.admin-modal-abierto { overflow: hidden; }
         -webkit-overflow-scrolling: touch;
         padding-bottom: 0.4rem;
         margin-bottom: 0.75rem;
+        margin-left: -0.85rem;
+        margin-right: -0.85rem;
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
+        scrollbar-width: none;
     }
+    .admin-filtros-chips::-webkit-scrollbar { display: none; }
     .admin-filtros-chips .admin-chip { flex-shrink: 0; }
+
+    /* Targets táctiles cómodos en móvil */
+    .admin-chip { min-height: 42px; padding: 0.5rem 1rem; }
+    .admin-select-filtro,
+    .admin-estado-select { min-height: 42px; }
+    .admin-check input[type="checkbox"] { width: 20px; height: 20px; }
 
     /* Topbar compacto */
     .admin-topbar { padding: 0.6rem 0.85rem; }
