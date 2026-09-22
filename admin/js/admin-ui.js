@@ -85,8 +85,7 @@ export function confirmarDialogo(opciones) {
             if (resuelto) return;
             resuelto = true;
             document.removeEventListener('keydown', onKey);
-            document.body.classList.remove('admin-modal-abierto');
-            overlay.remove();
+            cerrarModal(); // salida animada del modal
             resolve(valor);
         };
 
@@ -269,6 +268,10 @@ export function abrirModal(html) {
 
 export function cerrarModal() {
     const overlay = $('#adminModal');
-    if (overlay) overlay.remove();
+    if (!overlay) return;
+    if (overlay.classList.contains('admin-modal-cerrando')) return;
+    // Salida suave: anima y recién después quita el nodo.
+    overlay.classList.add('admin-modal-cerrando');
     document.body.classList.remove('admin-modal-abierto');
+    setTimeout(() => overlay.remove(), 160);
 }

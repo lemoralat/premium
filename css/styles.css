@@ -4657,6 +4657,18 @@ html.exit-intent-locked body {
     background: var(--danger-color);
 }
 
+/* Entrada / salida de los toasts de la tienda (definen las animaciones
+   referenciadas por mostrarNotificacion en utils.js) */
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(24px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(24px); }
+}
+
 .confirmacion-overlay {
     position: fixed;
     top: 0;

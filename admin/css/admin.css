@@ -719,6 +719,29 @@ body.admin-modal-abierto { overflow: hidden; }
     line-height: 1.5;
 }
 
+/* Transiciones suaves de los modales (entrada / salida). Se aplican también
+   a los modales de formularios (abrirModal) y a confirmarDialogo. */
+@keyframes adminModalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes adminModalPanelIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes adminModalFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+@keyframes adminModalPanelOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(10px) scale(0.98); }
+}
+.admin-modal { animation: adminModalFadeIn 0.18s ease-out; }
+.admin-modal .admin-modal-panel { animation: adminModalPanelIn 0.22s cubic-bezier(0.21, 1.02, 0.73, 1) both; }
+.admin-modal.admin-modal-cerrando { animation: adminModalFadeOut 0.16s ease-in forwards; }
+.admin-modal.admin-modal-cerrando .admin-modal-panel { animation: adminModalPanelOut 0.16s ease-in forwards; }
+
 /* ============================================================================
    TOASTS
    ============================================================================ */
@@ -746,6 +769,13 @@ body.admin-modal-abierto { overflow: hidden; }
 
 .admin-toast-item.error { background: var(--danger); }
 .admin-toast-item.salida { opacity: 0; transform: translateY(-8px); }
+
+/* Entrada suave de los toasts del panel */
+@keyframes adminToastIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.admin-toast-item { animation: adminToastIn 0.2s ease-out; }
 
 /* ============================================================================
    LOGIN
