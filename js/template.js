@@ -160,6 +160,9 @@ function aplicarDisenoGlobal() {
     if (CONFIG_DISENO.faviconUrl) {
         document.querySelectorAll('link[rel="icon"]').forEach((el) => {
             el.href = CONFIG_DISENO.faviconUrl;
+            // El favicon por defecto es SVG; al cambiarlo se limpia el "type"
+            // para que el navegador detecte el formato real (ej. PNG).
+            el.removeAttribute('type');
         });
     }
 
