@@ -35,6 +35,84 @@ function leerCache(clave) {
     return entrada.datos;
 }
 
+// ---------------------------------------------------------------------------
+// Refresco automático del catálogo (opción A): re-fetch liviano, sin WebSocket.
+//
+// Cuándo refresca (una sola red por disparo, compartida por todos los
+// suscriptores de la página):
+//   - Al volver a la pestaña (visibilitychange → visible).
+//   - Al volver de otra página (pageshow con bfcache o back/forward).
+//   - Cada 30 s con la página visible (sesiones largas sin tocar la pestaña).
+// Solo re-renderiza si cambió la firma de datos (stock/precio/imágenes).
+// Si Supabase está caído, no hace nada (el fallback JSON sigue intacto).
+// ---------------------------------------------------------------------------
+const INTERVALO_REFRESCO_CATALOGO = 30_000;
+const suscriptoresCatalogo = new Set();
+
+export function invalidarCacheProductos() {
+    cacheMemoria.delete('productos');
+}
+
+// Firma compacta: resume lo que las páginas muestran. Cambia solo si cambió
+// algo visible en pantalla (stock, precios, imagen/galería, destacado).
+function firmaProducto(p) {
+    return [p.id, p.stock, p.precio, p.precioAnterior, p.imagen, (p.galeria || []).join(','), p.destacado ? 1 : 0].join('|');
+}
+
+function firmaCatalogo(datos) {
+    return datos.map(firmaProducto).join(';');
+}
+
+// Fuerza un re-fetch sin usar el caché. Devuelve { ok, datos } de cargarProductos.
+export async function refrescarCatalogo() {
+    invalidarCacheProductos();
+    return cargarProductos();
+}
+
+// Registra un re-render que corre con datos frescos solo si algo cambió.
+export function suscribirRefrescoCatalogo(callback) {
+    suscriptoresCatalogo.add(callback);
+    return () => suscriptoresCatalogo.delete(callback);
+}
+
+let refrescando = false;
+let firmaGlobal = (() => {
+    const cacheado = leerCache('productos');
+    return Array.isArray(cacheado) ? firmaCatalogo(cacheado) : null;
+})();
+
+async function dispararRefresco() {
+    if (suscriptoresCatalogo.size === 0 || refrescando || document.visibilityState === 'hidden') return;
+    refrescando = true;
+    try {
+        const resultado = await refrescarCatalogo();
+        if (!resultado.ok || !Array.isArray(resultado.datos)) return;
+        const firma = firmaCatalogo(resultado.datos);
+        if (firmaGlobal === null) {
+            // Primera vez: solo sembrar la firma base (los datos ya están cargados).
+            firmaGlobal = firma;
+            return;
+        }
+        if (firma === firmaGlobal) return;
+        firmaGlobal = firma;
+        for (const cb of suscriptoresCatalogo) {
+            try { cb(resultado.datos); } catch (error) { console.warn('Suscriptor de refresco falló:', error); }
+        }
+    } finally {
+        refrescando = false;
+    }
+}
+
+// Disparadores únicos a nivel de módulo: una sola red por evento/tick.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') dispararRefresco();
+});
+window.addEventListener('pageshow', (event) => {
+    const tipo = performance.getEntriesByType('navigation')[0]?.type;
+    if (event.persisted || tipo === 'back_forward') dispararRefresco();
+});
+setInterval(dispararRefresco, INTERVALO_REFRESCO_CATALOGO);
+
 // Inicializa el cliente solo si hay configuración (import dinámico del CDN:
 // no se descarga el SDK si el proyecto no está configurado todavía).
 export function obtenerClienteSupabase() {

@@ -1,6 +1,7 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
 import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, imagenOptimizada } from './utils.js';
+import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
 let zoomActivo = false;
@@ -10,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarTodosLosProductos().then(() => {
         cargarDetalleProducto();
         cargarProductosRelacionados();
+        // Refresco automático (opción A): stock/precio/galería al día sin recargar.
+        suscribirRefrescoCatalogo(actualizarProductoEnPantalla);
     });
 });
 
@@ -17,6 +20,72 @@ document.addEventListener('DOMContentLoaded', function() {
 async function cargarTodosLosProductos() {
     productos = await obtenerProductos();
 };
+
+// ---------------------------------------------------------------------------
+// Refresco automático (opción A): actualiza stock/precio/galería del producto
+// visible SIN reconstruir toda la página (no resetea variantes ni zoom).
+// ---------------------------------------------------------------------------
+function actualizarProductoEnPantalla(datos) {
+    const productoId = obtenerIdProducto();
+    const fresco = datos.find(p => p.id === productoId);
+    if (!fresco) return;
+
+    const anterior = productos.find(p => p.id === productoId);
+    const huboStock = !anterior || anterior.stock !== fresco.stock;
+    const huboPrecio = !anterior || anterior.precio !== fresco.precio
+        || anterior.precioAnterior !== fresco.precioAnterior;
+    const huboGaleria = !anterior || anterior.imagen !== fresco.imagen
+        || JSON.stringify(anterior.galeria) !== JSON.stringify(fresco.galeria);
+
+    productos = datos;
+
+    if (huboStock) {
+        actualizarStockEnPantalla(fresco);
+        inyectarDatosEstructurados(fresco);
+    }
+    if (huboPrecio) actualizarPrecioEnPantalla(fresco);
+    if (huboGaleria) {
+        // Caso raro (se editan imágenes con la ficha abierta): reconstruimos la
+        // vista completa del producto para reflejar la nueva galería.
+        imagenActualIndex = 0;
+        renderizarDetalleProducto(fresco);
+    }
+}
+
+function actualizarStockEnPantalla(producto) {
+    const stockEl = document.querySelector('.product-stock');
+    if (stockEl) {
+        let stockClass = '';
+        let stockText = '';
+        if (producto.stock > 10) {
+            stockText = `En stock (${producto.stock} disponibles)`;
+        } else if (producto.stock > 0) {
+            stockClass = 'low';
+            stockText = `¡Últimas unidades! (${producto.stock} disponibles)`;
+        } else {
+            stockClass = 'out';
+            stockText = 'Agotado';
+        }
+        stockEl.className = `product-stock ${stockClass}`;
+        stockEl.textContent = stockText;
+    }
+
+    const btn = document.getElementById('btnAddCart');
+    if (btn) {
+        btn.disabled = producto.stock === 0;
+        btn.textContent = producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito';
+    }
+
+    // Recalibrar la cantidad elegida con el nuevo stock disponible.
+    cambiarCantidad(0);
+}
+
+function actualizarPrecioEnPantalla(producto) {
+    const priceEl = document.querySelector('.product-detail-price');
+    if (priceEl) {
+        priceEl.innerHTML = `${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}`;
+    }
+}
 
 // Obtener el ID del producto desde la URL
 function obtenerIdProducto() {

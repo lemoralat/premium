@@ -1,6 +1,7 @@
 // favoritos.js
 
 import { obtenerProductos, generarHTMLTarjetaProducto, mostrarNotificacion, renderPrecioAnterior, imagenOptimizada, escaparHtml } from './utils.js';
+import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let allProducts = []; // Para almacenar todos los productos una vez cargados
 
@@ -9,6 +10,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     allProducts = await obtenerProductos();
     // Renderizar la lista de favoritos
     renderizarFavoritos();
+    // Refresco automático (opción A): favoritos al día sin recargar.
+    suscribirRefrescoCatalogo((datos) => {
+        allProducts = datos;
+        renderizarFavoritos();
+    });
 });
 
 // Obtener la lista de IDs de productos favoritos desde localStorage

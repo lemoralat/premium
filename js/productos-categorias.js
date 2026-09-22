@@ -1,7 +1,9 @@
 // Renderizar productos por categorías en el index
 import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, slugificar } from './utils.js';
+import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
+let banners = []; // dinámicos (hoja "Banners"); se refrescan junto con los productos
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Cargar productos usando el sistema centralizado con caché
@@ -9,8 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (productos.length > 0) {
         // Banners dinámicos desde la hoja "Banners"; sin datos o error => sin banners
-        const banners = await obtenerBanners();
-        renderizarCategoriasAutomaticas(Array.isArray(banners) ? banners : []);
+        const bs = await obtenerBanners();
+        banners = Array.isArray(bs) ? bs : [];
+        renderizarCategoriasAutomaticas(banners);
 
         // Scroll al hash si se viene desde otra página (ej: index.html#cat-calzado)
         if (window.location.hash) {
@@ -19,8 +22,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 target.scrollIntoView({ behavior: 'smooth' });
             }
         }
+
+        // Refresco automático (opción A): stock/precio/imágenes al día sin recargar.
+        suscribirRefrescoCatalogo(actualizarCatalogo);
     }
 });
+
+// Re-renderiza la tienda con datos frescos (solo llega acá si cambió algo visible).
+async function actualizarCatalogo(nuevosProductos) {
+    productos = nuevosProductos;
+    const bs = await obtenerBanners();
+    banners = Array.isArray(bs) ? bs : banners;
+    renderizarCategoriasAutomaticas(banners);
+}
 
 function renderizarCategoriasAutomaticas(banners) {
     const container = document.getElementById('tienda');

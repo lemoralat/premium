@@ -1,5 +1,6 @@
 // Sistema de búsqueda de productos en tiempo real - Compatible con categorías
 import { obtenerProductos, generarHTMLTarjetaProducto, normalizarTexto } from './utils.js';
+import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
 let debounceTimer;
@@ -12,6 +13,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // template.js, así que también esperamos el evento 'lemora:header-ready'.
     conectarBuscador();
     document.addEventListener('lemora:header-ready', conectarBuscador, { once: true });
+
+    // Refresco automático (opción A): si hay una búsqueda activa, re-ejecutarla
+    // con datos frescos (stock/imagen/precio) sin recargar.
+    suscribirRefrescoCatalogo((datos) => {
+        productos = datos;
+        const activo = [...document.querySelectorAll('.search-input')].find(i => i.value.trim());
+        if (activo) buscarProductos(activo.value.trim());
+    });
 });
 
 // Vincular todos los inputs de búsqueda (idempotente por input).
