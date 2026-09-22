@@ -67,7 +67,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const datos = (iconos || ICONOS_ESTATICOS).map((i) => ({
         titulo: i.titulo,
         descripcion: i.descripcion,
-        imagen: imagenOptimizada(i.imagen) || 'img/icons/icono-pagos.png'
+        imagen: imagenOptimizada(i.imagen) || 'img/icons/icono-pagos.png',
+        icono: i.icono || ''
     }));
 
     contenedor.innerHTML = datos.map(generarIcono).join('');
