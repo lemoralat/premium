@@ -1,0 +1,7 @@
+# Lemora tienda — robots.txt (Repaso de seguridad, hallazgo Baja)
+# El panel de administración y la API no deben indexarse en buscadores
+# (además de estar protegidos por RLS/rol, conviene no exponer la URL del panel).
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/

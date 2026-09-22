@@ -15,7 +15,7 @@ export async function renderizar(contenedor) {
 
     const email = session.user.email || '';
     const perfil = await (async () => {
-        const { data } = await sb.from('profiles').select('full_name, role').eq('id', session.user.id).single();
+        const { data } = await sb.from('profiles').select('full_name').eq('id', session.user.id).single();
         return data || null;
     })();
 
@@ -34,7 +34,7 @@ export async function renderizar(contenedor) {
                 </div>
                 <div class="admin-field">
                     <label>Rol</label>
-                    <input type="text" value="${esc(perfil?.role || 'admin')}" disabled>
+                    <input type="text" value="Administrador" disabled>
                 </div>
                 <div class="admin-field" style="justify-content:flex-end;">
                     <button type="button" class="btn btn-primary" id="btnGuardarNombre">

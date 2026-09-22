@@ -19,12 +19,37 @@ const { createClient } = require('@supabase/supabase-js');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Orígenes que pueden POSTear a /api/pedido. Ampliables con la variable de
+// entorno ALLOWED_ORIGINS (separados por coma). «*» admite subdominios
+// (ej. https://*.vercel.app cubre las previews). Si no viene header Origin
+// (curl, server-to-server) se permite: no hay cookies de sesión que robar.
+function origenPermitido(origin) {
+    if (!origin) return true;
+    const permitidos = (process.env.ALLOWED_ORIGINS || [
+        'https://supabase.lemora.lat',
+        'https://*.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:3001'
+    ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
+    return permitidos.some((patron) => {
+        if (patron.includes('*')) {
+            return origin.startsWith(patron.replace(/\*/g, ''));
+        }
+        return origin === patron;
+    });
+}
+
 module.exports = async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('X-Content-Type-Options', 'nosniff');
 
     if (request.method !== 'POST') {
         return response.status(405).json({ status: 'error', message: 'Método no permitido.' });
+    }
+
+    // CSRF/abuso ligero: solo aceptamos POSTs desde orígenes conocidos de la tienda.
+    if (!origenPermitido(String(request.headers.origin || ''))) {
+        return response.status(403).json({ status: 'error', message: 'Origen no permitido.' });
     }
 
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -81,11 +106,15 @@ module.exports = async function handler(request, response) {
 
         return response.status(200).json(data);
     } catch (error) {
-        const mensaje = String(error.message || 'No se pudo registrar el pedido.');
-        // Errores de negocio esperados: stock insuficiente, producto inactivo, cantidades.
-        const conflicto = /stock insuficiente|cantidad inválida|producto/i.test(mensaje);
-        const limiteTasa = /intentá de nuevo/i.test(mensaje);
-        console.error('❌ Error registrando pedido en Supabase:', mensaje);
-        return response.status(limiteTasa ? 429 : (conflicto ? 409 : 500)).json({ status: 'error', message: mensaje });
+        const detalle = String(error.message || '');
+        // Solo exponemos mensajes de la RPC que controlamos nosotros; el resto
+        // (errores de BD, etc.) se devuelve genérico pero se loguea completo.
+        const amistoso = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida|demasiados pedidos|intentá de nuevo)/i.test(detalle)
+            ? detalle
+            : 'No se pudo registrar el pedido.';
+        const conflicto = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida)/i.test(detalle);
+        const limiteTasa = /demasiados pedidos|intentá de nuevo/i.test(detalle);
+        console.error('❌ Error registrando pedido en Supabase:', detalle);
+        return response.status(limiteTasa ? 429 : (conflicto ? 409 : 500)).json({ status: 'error', message: amistoso });
     }
 };
