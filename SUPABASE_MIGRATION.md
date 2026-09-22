@@ -218,6 +218,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0009_diseno.sql` (sección Diseño: `logo_path`, `favicon_path`, `og_image_path`, `color_principal` negro, `estilo_bordes`)
    - `migrations/0010_color_principal_negro.sql` (default del color principal → negro)
    - `migrations/0011_redes_sociales.sql` (redes del header: YouTube, X, Pinterest, LinkedIn, WhatsApp y Otra sobre las 3 existentes)
+   - `migrations/0012_iconos_fontawesome.sql` (sección Iconos: columna `icono` FontAwesome en `iconos_pie`, con selector curado + buscador en el dashboard)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).

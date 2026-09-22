@@ -1125,3 +1125,92 @@ body.admin-modal-abierto { overflow: hidden; }
 @media (max-width: 640px) {
     .pedido-detalle-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================================================
+   SELECCIÓN DE ÍCONOS FONTAWESOME (sección Iconos)
+   ============================================================================ */
+/* El atributo hidden debe ganar al display:flex de .admin-field */
+.admin-field[hidden] { display: none; }
+
+.admin-seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.admin-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.9rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.admin-seg-btn:hover { color: var(--text); }
+
+.admin-seg-btn.activo { background: var(--primary); color: #fff; }
+
+.admin-iconos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 0.4rem;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg);
+}
+
+.admin-icono-opcion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.admin-icono-opcion:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+
+.admin-icono-opcion.seleccionado {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.admin-icono-vacio { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
+
+.admin-icono-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--primary);
+    font-size: 1.05rem;
+}

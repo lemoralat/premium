@@ -3168,6 +3168,22 @@ body.searching .products-section {
     text-wrap: balance;
 }
 
+/* Ícono FontAwesome (modo "Ícono" de la sección Iconos): círculo suave con el
+   ícono en el color principal de la tienda. */
+.icono-icono {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--primary-color) 10%, #ffffff);
+    color: var(--primary-color);
+    font-size: 2rem;
+    line-height: 1;
+}
+
 /* ===================================
    MODAL DE ZOOM - ESTILOS FALTANTES
    =================================== */

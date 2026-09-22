@@ -34,11 +34,15 @@ function escapar(texto) {
 function generarIcono(icono) {
     const titulo = escapar(icono.titulo);
     const descripcion = escapar(icono.descripcion);
-    const imagen = escapar(icono.imagen);
+
+    // Ícono de Font Awesome (configurado desde el dashboard) o imagen.
+    const visual = icono.icono
+        ? `<div class="icono-icono"><i class="${escapar(icono.icono)}" aria-hidden="true"></i></div>`
+        : `<img loading="lazy" src="${escapar(icono.imagen)}" alt="${titulo}" width="60" height="60">`;
 
     return `
         <div class="icono">
-            <img loading="lazy" src="${imagen}" alt="${titulo}" width="60" height="60">
+            ${visual}
             <h3>${titulo}</h3>
             <p>${descripcion}</p>
         </div>

@@ -391,7 +391,7 @@ export async function cargarIconosPie() {
     try {
         const { data, error } = await sb
             .from('iconos_pie')
-            .select('id, titulo, descripcion, storage_path, external_url')
+            .select('id, titulo, descripcion, storage_path, external_url, icono')
             .eq('activo', true)
             .order('position', { ascending: true });
 
@@ -400,7 +400,8 @@ export async function cargarIconosPie() {
         const iconos = (data || []).map(i => ({
             titulo: i.titulo || '',
             descripcion: i.descripcion || '',
-            imagen: urlImagen(i) || ''
+            imagen: urlImagen(i) || '',
+            icono: i.icono || ''
         }));
 
         cachear('iconos-pie', iconos);
