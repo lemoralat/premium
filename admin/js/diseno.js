@@ -265,7 +265,7 @@ function prepararCampoImagen(r, pathActual) {
     });
 
     if (quitarBtn) {
-        quitarBtn.addEventListener('click', () => {
+        quitarBtn.addEventListener('click', async () => {
             if (est.quitar) {
                 // Deshacer la quita
                 est.quitar = false;
@@ -276,7 +276,7 @@ function prepararCampoImagen(r, pathActual) {
                 const confirmarMsg = r.defaultPreview
                     ? `¿Quitar el ${r.label.toLowerCase()}? Se usará el logo de Lemora por defecto.`
                     : `¿Quitar el ${r.label.toLowerCase()}? Se usará el archivo por defecto de la tienda.`;
-                if (!confirmarBorrado(confirmarMsg)) return;
+                if (!(await confirmarBorrado(confirmarMsg))) return;
                 est.quitar = true;
                 est.archivo = null;
                 archivoInput.value = '';

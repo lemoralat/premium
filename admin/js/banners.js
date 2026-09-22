@@ -260,7 +260,7 @@ async function guardarBanner(payload, id, { imagenArchivo, imagenUrl, logoArchiv
 }
 
 async function borrarBanner(id, contenedor) {
-    if (!confirmarBorrado('¿Eliminar este banner?')) return;
+    if (!(await confirmarBorrado('¿Eliminar este banner?'))) return;
     const sb = await clienteAdmin();
     const banner = banners.find((b) => b.id === id);
     const { error } = await sb.from('banners').delete().eq('id', id);

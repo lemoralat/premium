@@ -84,7 +84,7 @@ async function enviarPedidoWhatsApp(e) {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
     if (cart.length === 0) {
-        alert('Tu carrito está vacío');
+        mostrarNotificacion('Tu carrito está vacío', 'error');
         if (btnSubmit) btnSubmit.classList.remove('loading');
         return;
     }

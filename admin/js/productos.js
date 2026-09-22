@@ -584,7 +584,7 @@ async function guardarProducto(payload, id, variantes) {
 async function borrarProducto(id) {
     const producto = productos.find((p) => p.id === id);
     if (!producto) return;
-    if (!confirmarBorrado(`¿Eliminar "${producto.nombre}"? Se borran sus imágenes y variantes. Los pedidos anteriores no se ven afectados.`)) return;
+    if (!(await confirmarBorrado(`¿Eliminar "${producto.nombre}"? Se borran sus imágenes y variantes. Los pedidos anteriores no se ven afectados.`))) return;
 
     try {
         const sb = await clienteAdmin();

@@ -248,7 +248,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **Fallback JSON**: si no hay configuración o Supabase está caído, la tienda usa los JSON locales (`js/*.json`). Controlado por cada `obtener*`.
 - **`GOOGLE_SCRIPT_URL` conserva el nombre** en `js/formulario.js` (legado): evita tocar puntos ciegos del frontend; el destino `/api/pedido` ya no proxea a Google.
 - **Metas SEO**: se corrigieron los placeholders `tusitio.com` → `supabase.lemora.lat` en los 8 HTML.
-- **Panel en español y sin `alert()` como mecanismo principal de UX** (solo usa `confirm` para borrados irrecuperables).
+- **Sin ventanas nativas del navegador** (solo UI propia): las confirmaciones usan el modal del panel (`confirmarDialogo` en `admin-ui.js`) y las notificaciones de la tienda usan los toasts propios (`mostrarNotificacion`).
 - **`sale10` quedó inactivo** (vencido el 2026-08-30) respetando la realidad de la planilla.
 
 ---

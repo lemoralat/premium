@@ -190,7 +190,7 @@ async function guardarIcono(payload, id, archivo, urlExterna) {
 }
 
 async function borrarIcono(id, contenedor) {
-    if (!confirmarBorrado('¿Eliminar este icono?')) return;
+    if (!(await confirmarBorrado('¿Eliminar este icono?'))) return;
     const sb = await clienteAdmin();
     const icono = iconos.find((i) => i.id === id);
     const { error } = await sb.from('iconos_pie').delete().eq('id', id);

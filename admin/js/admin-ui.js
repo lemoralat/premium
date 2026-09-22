@@ -62,8 +62,70 @@ export function toast(mensaje, tipo = 'success') {
 }
 
 // ---------- Confirmación de borrado ----------
-export function confirmarBorrado(mensaje) {
-    return window.confirm(mensaje || '¿Eliminar este elemento? Esta acción no se puede deshacer.');
+// Diálogo de confirmación con UI propia del panel (sin ventanas nativas).
+// Abre un modal con los mismos estilos que el resto del dashboard y devuelve
+// Promise<boolean>: true con el botón de acción, false con Cancelar / ✕ /
+// clic fuera / Escape.
+export function confirmarDialogo(opciones) {
+    const {
+        titulo = '¿Confirmar acción?',
+        mensaje = '',
+        textoConfirmar = 'Confirmar',
+        textoCancelar = 'Cancelar',
+        peligro = false
+    } = opciones || {};
+
+    return new Promise((resolve) => {
+        const existente = $('#adminModal');
+        if (existente) existente.remove();
+
+        let resuelto = false;
+        const onKey = (e) => { if (e.key === 'Escape') terminar(false); };
+        const terminar = (valor) => {
+            if (resuelto) return;
+            resuelto = true;
+            document.removeEventListener('keydown', onKey);
+            document.body.classList.remove('admin-modal-abierto');
+            overlay.remove();
+            resolve(valor);
+        };
+
+        const overlay = document.createElement('div');
+        overlay.id = 'adminModal';
+        overlay.className = 'admin-modal';
+        overlay.innerHTML = `
+            <div class="admin-modal-backdrop" data-cerrar-confirm></div>
+            <div class="admin-modal-panel admin-confirm-panel">
+                <button type="button" class="admin-modal-close" data-cerrar-confirm aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <h2>${esc(titulo)}</h2>
+                ${mensaje ? `<p class="admin-confirm-mensaje">${esc(mensaje)}</p>` : ''}
+                <div class="admin-modal-acciones">
+                    <button type="button" class="btn btn-outline" data-confirm-no>${esc(textoCancelar)}</button>
+                    <button type="button" class="btn ${peligro ? 'btn-danger' : 'btn-primary'}" data-confirm-si>${esc(textoConfirmar)}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        document.body.classList.add('admin-modal-abierto');
+        document.addEventListener('keydown', onKey);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target.closest('[data-cerrar-confirm]')) terminar(false);
+        });
+        overlay.querySelector('[data-confirm-si]').addEventListener('click', () => terminar(true));
+        overlay.querySelector('[data-confirm-no]').addEventListener('click', () => terminar(false));
+    });
+}
+
+export async function confirmarBorrado(mensaje) {
+    return confirmarDialogo({
+        titulo: 'Confirmar eliminación',
+        mensaje: mensaje || '¿Eliminar este elemento? Esta acción no se puede deshacer.',
+        textoConfirmar: 'Eliminar',
+        peligro: true
+    });
 }
 
 // ---------- URL pública de una imagen ----------

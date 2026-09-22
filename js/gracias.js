@@ -2,7 +2,7 @@
 // Los datos de transferencia (entidad, titular, alias) salen de la configuración
 // de Supabase (tabla settings) con los valores actuales como respaldo.
 
-import { formatearPrecio, CONFIG_APP, cargarConfiguracionGlobal } from './utils.js';
+import { formatearPrecio, CONFIG_APP, cargarConfiguracionGlobal, mostrarNotificacion } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     await cargarConfiguracionGlobal();
@@ -86,7 +86,7 @@ function copiarConFallback(text, btn) {
         document.execCommand('copy');
         mostrarExitoCopia(btn);
     } catch (err) {
-        alert('No se pudo copiar el alias. Por favor, cópialo manualmente: ' + text);
+        mostrarNotificacion('No se pudo copiar el alias. Por favor, cópialo manualmente: ' + text, 'error');
     }
 
     document.body.removeChild(textArea);

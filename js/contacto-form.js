@@ -20,7 +20,7 @@ function enviarContactoWhatsApp(e) {
     
     // Validación básica
     if (!nombre || !mensaje) {
-        alert('Por favor, completa todos los campos');
+        mostrarNotificacion('Por favor, completa todos los campos', 'error');
         return;
     }
     

@@ -131,7 +131,7 @@ async function guardarCategoria(payload, id) {
 }
 
 async function borrarCategoria(id, contenedor) {
-    if (!confirmarBorrado('¿Eliminar esta categoría? Los productos quedan sin categoría, no se borran.')) return;
+    if (!(await confirmarBorrado('¿Eliminar esta categoría? Los productos quedan sin categoría, no se borran.'))) return;
 
     const sb = await clienteAdmin();
     const { error } = await sb.from('categories').delete().eq('id', id);

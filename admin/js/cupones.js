@@ -138,7 +138,7 @@ async function guardarCupon(payload, id) {
 }
 
 async function borrarCupon(id, contenedor) {
-    if (!confirmarBorrado('¿Eliminar este cupón?')) return;
+    if (!(await confirmarBorrado('¿Eliminar este cupón?'))) return;
     const sb = await clienteAdmin();
     const { error } = await sb.from('coupons').delete().eq('id', id);
     if (error) {

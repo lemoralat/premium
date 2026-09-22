@@ -710,6 +710,15 @@ table.admin-tabla tr:hover td { background: #f8fafc; }
 
 body.admin-modal-abierto { overflow: hidden; }
 
+/* Diálogo de confirmación (confirmarDialogo): versión compacta del modal */
+.admin-confirm-panel { max-width: 440px; }
+.admin-confirm-mensaje {
+    margin: 0.7rem 0 0.4rem;
+    color: var(--text-muted, #64748b);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
 /* ============================================================================
    TOASTS
    ============================================================================ */

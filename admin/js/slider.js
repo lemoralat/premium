@@ -218,7 +218,7 @@ async function guardarSlide(payload, id, archivo, urlExterna) {
 }
 
 async function borrarSlide(id, contenedor) {
-    if (!confirmarBorrado('¿Eliminar este slide?')) return;
+    if (!(await confirmarBorrado('¿Eliminar este slide?'))) return;
     const sb = await clienteAdmin();
     const slide = slides.find((s) => s.id === id);
     const { error } = await sb.from('sliders').delete().eq('id', id);

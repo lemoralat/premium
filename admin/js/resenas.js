@@ -205,7 +205,7 @@ async function guardarResena(payload, id, archivo, urlExterna) {
 }
 
 async function borrarResena(id, contenedor) {
-    if (!confirmarBorrado('¿Eliminar esta reseña?')) return;
+    if (!(await confirmarBorrado('¿Eliminar esta reseña?'))) return;
     const sb = await clienteAdmin();
     const reseña = reseñas.find((r) => r.id === id);
     const { error } = await sb.from('reviews').delete().eq('id', id);
