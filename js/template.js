@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar } from './utils.js';
 
 // Renderizar Header
 function renderHeader(activePage = '', categorias = []) {
@@ -32,7 +32,7 @@ function renderHeader(activePage = '', categorias = []) {
                 <a href="index.html" class="logo">Mi Tienda</a>
                 -->
                 <a href="index.html" class="logo-link">
-                    <img src="img/logo.svg" alt="Logo de la tienda" class="logo">
+                    <img src="${escaparHtml(CONFIG_DISENO.logoUrl || 'img/logo.svg')}" alt="${escaparHtml(obtenerNombreSitio())}" class="logo">
                 </a>
 
                 <div class="header-actions-mobile">
@@ -144,6 +144,47 @@ function initMarquee() {
 }
 */
 
+// Aplicar branding configurable (sección "Diseño" del panel): color principal,
+// estilo de bordes, favicon y metas OpenGraph/Twitter. Se ejecuta en cada carga.
+function aplicarDisenoGlobal() {
+    // Color principal + hover derivado (~15% más oscuro) para no romper estados hover
+    document.documentElement.style.setProperty('--primary-color', CONFIG_DISENO.colorPrincipal);
+    document.documentElement.style.setProperty('--primary-hover', oscurecerHex(CONFIG_DISENO.colorPrincipal, 0.85));
+
+    // Estilo de bordes ("redondeado" es el por defecto: sin clase extra)
+    document.body.classList.remove('diseno-circular', 'diseno-recto');
+    if (CONFIG_DISENO.estiloBordes === 'circular') document.body.classList.add('diseno-circular');
+    if (CONFIG_DISENO.estiloBordes === 'recto') document.body.classList.add('diseno-recto');
+
+    // Favicon dinámico (todas las páginas usan template.js)
+    if (CONFIG_DISENO.faviconUrl) {
+        document.querySelectorAll('link[rel="icon"]').forEach((el) => {
+            el.href = CONFIG_DISENO.faviconUrl;
+        });
+    }
+
+    // OpenGraph / Twitter (best effort: los rastreadores pueden no ejecutar JS;
+    // la meta estática queda como fallback)
+    if (CONFIG_DISENO.ogImageUrl) {
+        document.querySelector('meta[property="og:image"]')?.setAttribute('content', CONFIG_DISENO.ogImageUrl);
+        document.querySelector('meta[name="twitter:image"]')?.setAttribute('content', CONFIG_DISENO.ogImageUrl);
+    }
+    const nombreSitio = obtenerNombreSitio();
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', nombreSitio);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', nombreSitio);
+    document.title = `${nombreSitio} - Productos de Calidad`;
+}
+
+// Oscurece (o aclara con factor > 1) un color hex #RRGGBB.
+function oscurecerHex(hex, factor) {
+    if (!/^#([0-9a-f]{6})$/i.test(hex)) return hex;
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.round(((n >> 16) & 255) * factor);
+    const g = Math.round(((n >> 8) & 255) * factor);
+    const b = Math.round((n & 255) * factor);
+    return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
+
 // Inicializar template
 async function initTemplate(activePage = '') {
     const body = document.body;
@@ -151,6 +192,10 @@ async function initTemplate(activePage = '') {
     // Aplicar configuración remota (settings de Supabase): nombre del sitio,
     // WhatsApp, descuentos, transferencia y redes — antes de renderizar el template.
     await cargarConfiguracionGlobal();
+
+    // Aplicar branding configurable (sección "Diseño" del panel): color, bordes,
+    // favicon y metas OpenGraph/Twitter.
+    aplicarDisenoGlobal();
 
     // Obtener categorías dinámicas
     let categorias = [];

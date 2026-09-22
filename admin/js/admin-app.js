@@ -8,6 +8,7 @@ import { protegerAdmin, cerrarSesionAdmin } from './auth.js';
 import { esc, $ } from './admin-ui.js';
 
 import * as dashboard from './dashboard.js';
+import * as diseno from './diseno.js';
 import * as productos from './productos.js';
 import * as categorias from './categorias.js';
 import * as pedidos from './pedidos.js';
@@ -21,6 +22,7 @@ import * as cuenta from './cuenta.js';
 
 const secciones = {
     dashboard:     { ...dashboard,     titulo: 'Dashboard' },
+    diseno:        { ...diseno,        titulo: 'Diseño' },
     productos:     { ...productos,     titulo: 'Productos' },
     categorias:    { ...categorias,    titulo: 'Categorías' },
     pedidos:       { ...pedidos,       titulo: 'Pedidos' },

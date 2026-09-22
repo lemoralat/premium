@@ -316,23 +316,23 @@ html {
 
 /* Clase universal para border-radius en banners */
 .banner-border {
-    border-radius: 16px;
+    border-radius: var(--curva-xl);
 }
 
 @media (max-width: 768px) {
     .banner-border {
-        border-radius: 12px;
+        border-radius: var(--curva-md);
     }
 }
 
 /* Clase universal para border-radius en botones */
 .btn-border {
-    border-radius: 8px;
+    border-radius: var(--curva);
 }
 
 @media (max-width: 768px) {
     .btn-border {
-        border-radius: 4px;
+        border-radius: var(--curva-xs);
     }
 }
 
@@ -563,7 +563,7 @@ span {
     .mobile-search .search-container {
         margin: 0.5rem 0.75rem;
         border: 1px solid var(--border-color);
-        border-radius: 8px;
+        border-radius: var(--curva);
         box-shadow: none;
         overflow: hidden;
     }
@@ -740,7 +740,7 @@ span {
         justify-content: center;
         background: var(--bg-color);
         border: 1px solid var(--border-color);
-        border-radius: 8px;
+        border-radius: var(--curva);
         cursor: pointer;
         color: var(--text-color);
         font-size: 1.05rem;
@@ -862,7 +862,7 @@ span {
     box-shadow: var(--shadow-lg);
     list-style: none;
     padding: 10px 0;
-    border-radius: 8px;
+    border-radius: var(--curva);
     opacity: 0;
     visibility: hidden;
     transform: translateY(10px);
@@ -947,7 +947,7 @@ span {
     height: 4px;
     background: var(--text-color);
     transition: all 0.3s;
-    border-radius: 2px;
+    border-radius: var(--curva-xs);
 }
 
 /* Botón de cierre del menú móvil (solo visible en el drawer) */
@@ -991,7 +991,7 @@ span {
     text-align: center;
     padding: 3rem 1rem;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     box-shadow: var(--shadow);
 }
 
@@ -1032,7 +1032,7 @@ span {
 .product-card {
     position: relative;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: transform 0.3s, box-shadow 0.3s;
@@ -1090,7 +1090,7 @@ span {
     background-color: var(--danger-color);
     color: white;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--curva-xs);
     font-size: var(--fs-badge);
     font-weight: 400;
     z-index: 10;
@@ -1162,7 +1162,7 @@ span {
 
 .contact-container {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow-lg);
 }
@@ -1183,7 +1183,7 @@ span {
 /* Mapa de contacto */
 .contact-map-container {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow-lg);
     display: flex;
@@ -1207,7 +1207,7 @@ span {
 .contact-map {
     flex: 1;
     min-height: 350px;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     overflow: hidden;
     border: 1px solid var(--border-color);
 }
@@ -1269,7 +1269,7 @@ span {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--border-color);
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     font-family: inherit;
     font-size: var(--fs-input);
     line-height: 1.4;
@@ -1330,7 +1330,7 @@ span {
 
 .cart-items {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     padding: 1.5rem;
     box-shadow: var(--shadow);
 }
@@ -1350,7 +1350,7 @@ span {
     width: 80px;
     height: 80px;
     object-fit: cover;
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     background: var(--border-color);
 }
 
@@ -1401,7 +1401,7 @@ span {
 .qty-display {
     padding: 0.25rem 0.75rem;
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: var(--curva-xs);
 }
 
 .remove-btn {
@@ -1423,7 +1423,7 @@ span {
 
 .cart-summary {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     padding: 1.5rem;
     box-shadow: var(--shadow);
     height: fit-content;
@@ -1445,7 +1445,7 @@ span {
     flex: 1;
     padding: 0.75rem;
     border: 1px solid var(--border-color);
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     font-family: inherit;
     font-size: var(--fs-input);
     line-height: 1.4;
@@ -1549,7 +1549,7 @@ span {
 /* Checkout Form */
 .checkout-form {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow);
     margin-bottom: 2rem;
@@ -1600,7 +1600,7 @@ span {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--border-color);
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     font-family: inherit;
     font-size: var(--fs-input);
     line-height: 1.4;
@@ -1912,7 +1912,7 @@ footer p {
         justify-content: center;
         background: var(--bg-color);
         border: 1px solid var(--border-color);
-        border-radius: 8px;
+        border-radius: var(--curva);
         cursor: pointer;
         color: var(--text-color);
         font-size: 1.1rem;
@@ -2005,7 +2005,7 @@ footer p {
 
 .success-container {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     padding: 3rem 2rem;
     box-shadow: var(--shadow-lg);
     text-align: center;
@@ -2037,7 +2037,7 @@ footer p {
     padding: 1.5rem;
     margin: 2rem 0;
     text-align: left;
-    border-radius: 5px;
+    border-radius: var(--curva-surface);
 }
 
 .info-box h2 {
@@ -2074,7 +2074,7 @@ footer p {
     border-collapse: collapse;
     margin: 1.5rem 0;
     background: var(--bg-color);
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     overflow: hidden;
 }
 
@@ -2131,7 +2131,7 @@ footer p {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
     color: white;
     padding: 1.5rem;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     margin-top: 1.5rem;
     text-align: center;
 }
@@ -2259,7 +2259,7 @@ footer p {
 
 .product-detail-container {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow-lg);
     margin-bottom: 3rem;
@@ -2280,7 +2280,7 @@ footer p {
 .product-detail-image {
     width: 100%;
     height: auto;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     background: var(--border-color);
 }
 
@@ -2295,7 +2295,7 @@ footer p {
     background: var(--bg-color);
     color: var(--primary-color);
     padding: 0.25rem 0.75rem;
-    border-radius: 20px;
+    border-radius: var(--curva-lg);
     font-size: var(--fs-product-secondary);
     line-height: 1.35;
     font-weight: 400;
@@ -2435,7 +2435,7 @@ footer p {
     max-width: 280px;
     padding: 0.55rem 0.75rem;
     border: 2px solid var(--border-color, #e2e2e2);
-    border-radius: var(--radius, 6px);
+    border-radius: var(--curva);
     background: #fff;
     font-size: 0.95rem;
     cursor: pointer;
@@ -2652,7 +2652,7 @@ footer p {
     position: relative;
     width: 100%;
     background: var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     overflow: hidden;
 }
 
@@ -2707,7 +2707,7 @@ footer p {
     background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 0.5rem 1rem;
-    border-radius: 20px;
+    border-radius: var(--curva-lg);
     font-size: var(--fs-small);
     line-height: 1.3;
     font-weight: 400;
@@ -2728,12 +2728,12 @@ footer p {
 
 .thumbnails-container::-webkit-scrollbar-track {
     background: var(--border-color);
-    border-radius: 3px;
+    border-radius: var(--curva-xs);
 }
 
 .thumbnails-container::-webkit-scrollbar-thumb {
     background: var(--primary-color);
-    border-radius: 3px;
+    border-radius: var(--curva-xs);
 }
 
 /* Miniaturas */
@@ -2743,7 +2743,7 @@ footer p {
     height: 80px;
     object-fit: cover;
     border: 2px solid var(--border-color);
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     cursor: pointer;
     transition: all 0.3s;
     opacity: 0.6;
@@ -2847,7 +2847,7 @@ body.searching .products-section {
 
 .faq-container {
     background: white;
-    border-radius: 12px;
+    border-radius: var(--curva-md);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
 }
@@ -2907,7 +2907,7 @@ body.searching .products-section {
 .faq-item {
     margin-bottom: 1rem;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     overflow: hidden;
     transition: all 0.3s ease;
 }
@@ -3306,7 +3306,7 @@ body.searching .products-section {
     overflow-x: auto;
     padding: 0.5rem;
     background: rgba(0, 0, 0, 0.5);
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     z-index: 10001;
 }
 
@@ -3316,12 +3316,12 @@ body.searching .products-section {
 
 .zoom-thumbnails::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+    border-radius: var(--curva-xs);
 }
 
 .zoom-thumbnails::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
+    border-radius: var(--curva-xs);
 }
 
 .zoom-thumbnail {
@@ -3330,7 +3330,7 @@ body.searching .products-section {
     height: 80px;
     object-fit: cover;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     cursor: pointer;
     transition: all 0.3s;
     opacity: 0.6;
@@ -3356,7 +3356,7 @@ body.searching .products-section {
     background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 0.5rem 1rem;
-    border-radius: 20px;
+    border-radius: var(--curva-lg);
     font-size: var(--fs-small);
     line-height: 1.3;
     display: flex;
@@ -3549,7 +3549,7 @@ body.zoom-active {
 
 .favoritos-list {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
 }
@@ -3575,7 +3575,7 @@ body.zoom-active {
     width: 80px;
     height: 80px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: var(--curva);
     background: var(--border-color);
     flex-shrink: 0;
 }
@@ -3664,7 +3664,7 @@ body.zoom-active {
     text-align: center;
     padding: 4rem 2rem;
     background: white;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     box-shadow: var(--shadow-lg);
 }
 
@@ -4118,7 +4118,7 @@ body.zoom-active {
 .testimonio-body {
     background: white;
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: var(--curva-md);
     box-shadow: var(--shadow);
     padding: 1.25rem;
     height: 100%;
@@ -4384,7 +4384,7 @@ body.zoom-active {
     width: 60px;
     height: 4px;
     background: linear-gradient(90deg, var(--primary-color), #60a5fa);
-    border-radius: 4px;
+    border-radius: var(--curva-xs);
     margin: 0 auto 1.5rem;
 }
 
@@ -4531,7 +4531,7 @@ html.exit-intent-locked body {
     max-width: 420px;
     background: #fff;
     color: var(--text-color);
-    border-radius: 16px;
+    border-radius: var(--curva-xl);
     padding: 2rem 1.75rem 1.75rem;
     box-shadow: var(--shadow-lg), 0 25px 50px rgba(0, 0, 0, 0.15);
     transform: translateY(12px) scale(0.98);
@@ -4595,7 +4595,7 @@ html.exit-intent-locked body {
     font-weight: 400;
     font-size: var(--fs-button);
     line-height: 1.2;
-    border-radius: 10px;
+    border-radius: var(--curva);
     text-decoration: none;
     transition: background 0.2s;
 }
@@ -4612,7 +4612,7 @@ html.exit-intent-locked body {
     font-weight: 400;
     line-height: 1.2;
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: var(--curva);
     cursor: pointer;
     transition: border-color 0.2s, color 0.2s;
 }
@@ -4633,7 +4633,7 @@ html.exit-intent-locked body {
     background: var(--success-color);
     color: white;
     padding: 1rem 1.5rem;
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: var(--z-notif);
     animation: slideIn 0.3s ease-out;
@@ -4664,7 +4664,7 @@ html.exit-intent-locked body {
 .confirmacion-modal {
     background: white;
     padding: 2rem;
-    border-radius: 8px;
+    border-radius: var(--curva-surface);
     box-shadow: var(--shadow-lg);
     text-align: center;
     max-width: 400px;
@@ -4705,7 +4705,7 @@ html.exit-intent-locked body {
     background: #2563eb;
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--curva-sm);
     cursor: pointer;
     font-size: 1rem;
     font-weight: 400;
@@ -4821,7 +4821,7 @@ html.cart-sidemenu-locked body {
     justify-content: center;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--curva);
     cursor: pointer;
     color: var(--text-color);
     font-size: 1.05rem;
@@ -4855,7 +4855,7 @@ html.cart-sidemenu-locked body {
     margin: 0.75rem -0.75rem;
     padding: 0.75rem;
     border: 1px solid var(--danger-color);
-    border-radius: 8px;
+    border-radius: var(--curva);
     background: #fff5f5;
 }
 
@@ -4886,7 +4886,7 @@ html.cart-sidemenu-locked body {
     background: transparent;
     border: 1px solid var(--danger-color);
     color: var(--danger-color);
-    border-radius: 8px;
+    border-radius: var(--curva);
     cursor: pointer;
     transition: background 0.25s, color 0.25s;
 }
@@ -4962,7 +4962,7 @@ html.cart-sidemenu-locked body {
     font-size: var(--fs-button);
     font-weight: 400;
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: var(--curva);
     transition: background 0.3s;
 }
 
@@ -4981,7 +4981,7 @@ html.cart-sidemenu-locked body {
     background: #fff;
     color: var(--text-color);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--curva);
     cursor: pointer;
     font-size: var(--fs-button);
     font-weight: 400;
@@ -5020,4 +5020,42 @@ html.cart-sidemenu-locked body {
     .cart-sidemenu-panel {
         transition: none;
     }
+}
+
+/* ============================================================================
+   DISEÑO CONFIGURABLE — sección "Diseño" del panel (settings.estilo_bordes).
+   template.js agrega body.diseno-circular / body.diseno-recto según la elección.
+   - redondeado (por defecto): esquinas suaves actuales.
+   - circular: botones y controles en píldora (999px); superficies grandes
+     (tarjetas, imágenes, modales) fuertemente redondeadas (~24px).
+   - recto: esquinas rectas (sin bordes).
+   ============================================================================ */
+:root {
+    --curva-xs: 3px;       /* detalles mínimos: badges, scrollbars, líneas */
+    --curva-sm: 5px;       /* controles: inputs, thumbnails, botones chicos */
+    --curva: 8px;          /* botones y contenedores medianos */
+    --curva-md: 12px;      /* tarjetas medianas (FAQ, testimonios) */
+    --curva-xl: 16px;      /* superficies grandes medianas (banners) */
+    --curva-lg: 20px;      /* píldoras / etiquetas */
+    --curva-surface: 8px;  /* superficies grandes: cards, imágenes, modales */
+}
+
+body.diseno-circular {
+    --curva-xs: 999px;
+    --curva-sm: 999px;
+    --curva: 999px;
+    --curva-lg: 999px;
+    --curva-md: 24px;
+    --curva-xl: 24px;
+    --curva-surface: 24px;
+}
+
+body.diseno-recto {
+    --curva-xs: 0;
+    --curva-sm: 0;
+    --curva: 0;
+    --curva-md: 0;
+    --curva-xl: 0;
+    --curva-lg: 0;
+    --curva-surface: 0;
 }

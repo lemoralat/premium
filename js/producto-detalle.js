@@ -1,6 +1,6 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, imagenOptimizada } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, imagenOptimizada, obtenerNombreSitio } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
@@ -104,7 +104,7 @@ function cargarDetalleProducto() {
     }
     
     // Actualizar título de la página
-    document.title = `${recortarTexto(producto.nombre)} - Mi Tienda Online`;
+    document.title = `${recortarTexto(producto.nombre)} - ${obtenerNombreSitio()}`;
     
     // Actualizar breadcrumb
     const breadcrumbProduct = document.getElementById('breadcrumbProduct');

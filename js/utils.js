@@ -4,7 +4,7 @@
 // (modo dual controlado) para que la tienda siga funcionando si Supabase no
 // está configurado o hay un corte de red.
 import {
-    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie
+    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, urlImagen
 } from './supabase.js';
 
 // Configuración de descuentos (se refresca desde Supabase settings)
@@ -40,6 +40,18 @@ export const CONFIG_APP = {
 
 export let configuracionCargada = false;
 
+// Configuración de diseño (sección "Diseño" del panel): branding aplicado en
+// template.js al cargar cada página. Si no hay configurado un recurso, la
+// tienda sigue usando los archivos por defecto (img/logo.svg, img/lemora.svg,
+// img/imagen-preview.jpg) y el color/bordes actuales.
+export const CONFIG_DISENO = {
+    logoUrl: '',            // URL pública del logotipo (vacío ⇒ logo por defecto)
+    faviconUrl: '',         // URL pública del favicon (vacío ⇒ favicon por defecto)
+    ogImageUrl: '',         // URL pública de la imagen OpenGraph (vacío ⇒ por defecto)
+    colorPrincipal: '#2563eb',
+    estiloBordes: 'redondeado' // redondeado | circular | recto
+};
+
 // Aplicar la configuración remota (settings) sobre CONFIG_APP / WHATSAPP_CONFIG / CONFIG_DESCUENTO.
 // Llamar una vez al inicio (template.js) y antes de calcular totales (formulario).
 export async function cargarConfiguracionGlobal() {
@@ -62,6 +74,18 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.socialFacebook = c.social_facebook || '';
             CONFIG_APP.socialInstagram = c.social_instagram || '';
             CONFIG_APP.socialTiktok = c.social_tiktok || '';
+
+            // Diseño (sección "Diseño" del panel)
+            CONFIG_DISENO.logoUrl = c.logo_path ? urlImagen({ storage_path: c.logo_path }) : '';
+            CONFIG_DISENO.faviconUrl = c.favicon_path ? urlImagen({ storage_path: c.favicon_path }) : '';
+            CONFIG_DISENO.ogImageUrl = c.og_image_path ? urlImagen({ storage_path: c.og_image_path }) : '';
+            if (/^#[0-9a-fA-F]{6}$/.test(c.color_principal || '')) {
+                CONFIG_DISENO.colorPrincipal = c.color_principal.toLowerCase();
+            }
+            if (['redondeado', 'circular', 'recto'].includes(c.estilo_bordes)) {
+                CONFIG_DISENO.estiloBordes = c.estilo_bordes;
+            }
+
             configuracionCargada = true;
         }
     } catch (error) {
