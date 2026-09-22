@@ -33,9 +33,15 @@ export const CONFIG_APP = {
     transferHolder: 'Nombre completo',
     emailContact: '',
     address: '',
-    socialFacebook: 'https://www.facebook.com/p/',
-    socialInstagram: 'https://www.instagram.com/',
-    socialTiktok: 'https://www.tiktok.com/@'
+    socialInstagram: '',
+    socialFacebook: '',
+    socialTiktok: '',
+    socialYoutube: '',
+    socialX: '',
+    socialPinterest: '',
+    socialLinkedin: '',
+    socialWhatsapp: '',
+    socialOtra: ''
 };
 
 export let configuracionCargada = false;
@@ -71,9 +77,15 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.transferHolder = c.transfer_holder || CONFIG_APP.transferHolder;
             CONFIG_APP.emailContact = c.email_contact || '';
             CONFIG_APP.address = c.address || '';
-            CONFIG_APP.socialFacebook = c.social_facebook || '';
             CONFIG_APP.socialInstagram = c.social_instagram || '';
+            CONFIG_APP.socialFacebook = c.social_facebook || '';
             CONFIG_APP.socialTiktok = c.social_tiktok || '';
+            CONFIG_APP.socialYoutube = c.social_youtube || '';
+            CONFIG_APP.socialX = c.social_x || '';
+            CONFIG_APP.socialPinterest = c.social_pinterest || '';
+            CONFIG_APP.socialLinkedin = c.social_linkedin || '';
+            CONFIG_APP.socialWhatsapp = c.social_whatsapp || '';
+            CONFIG_APP.socialOtra = c.social_otra || '';
 
             // Diseño (sección "Diseño" del panel)
             CONFIG_DISENO.logoUrl = c.logo_path ? urlImagen({ storage_path: c.logo_path }) : '';

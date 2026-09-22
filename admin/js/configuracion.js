@@ -30,17 +30,45 @@ export async function renderizar(contenedor) {
                         <label for="cfgAddress">Dirección / Zona</label>
                         <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="ej: Ciudad de Córdoba, Argentina">
                     </div>
-                    <div class="admin-field">
-                        <label for="cfgFacebook">Facebook</label>
-                        <input type="url" id="cfgFacebook" value="${esc(s.social_facebook || '')}">
+                    <div class="admin-field full">
+                        <label>Redes sociales del header</label>
+                        <span class="hint">Se muestran en la barra superior del header. Dejá vacía la que no uses.</span>
                     </div>
                     <div class="admin-field">
                         <label for="cfgInstagram">Instagram</label>
-                        <input type="url" id="cfgInstagram" value="${esc(s.social_instagram || '')}">
+                        <input type="url" id="cfgInstagram" value="${esc(s.social_instagram || '')}" placeholder="https://instagram.com/tucuenta">
                     </div>
-                    <div class="admin-field full">
+                    <div class="admin-field">
+                        <label for="cfgFacebook">Facebook</label>
+                        <input type="url" id="cfgFacebook" value="${esc(s.social_facebook || '')}" placeholder="https://facebook.com/tucuenta">
+                    </div>
+                    <div class="admin-field">
                         <label for="cfgTiktok">TikTok</label>
-                        <input type="url" id="cfgTiktok" value="${esc(s.social_tiktok || '')}">
+                        <input type="url" id="cfgTiktok" value="${esc(s.social_tiktok || '')}" placeholder="https://tiktok.com/@tucuenta">
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgYoutube">YouTube</label>
+                        <input type="url" id="cfgYoutube" value="${esc(s.social_youtube || '')}" placeholder="https://youtube.com/@tucanal">
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgX">X (Twitter)</label>
+                        <input type="url" id="cfgX" value="${esc(s.social_x || '')}" placeholder="https://x.com/tucuenta">
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgPinterest">Pinterest</label>
+                        <input type="url" id="cfgPinterest" value="${esc(s.social_pinterest || '')}" placeholder="https://pinterest.com/tucuenta">
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgLinkedin">LinkedIn</label>
+                        <input type="url" id="cfgLinkedin" value="${esc(s.social_linkedin || '')}" placeholder="https://linkedin.com/in/tucuenta">
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgWhatsappRed">WhatsApp</label>
+                        <input type="url" id="cfgWhatsappRed" value="${esc(s.social_whatsapp || '')}" placeholder="https://wa.me/54XXXXXXXXXX">
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgOtra">Otra</label>
+                        <input type="url" id="cfgOtra" value="${esc(s.social_otra || '')}" placeholder="https://tu-sitio-o-red.com">
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -110,6 +138,12 @@ export async function renderizar(contenedor) {
         social_facebook: $('#cfgFacebook').value.trim(),
         social_instagram: $('#cfgInstagram').value.trim(),
         social_tiktok: $('#cfgTiktok').value.trim(),
+        social_youtube: $('#cfgYoutube').value.trim(),
+        social_x: $('#cfgX').value.trim(),
+        social_pinterest: $('#cfgPinterest').value.trim(),
+        social_linkedin: $('#cfgLinkedin').value.trim(),
+        social_whatsapp: $('#cfgWhatsappRed').value.trim(),
+        social_otra: $('#cfgOtra').value.trim(),
         whatsapp_number: $('#cfgWhatsapp').value.trim(),
         whatsapp_default_message: $('#cfgWhatsappMsg').value.trim(),
         discount_threshold: parseFloat($('#cfgUmbral').value) || 0,

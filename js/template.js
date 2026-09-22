@@ -26,12 +26,27 @@ function renderHeader(activePage = '', categorias = []) {
                 </a>`
         : `<a href="index.html" class="logo-link logo-text" title="${escaparHtml(obtenerNombreSitio())}">${escaparHtml(obtenerNombreSitio())}</a>`;
 
+    // Redes sociales del header: se muestran solo las que tienen URL configurada
+    // (Configuración → Redes sociales del dashboard).
+    const REDES_HEADER = [
+        { campo: 'socialInstagram', clase: 'fa-brands fa-instagram', label: 'Instagram' },
+        { campo: 'socialFacebook', clase: 'fa-brands fa-facebook-f', label: 'Facebook' },
+        { campo: 'socialTiktok', clase: 'fa-brands fa-tiktok', label: 'TikTok' },
+        { campo: 'socialYoutube', clase: 'fa-brands fa-youtube', label: 'YouTube' },
+        { campo: 'socialX', clase: 'fa-brands fa-x-twitter', label: 'X' },
+        { campo: 'socialPinterest', clase: 'fa-brands fa-pinterest-p', label: 'Pinterest' },
+        { campo: 'socialLinkedin', clase: 'fa-brands fa-linkedin-in', label: 'LinkedIn' },
+        { campo: 'socialWhatsapp', clase: 'fa-brands fa-whatsapp', label: 'WhatsApp' },
+        { campo: 'socialOtra', clase: 'fa-solid fa-globe', label: 'Otra' }
+    ];
+    const redesHTML = REDES_HEADER.map((r) => CONFIG_APP[r.campo]
+        ? `<a href="${escaparHtml(CONFIG_APP[r.campo])}" target="_blank" aria-label="${r.label}" rel="noopener"><i class="${r.clase}"></i></a>`
+        : '').join('');
+
     header.innerHTML = `
         <div class="redes">
             <div class="contenedor">
-                <a href="${escaparHtml(CONFIG_APP.socialFacebook)}" target="_blank" aria-label="Facebook" rel="noopener"><i class="fa-brands fa-facebook-f"></i></a>
-                <a href="${escaparHtml(CONFIG_APP.socialInstagram)}" target="_blank" aria-label="Instagram" rel="noopener"><i class="fa-brands fa-instagram"></i></a>
-                <a href="${escaparHtml(CONFIG_APP.socialTiktok)}" target="_blank" aria-label="TikTok" rel="noopener"><i class="fa-brands fa-tiktok"></i></a>
+                ${redesHTML}
             </div>
         </div>
         <nav class="navbar" aria-label="Menú principal">
