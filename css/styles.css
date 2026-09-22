@@ -800,14 +800,28 @@ span {
     }
 }
 
-/* Si no existe logo en img */
-
-/* .logo {
+/* Logo textual: cuando no hay logotipo subido (sección Diseño) se muestra el
+   nombre de la tienda (settings.site_name) en lugar de la imagen. */
+.logo-text {
+    display: block;
     font-size: 1.5rem;
     font-weight: 400;
     color: var(--primary-color);
     text-decoration: none;
-} */
+    line-height: 1.25;
+    margin: 10px 0; /* mismo ritmo vertical que la imagen (.logo) */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 40vw;
+}
+
+@media (max-width: 768px) {
+    .logo-text {
+        margin: 0; /* coincide con .logo en móvil */
+        max-width: 38vw;
+    }
+}
 
 .nav-menu {
     display: flex;

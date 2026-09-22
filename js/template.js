@@ -18,6 +18,14 @@ function renderHeader(activePage = '', categorias = []) {
         </ul>
     ` : '';
 
+    // Logo del header: si hay logotipo subido (sección Diseño) se muestra la
+    // imagen; si no, el nombre de la tienda (settings.site_name) como texto.
+    const logoSitio = CONFIG_DISENO.logoUrl
+        ? `<a href="index.html" class="logo-link">
+                    <img src="${escaparHtml(CONFIG_DISENO.logoUrl)}" alt="${escaparHtml(obtenerNombreSitio())}" class="logo">
+                </a>`
+        : `<a href="index.html" class="logo-link logo-text" title="${escaparHtml(obtenerNombreSitio())}">${escaparHtml(obtenerNombreSitio())}</a>`;
+
     header.innerHTML = `
         <div class="redes">
             <div class="contenedor">
@@ -28,12 +36,7 @@ function renderHeader(activePage = '', categorias = []) {
         </div>
         <nav class="navbar" aria-label="Menú principal">
             <div class="nav-container contenedor">
-                <!--
-                <a href="index.html" class="logo">Mi Tienda</a>
-                -->
-                <a href="index.html" class="logo-link">
-                    <img src="${escaparHtml(CONFIG_DISENO.logoUrl || 'img/logo.svg')}" alt="${escaparHtml(obtenerNombreSitio())}" class="logo">
-                </a>
+                ${logoSitio}
 
                 <div class="header-actions-mobile">
                     <button type="button" class="header-icon" onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
