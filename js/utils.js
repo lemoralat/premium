@@ -48,7 +48,7 @@ export const CONFIG_DISENO = {
     logoUrl: '',            // URL pública del logotipo (vacío ⇒ logo por defecto)
     faviconUrl: '',         // URL pública del favicon (vacío ⇒ favicon por defecto)
     ogImageUrl: '',         // URL pública de la imagen OpenGraph (vacío ⇒ por defecto)
-    colorPrincipal: '#2563eb',
+    colorPrincipal: '#000000',
     estiloBordes: 'redondeado' // redondeado | circular | recto
 };
 

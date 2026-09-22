@@ -14,8 +14,8 @@ html {
 
 :root {
     /* Colores */
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary-color: #000000;
+    --primary-hover: #000000;
     --secondary-color: #64748b;
     --success-color: #00a650;
     --danger-color: #ef4444;
@@ -4716,7 +4716,7 @@ html.exit-intent-locked body {
 
 .confirmacion-btn {
     padding: 0.75rem 2rem;
-    background: #2563eb;
+    background: var(--primary-color);
     color: #fff;
     border: none;
     border-radius: var(--curva-sm);

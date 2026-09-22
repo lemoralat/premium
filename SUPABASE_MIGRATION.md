@@ -213,6 +213,10 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
    - `migrations/0005_enlace_target.sql` (columna `target` en `sliders` y `banners`: `interno` → `_self` default, `externo` → `_blank`)
    - `migrations/0006_productos_destacado.sql` (columna `destacado` en `products`, default false)
+   - `migrations/0007_seguridad.sql` (policies admin exigiendo `es_admin()`, tabla `admins`)
+   - `migrations/0008_higiene.sql` (perfil: `full_name` como única columna editable)
+   - `migrations/0009_diseno.sql` (sección Diseño: `logo_path`, `favicon_path`, `og_image_path`, `color_principal` negro, `estilo_bordes`)
+   - `migrations/0010_color_principal_negro.sql` (default del color principal → negro)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).

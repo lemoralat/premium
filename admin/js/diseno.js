@@ -15,7 +15,7 @@ import {
 } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
-const COLOR_DEFECTO = '#2563eb';
+const COLOR_DEFECTO = '#000000';
 
 const RECURSOS_IMAGEN = [
     {
@@ -101,7 +101,7 @@ export async function renderizar(contenedor) {
                         <div class="diseno-color">
                             <input type="color" id="dsnColorPicker" value="${esc(color)}" aria-label="Selector de color principal">
                             <input type="text" id="dsnColor" value="${esc(color)}" maxlength="7" spellcheck="false" aria-label="Color principal en formato hexadecimal">
-                            <button type="button" class="btn btn-sm btn-outline" id="dsnColorRestaurar">Restaurar (#2563eb)</button>
+                            <button type="button" class="btn btn-sm btn-outline" id="dsnColorRestaurar">Restaurar (#000000)</button>
                         </div>
                         <span class="hint">Se aplica a botones, enlaces y acentos de la tienda.</span>
                     </div>

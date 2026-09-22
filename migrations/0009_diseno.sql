@@ -19,7 +19,7 @@ alter table public.settings
     add column if not exists logo_path       text,
     add column if not exists favicon_path    text,
     add column if not exists og_image_path   text,
-    add column if not exists color_principal text not null default '#2563eb',
+    add column if not exists color_principal text not null default '#000000',
     add column if not exists estilo_bordes   text not null default 'redondeado';
 
 -- Check de estilo (idempotente: no se duplica si se reaplica la migración).
