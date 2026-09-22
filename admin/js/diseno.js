@@ -26,7 +26,9 @@ const RECURSOS_IMAGEN = [
     {
         recurso: 'favicon', columna: 'favicon_path', carpeta: 'favicon',
         label: 'Favicon',
-        hint: 'Icono del navegador. Recomendado: PNG cuadrado de 64×64 px o más (el validador no acepta SVG).'
+        hint: 'Icono del navegador. Recomendado: PNG cuadrado de 64×64 px o más (el validador no acepta SVG).',
+        // Sin favicon cargado se muestra el logo de Lemora como preview (default de la tienda)
+        defaultPreview: '../img/lemora.svg'
     },
     {
         recurso: 'og', columna: 'og_image_path', carpeta: 'og',
@@ -161,7 +163,7 @@ function campoImagen(r, pathActual) {
             <label>${esc(r.label)}</label>
             <div class="diseno-imagen" data-recurso="${esc(r.recurso)}">
                 <div class="diseno-preview" data-preview>
-                    ${url ? `<img src="${esc(url)}" alt="">` : '<span class="diseno-preview-vacio">Sin archivo<br><small>Se usará el actual por defecto</small></span>'}
+                    ${url ? `<img src="${esc(url)}" alt="">` : campoVacioHTML(r)}
                 </div>
                 <div class="diseno-preview-acciones">
                     <label class="btn btn-sm btn-outline admin-file-btn">
@@ -173,6 +175,18 @@ function campoImagen(r, pathActual) {
                 <span class="hint">${esc(r.hint)}</span>
             </div>
         </div>`;
+}
+
+// HTML del estado vacío del preview. Para recursos con defaultPreview (el
+// favicon) se muestra la imagen de respaldo de Lemora; el resto mantiene el
+// placeholder textual.
+function campoVacioHTML(r, caption) {
+    const texto = caption || (r.defaultPreview
+        ? 'Por defecto se usa el logo de Lemora'
+        : 'Sin archivo<br><small>Se usará el actual por defecto</small>');
+    return r.defaultPreview
+        ? `<span class="diseno-preview-vacio"><img src="${esc(r.defaultPreview)}" alt="" class="diseno-preview-defecto"><small>${esc(texto)}</small></span>`
+        : `<span class="diseno-preview-vacio">${texto}</span>`;
 }
 
 function bordeOpcion(b, actual) {
@@ -202,7 +216,7 @@ function prepararCampoImagen(r, pathActual) {
     const quitarBtn = bloque.querySelector('[data-quitar]');
 
     const mostrarVacio = (mensaje) => {
-        preview.innerHTML = `<span class="diseno-preview-vacio">${esc(mensaje)}</span>`;
+        preview.innerHTML = campoVacioHTML(r, mensaje);
     };
 
     const renderDesdeEstado = () => {
@@ -213,7 +227,7 @@ function prepararCampoImagen(r, pathActual) {
         } else if (urlOriginal) {
             preview.innerHTML = `<img src="${esc(urlOriginal)}" alt="">`;
         } else {
-            mostrarVacio('Sin archivo<br><small>Se usará el actual por defecto</small>');
+            mostrarVacio();
         }
     };
 
@@ -259,7 +273,10 @@ function prepararCampoImagen(r, pathActual) {
                 archivoInput.value = '';
                 renderDesdeEstado();
             } else {
-                if (!confirmarBorrado(`¿Quitar el ${r.label.toLowerCase()}? Se usará el archivo por defecto de la tienda.`)) return;
+                const confirmarMsg = r.defaultPreview
+                    ? `¿Quitar el ${r.label.toLowerCase()}? Se usará el logo de Lemora por defecto.`
+                    : `¿Quitar el ${r.label.toLowerCase()}? Se usará el archivo por defecto de la tienda.`;
+                if (!confirmarBorrado(confirmarMsg)) return;
                 est.quitar = true;
                 est.archivo = null;
                 archivoInput.value = '';
