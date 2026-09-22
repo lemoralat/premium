@@ -5,7 +5,8 @@
 // ============================================================================
 
 import { protegerAdmin, cerrarSesionAdmin } from './auth.js';
-import { esc, $ } from './admin-ui.js';
+import { esc, $, urlPublica } from './admin-ui.js';
+import { clienteAdmin } from './admin-supabase.js';
 
 import * as dashboard from './dashboard.js';
 import * as diseno from './diseno.js';
@@ -100,6 +101,30 @@ function configurarMenuMovil() {
     });
 }
 
+// Logo del panel: usa el logotipo configurado en Diseño (settings.logo_path);
+// si no hay, queda el default de lemora (../img/lemora.svg). También actualiza
+// el favicon, igual que la tienda. No bloquea el arranque del panel.
+async function aplicarLogoPanel() {
+    const img = document.querySelector('.admin-brand img');
+    const iconos = document.querySelectorAll('link[rel="icon"]');
+    const ruta = await (async () => {
+        try {
+            const sb = await clienteAdmin();
+            const { data } = await sb.from('settings').select('logo_path').eq('id', 1).single();
+            return data?.logo_path || '';
+        } catch {
+            return ''; // sin acceso o sin configuración: default
+        }
+    })();
+
+    const fuente = ruta ? urlPublica(ruta) : '../img/lemora.svg';
+    if (img) img.src = fuente;
+    iconos.forEach((el) => {
+        el.href = fuente;
+        if (ruta) el.removeAttribute('type'); // favicon subido puede ser PNG
+    });
+}
+
 // ---------- Arranque ----------
 document.addEventListener('DOMContentLoaded', async () => {
     const sesion = await protegerAdmin();
@@ -112,6 +137,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnLogout) btnLogout.addEventListener('click', () => cerrarSesionAdmin());
 
     configurarMenuMovil();
+
+    aplicarLogoPanel(); // no bloquea el routing
 
     window.addEventListener('hashchange', navegar);
     navegar();
