@@ -21,6 +21,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 module.exports = async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
 
     if (request.method !== 'POST') {
         return response.status(405).json({ status: 'error', message: 'Método no permitido.' });
@@ -41,13 +42,23 @@ module.exports = async function handler(request, response) {
         return response.status(400).json({ status: 'error', message: 'Estructura de pedido inválida.' });
     }
 
+    // Límites razonables de payload (anti-abuso, V-3): el RPC valida el resto.
+    if (body.productos.length > 50) {
+        return response.status(400).json({ status: 'error', message: 'Demasiados productos en el pedido.' });
+    }
+    const clienteNombre = typeof body.cliente?.nombre === 'string' ? body.cliente.nombre.trim() : '';
+    const clienteEmail = typeof body.cliente?.email === 'string' ? body.cliente.email.trim() : '';
+    if (!clienteNombre || !clienteEmail || clienteNombre.length > 200 || clienteEmail.length > 254) {
+        return response.status(400).json({ status: 'error', message: 'Datos del cliente inválidos.' });
+    }
+
     const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
 
     try {
         const items = body.productos.map((item) => ({
             product_id: Number(item.id),
             quantity: Number(item.quantity),
-            variante_texto: typeof item.varianteTexto === 'string' ? String(item.varianteTexto) : ''
+            variante_texto: typeof item.varianteTexto === 'string' ? String(item.varianteTexto).slice(0, 300) : ''
         }));
 
         if (items.some(i => !Number.isInteger(i.product_id) || !Number.isInteger(i.quantity) || i.quantity <= 0)) {
@@ -73,7 +84,8 @@ module.exports = async function handler(request, response) {
         const mensaje = String(error.message || 'No se pudo registrar el pedido.');
         // Errores de negocio esperados: stock insuficiente, producto inactivo, cantidades.
         const conflicto = /stock insuficiente|cantidad inválida|producto/i.test(mensaje);
+        const limiteTasa = /intentá de nuevo/i.test(mensaje);
         console.error('❌ Error registrando pedido en Supabase:', mensaje);
-        return response.status(conflicto ? 409 : 500).json({ status: 'error', message: mensaje });
+        return response.status(limiteTasa ? 429 : (conflicto ? 409 : 500)).json({ status: 'error', message: mensaje });
     }
 };

@@ -46,7 +46,7 @@ export function obtenerClienteSupabase() {
         return Promise.resolve(null);
     }
 
-    promesaCliente = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm')
+    promesaCliente = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm')
         .then((mod) => {
             cliente = mod.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey, {
                 auth: { persistSession: false, autoRefreshToken: false }

@@ -1,6 +1,6 @@
 // Testimonios - carrusel de reseñas (motor JS + drag/swipe)
 
-import { obtenerResenas, imagenOptimizada } from './utils.js';
+import { obtenerResenas, imagenOptimizada, escaparHtml } from './utils.js';
 
 const TESTIMONIOS = [
     {
@@ -93,6 +93,12 @@ function generarCard(testimonio) {
     const card = document.createElement('article');
     card.className = 'testimonio-card';
 
+    // V-2: reseñas son contenido administrado → escapar antes de interpolar.
+    const nombre = escaparHtml(testimonio.nombre);
+    const avatar = escaparHtml(imagenOptimizada(testimonio.avatar));
+    const fecha = escaparHtml(testimonio.fecha);
+    const texto = escaparHtml(testimonio.texto);
+
     let estrellas = '';
     for (let i = 1; i <= 5; i++) {
         estrellas += `<i class="${i <= testimonio.rating ? 'fa-solid' : 'fa-regular'} fa-star star"></i>`;
@@ -101,15 +107,15 @@ function generarCard(testimonio) {
     card.innerHTML = `
         <div class="testimonio-body">
             <div class="testimonio-head">
-                <img src="${testimonio.avatar}" alt="Foto de ${testimonio.nombre}" class="testimonio-foto" loading="lazy" width="56" height="56">
+                <img src="${avatar}" alt="Foto de ${nombre}" class="testimonio-foto" loading="lazy" width="56" height="56">
                 <div class="testimonio-info">
-                    <p class="testimonio-nombre">${testimonio.nombre}</p>
+                    <p class="testimonio-nombre">${nombre}</p>
                     <div class="testimonio-stars">${estrellas}</div>
-                    <p class="testimonio-fecha">${testimonio.fecha}</p>
+                    <p class="testimonio-fecha">${fecha}</p>
                 </div>
                 <i class="fa-brands fa-google google-isologo" aria-hidden="true"></i>
             </div>
-            <p class="testimonio-texto">"${testimonio.texto}"</p>
+            <p class="testimonio-texto">"${texto}"</p>
         </div>
     `;
 

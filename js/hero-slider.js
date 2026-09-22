@@ -2,7 +2,7 @@
 // Slides dinámicos desde la hoja "Slider" (js/slider.json).
 // Sin slides => la sección se mantiene oculta (hidden en el HTML).
 
-import { obtenerSlider, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
+import { obtenerSlider, recortarTexto, imagenOptimizada, atributosEnlace, escaparHtml, urlSegura } from './utils.js';
 
 class HeroSlider {
     constructor() {
@@ -67,19 +67,26 @@ class HeroSlider {
     // Misma estructura de clases que los slides estáticos del index.html
     construirSlides(datos) {
         this.track.innerHTML = datos.map((slide, i) => {
+            // V-2: texto, imagen y link son contenido administrado → escapar y
+            // filtrar esquemas peligrosos antes de interpolar en HTML.
+            const titulo = recortarTexto(slide.titulo);
+            const textoSoporte = recortarTexto(slide.textoSoporte);
+            const imagen = escaparHtml(imagenOptimizada(slide.imagen));
+            const link = slide.link ? urlSegura(slide.link) : '';
+
             const contenido = `
-                    <img src="${imagenOptimizada(slide.imagen)}" alt="${slide.titulo}" width="1920" height="1280"${i === 0 ? ' fetchpriority="high"' : ''}>
+                    <img src="${imagen}" alt="${escaparHtml(titulo)}" width="1920" height="1280"${i === 0 ? ' fetchpriority="high"' : ''}>
 
                     <div class="slider-content">
                         <div class="slider-text">
-                            <h1>${recortarTexto(slide.titulo)}</h1>
-                            ${slide.textoSoporte ? `<p>${recortarTexto(slide.textoSoporte)}</p>` : ''}
+                            <h1>${escaparHtml(titulo)}</h1>
+                            ${textoSoporte ? `<p>${escaparHtml(textoSoporte)}</p>` : ''}
                         </div>
                     </div>
             `;
             return `
                 <div class="slider-slide${i === 0 ? ' active' : ''}">
-                    ${slide.link ? `<a href="${slide.link}" ${atributosEnlace(slide)} class="slider-link">${contenido}</a>` : contenido}
+                    ${link ? `<a href="${escaparHtml(link)}" ${atributosEnlace(slide)} class="slider-link">${contenido}</a>` : contenido}
                 </div>
             `;
         }).join('');

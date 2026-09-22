@@ -1,6 +1,6 @@
 // favoritos.js
 
-import { obtenerProductos, generarHTMLTarjetaProducto, mostrarNotificacion, renderPrecioAnterior, imagenOptimizada } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, mostrarNotificacion, renderPrecioAnterior, imagenOptimizada, escaparHtml } from './utils.js';
 
 let allProducts = []; // Para almacenar todos los productos una vez cargados
 
@@ -56,12 +56,13 @@ function renderizarFavoritos() {
     }
 
     // Generar el HTML para cada producto favorito
+    // (V-2: nombre, imagen y categoría son contenido administrado → escapar)
     favoritosContainer.innerHTML = favoriteProducts.map(p => `
         <div class="favorito-item">
-            <img src="${imagenOptimizada(p.imagen)}" alt="${p.nombre}" class="favorito-imagen">
+            <img src="${escaparHtml(imagenOptimizada(p.imagen))}" alt="${escaparHtml(p.nombre)}" class="favorito-imagen">
             <div class="favorito-info">
-                <a href="producto.html?id=${p.id}" class="favorito-nombre">${p.nombre}</a>
-                <p class="favorito-categoria">${p.categoria}</p>
+                <a href="producto.html?id=${p.id}" class="favorito-nombre">${escaparHtml(p.nombre)}</a>
+                <p class="favorito-categoria">${escaparHtml(p.categoria)}</p>
                 <p class="favorito-precio">${renderPrecioAnterior(p)}$${formatearPrecio(p.precio)}</p>
             </div>
             <div class="favorito-acciones">

@@ -18,7 +18,7 @@ export function clienteAdmin() {
             if (!SUPABASE_CONFIG || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.publishableKey) {
                 throw new Error('Supabase no configurado. Ejecutá `npm run build:env` con tus variables.');
             }
-            const mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+            const mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm');
             cliente = mod.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
             return cliente;
         })();

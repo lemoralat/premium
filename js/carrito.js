@@ -40,11 +40,16 @@ function renderizarCarrito() {
         const stockBajo = productoRef && productoRef.stock > 0 && productoRef.stock < 5;
         const clave = claveItemCarrito(item.id, item.varianteTexto);
 
+        // V-2: el nombre del producto (contenido administrado) viaja en el
+        // carrito → escapar antes de interpolar en HTML.
+        const nombreSeguro = escaparHtml(recortarTexto(item.nombre));
+        const imagenSegura = escaparHtml(imagenOptimizada(item.imagen));
+
         return `
         <div class="cart-item${sinStock ? ' sin-stock' : ''}" data-clave="${escaparHtml(clave)}">
-            <img src="${imagenOptimizada(item.imagen)}" alt="${item.nombre}" class="item-image" loading="lazy">
+            <img src="${imagenSegura}" alt="${nombreSeguro}" class="item-image" loading="lazy">
             <div class="item-details">
-                <h3 class="item-title">${recortarTexto(item.nombre)}</h3>
+                <h3 class="item-title">${nombreSeguro}</h3>
                 ${item.varianteTexto ? `<p class="item-variant">${escaparHtml(item.varianteTexto)}</p>` : ''}
                 ${sinStock ? `<p class="stock-alert stock-alert-danger">⚠️ Este producto se agotó. Debes eliminarlo para continuar.</p>` : ''}
                 ${stockBajo ? `<p class="stock-alert stock-alert-warn">⚠️ ¡Últimas unidades disponibles! (Quedan ${productoRef.stock})</p>` : ''}
@@ -56,7 +61,7 @@ function renderizarCarrito() {
                     <span class="qty-display">${item.quantity}</span>
                     <button class="qty-btn btn-border" onclick="actualizarCantidad(this.dataset.clave, 1)" data-clave="${escaparHtml(clave)}" aria-label="Aumentar cantidad" ${sinStock ? 'disabled' : ''}>+</button>
                 </div>
-                <button class="remove-btn btn-border" onclick="eliminarDelCarrito(this.dataset.clave)" data-clave="${escaparHtml(clave)}" aria-label="Eliminar ${item.nombre}">
+                <button class="remove-btn btn-border" onclick="eliminarDelCarrito(this.dataset.clave)" data-clave="${escaparHtml(clave)}" aria-label="Eliminar ${nombreSeguro}">
                     <i class="fa-solid fa-trash-can"></i> Eliminar
                 </button>
             </div>

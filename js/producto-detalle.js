@@ -106,14 +106,17 @@ function renderizarDetalleProducto(producto) {
     const imagenesGaleria = (producto.galeria && producto.galeria.length > 0 
         ? producto.galeria 
         : [producto.imagen]).map(imagenOptimizada);
+
+    // V-2: nombre y URLs son contenido administrado → escapar antes de HTML.
+    const nombreSeguro = escaparHtml(recortarTexto(producto.nombre));
     
     container.innerHTML = `
         <div class="product-detail-grid">
             <div class="product-detail-image-container">
                 <!-- Imagen principal -->
                 <div class="main-image-wrapper">
-                    <img src="${imagenesGaleria[0]}" 
-                         alt="${producto.nombre}" 
+                    <img src="${escaparHtml(imagenesGaleria[0])}" 
+                         alt="${nombreSeguro}" 
                          class="product-detail-image" 
                          id="mainProductImage"
                          onclick="toggleZoom()">
@@ -141,8 +144,8 @@ function renderizarDetalleProducto(producto) {
                 ${imagenesGaleria.length > 1 ? `
                     <div class="thumbnails-container">
                         ${imagenesGaleria.map((img, idx) => `
-                            <img src="${img}" 
-                                 alt="${producto.nombre} - Vista ${idx + 1}" 
+                            <img src="${escaparHtml(img)}" 
+                                 alt="${nombreSeguro} - Vista ${idx + 1}" 
                                  class="thumbnail ${idx === 0 ? 'active' : ''}" 
                                  onclick="seleccionarImagen(${idx})"
                                  loading="lazy">
@@ -154,7 +157,7 @@ function renderizarDetalleProducto(producto) {
             <div class="product-detail-info">
                 <span class="product-category">${escaparHtml(producto.categoria)}</span>
                 <div class="product-title-row">
-                    <h1 class="product-detail-title">${recortarTexto(producto.nombre)}</h1>
+                    <h1 class="product-detail-title">${nombreSeguro}</h1>
                     <button class="btn-favorito ${esFavorito(producto.id) ? 'active' : ''}" 
                             onclick="toggleFavorito(${producto.id})" 
                             aria-label="Agregar a favoritos"
@@ -237,13 +240,13 @@ function renderizarDetalleProducto(producto) {
                 <div class="product-navigation">
                     ${prevProduct ? `
                         <a href="producto.html?id=${prevProduct.id}" class="nav-product-btn btn-border prev">
-                            ← ${prevProduct.nombre}
+                            ← ${escaparHtml(recortarTexto(prevProduct.nombre))}
                         </a>
                     ` : '<span></span>'}
                     
                     ${nextProduct ? `
                         <a href="producto.html?id=${nextProduct.id}" class="nav-product-btn btn-border next">
-                            ${nextProduct.nombre} →
+                            ${escaparHtml(recortarTexto(nextProduct.nombre))} →
                         </a>
                     ` : '<span></span>'}
                 </div>
@@ -325,6 +328,9 @@ function toggleZoom() {
     const imagenesGaleria = (producto.galeria && producto.galeria.length > 0 
         ? producto.galeria 
         : [producto.imagen]).map(imagenOptimizada);
+
+    // V-2: nombre y URLs administradas → escapar antes de interpolar.
+    const productoNombre = escaparHtml(recortarTexto(producto.nombre));
     
     // Crear modal de zoom
     const zoomModal = document.createElement('div');
@@ -346,8 +352,8 @@ function toggleZoom() {
             ` : ''}
             
             <div class="zoom-image-wrapper">
-                <img src="${imagenesGaleria[imagenActualIndex]}" 
-                     alt="${producto.nombre}" 
+                <img src="${escaparHtml(imagenesGaleria[imagenActualIndex])}" 
+                     alt="${productoNombre}" 
                      class="zoom-image" 
                      id="zoomImage"
                      draggable="false">
@@ -360,8 +366,8 @@ function toggleZoom() {
                 
                 <div class="zoom-thumbnails">
                     ${imagenesGaleria.map((img, idx) => `
-                        <img src="${img}" 
-                             alt="${producto.nombre} - Vista ${idx + 1}" 
+                        <img src="${escaparHtml(img)}" 
+                             alt="${productoNombre} - Vista ${idx + 1}" 
                              class="zoom-thumbnail ${idx === imagenActualIndex ? 'active' : ''}" 
                              onclick="event.stopPropagation(); seleccionarImagenZoom(${idx})">
                     `).join('')}

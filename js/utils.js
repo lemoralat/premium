@@ -296,6 +296,29 @@ export function escaparHtml(texto) {
         .replaceAll("'", '&#039;');
 }
 
+// Solo deja URLs navegables en hrefs administrados: http(s), mailto, tel y
+// rutas locales (absolutas, relativas o anclas). Bloquea `javascript:`, `data:`
+// y cualquier otro esquema peligroso. Devuelve '' si la URL no es segura.
+export function urlSegura(url) {
+    const u = String(url ?? '').trim();
+    if (!u) return '';
+    if (/^(https?:|mailto:|tel:)/i.test(u)) return u;
+    if (u.startsWith('/') || u.startsWith('./') || u.startsWith('../') || u.startsWith('#')) return u;
+    return '';
+}
+
+// Convierte texto libre (ej. nombre de categoría) en un slug seguro para usar
+// como fragmento de URL o id de sección: sin acentos, sin caracteres peligrosos.
+export function slugificar(texto) {
+    const slug = String(texto ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    return slug || 'seccion';
+}
+
 // ================= BANNERS =================
 // Cargar banners dinámicos. [] => la web no renderiza secciones de banners.
 export async function obtenerBanners() {
@@ -418,16 +441,21 @@ export function generarHTMLTarjetaProducto(producto, opciones = {}) {
     const esAgotado = producto.stock === 0;
     const { soloNombrePrecio = false } = opciones;
 
+    // V-2: todo texto/URL administrado se escapa antes de interpolarse en HTML.
+    const nombre = escaparHtml(recortarTexto(producto.nombre));
+    const descripcion = escaparHtml(recortarTexto(producto.descripcion));
+    const imagen = escaparHtml(imagenOptimizada(producto.imagen));
+
     return `
-        <a href="producto.html?id=${producto.id}" class="product-card product-link ${esAgotado ? 'out-of-stock' : ''}" aria-label="Ver detalle de ${producto.nombre}">
+        <a href="producto.html?id=${producto.id}" class="product-card product-link ${esAgotado ? 'out-of-stock' : ''}" aria-label="Ver detalle de ${nombre}">
             ${esAgotado ? '<span class="out-of-stock-badge">Sin Stock</span>' : ''}
             <div class="product-image-wrapper">
-                <img src="${imagenOptimizada(producto.imagen)}" alt="${producto.nombre}" class="product-image" loading="lazy">
+                <img src="${imagen}" alt="${nombre}" class="product-image" loading="lazy">
                 <span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
             </div>
             <div class="product-info">
-                <h3 class="product-title">${recortarTexto(producto.nombre)}</h3>
-                ${soloNombrePrecio ? '' : `<p class="product-description">${recortarTexto(producto.descripcion)}</p>`}
+                <h3 class="product-title">${nombre}</h3>
+                ${soloNombrePrecio ? '' : `<p class="product-description">${descripcion}</p>`}
                 <p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
             </div>
         </a>

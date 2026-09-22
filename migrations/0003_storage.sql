@@ -28,24 +28,34 @@ create policy "Imágenes: lectura pública"
     to anon, authenticated
     using (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews'));
 
--- ---------- Subida: solo autenticado (admin) ----------
+-- Las escrituras requieren public.es_admin() (usuario en la tabla `admins`,
+-- migración 0007): estar autenticado ya no alcanza.
+
+-- ---------- Subida: solo admin ----------
 drop policy if exists "Imágenes: subida autenticada" on storage.objects;
-create policy "Imágenes: subida autenticada"
+drop policy if exists "Imágenes: subida solo admin" on storage.objects;
+create policy "Imágenes: subida solo admin"
     on storage.objects for insert
     to authenticated
-    with check (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews'));
+    with check (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews')
+        and public.es_admin());
 
--- ---------- Actualización: solo autenticado ----------
+-- ---------- Actualización: solo admin ----------
 drop policy if exists "Imágenes: actualización autenticada" on storage.objects;
-create policy "Imágenes: actualización autenticada"
+drop policy if exists "Imágenes: actualización solo admin" on storage.objects;
+create policy "Imágenes: actualización solo admin"
     on storage.objects for update
     to authenticated
-    using (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews'))
-    with check (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews'));
+    using (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews')
+        and public.es_admin())
+    with check (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews')
+        and public.es_admin());
 
--- ---------- Eliminación: solo autenticado ----------
+-- ---------- Eliminación: solo admin ----------
 drop policy if exists "Imágenes: eliminación autenticada" on storage.objects;
-create policy "Imágenes: eliminación autenticada"
+drop policy if exists "Imágenes: eliminación solo admin" on storage.objects;
+create policy "Imágenes: eliminación solo admin"
     on storage.objects for delete
     to authenticated
-    using (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews'));
+    using (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews')
+        and public.es_admin());

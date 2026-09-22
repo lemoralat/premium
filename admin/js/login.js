@@ -13,6 +13,14 @@ function mostrarError(mensaje) {
     errorBox.hidden = false;
 }
 
+// Si la sesión existía pero el usuario no está en la tabla `admins` (o el
+// panel está en actualización), el login explica por qué volvió acá.
+const params = new URLSearchParams(window.location.search);
+if (params.get('denegado') === '1') {
+    errorBox.className = '';
+    mostrarError('Tu usuario no tiene permisos de administrador. Verificá que esté en la tabla public.admins.');
+}
+
 function limpiarError() {
     errorBox.hidden = true;
     errorBox.textContent = '';

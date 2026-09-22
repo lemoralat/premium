@@ -235,12 +235,15 @@ create table if not exists public.profiles (
     id         uuid primary key references auth.users(id) on delete cascade,
     email      text,
     full_name  text,
-    role       text not null default 'admin',
+    -- El acceso administrativo real se controla con la tabla public.admins
+    -- (migración 0007). Nadie nace admin: el rol por defecto es solo informativo.
+    role       text not null default 'cliente',
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
 
-comment on table public.profiles is 'Perfil del usuario administrador de la tienda (autenticado con Supabase Auth).';
+comment on table public.profiles is 'Perfil del usuario de la tienda (autenticado con Supabase Auth).';
+comment on column public.profiles.role is 'Rol informativo (cliente/admin). El acceso real se controla con la tabla public.admins.';
 
 -- ----------------------------------------------------------------------------
 -- TRIGGERS
@@ -461,7 +464,9 @@ exception
 end;
 $$;
 
-grant execute on function public.insertar_pedido(jsonb, jsonb, text, uuid) to anon, authenticated;
+-- Solo la función serverless (api/pedido.js, Vercel) invoca esta RPC con la
+-- service_role key. anon/authenticated no pueden ejecutarla desde el navegador.
+grant execute on function public.insertar_pedido(jsonb, jsonb, text, uuid) to service_role;
 
 -- ============================================================================
 -- ROW LEVEL SECURITY

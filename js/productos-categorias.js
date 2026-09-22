@@ -1,5 +1,5 @@
 // Renderizar productos por categorías en el index
-import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, slugificar } from './utils.js';
 
 let productos = [];
 
@@ -77,8 +77,9 @@ function renderizarCategoriasAutomaticas(banners) {
         if (productosFiltrados.length === 0) return;
 
         // Agregar la sección de productos de la categoría
+        // (id slugificado: coincide con los links del submenú del header)
         htmlFinal += `
-            <section class="category-section" id="cat-${categoria.toLowerCase().replace(/\s+/g, '-')}">
+            <section class="category-section" id="cat-${slugificar(categoria)}">
                 <div class="products-grid">
                     ${productosFiltrados.map(p => generarHTMLTarjetaProducto(p)).join('')}
                 </div>

@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar } from './utils.js';
 
 // Renderizar Header
 function renderHeader(activePage = '', categorias = []) {
@@ -8,10 +8,12 @@ function renderHeader(activePage = '', categorias = []) {
     header.className = 'header-wrapper';
 
     // Generar HTML del submenú de categorías
+    // V-2: el nombre de categoría es contenido administrado → escapar el texto
+    // y slugificar el fragmento para que coincida con el id de las secciones.
     const submenuHTML = categorias.length > 0 ? `
         <ul class="submenu">
             ${categorias.map(cat => `
-                <li><a href="index.html#cat-${cat.toLowerCase().replace(/\s+/g, '-')}">${cat}</a></li>
+                <li><a href="index.html#cat-${slugificar(cat)}">${escaparHtml(cat)}</a></li>
             `).join('')}
         </ul>
     ` : '';
@@ -113,7 +115,7 @@ function renderHeader(activePage = '', categorias = []) {
 function renderFooter() {
     const footer = document.createElement('footer');
     footer.innerHTML = `
-        <p>&copy; ${new Date().getFullYear()} ${obtenerNombreSitio()}. Todos los derechos reservados. Hecho con <i class="fa-solid fa-heart footer-heart"></i> por <a href="https://lemora.lat" target="_blank"><img src="img/lemora.svg" alt="Diseño y Desarrollo por Lemora" class="devBy"></a></p>
+        <p>&copy; ${new Date().getFullYear()} ${escaparHtml(obtenerNombreSitio())}. Todos los derechos reservados. Hecho con <i class="fa-solid fa-heart footer-heart"></i> por <a href="https://lemora.lat" target="_blank"><img src="img/lemora.svg" alt="Diseño y Desarrollo por Lemora" class="devBy"></a></p>
         `;
 
     return footer;
