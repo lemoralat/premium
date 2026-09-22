@@ -74,18 +74,27 @@ function configurarMenuMovil() {
     const btnMenu = $('#btnMenu');
     if (!sidebar || !btnMenu) return;
 
-    btnMenu.addEventListener('click', () => sidebar.classList.toggle('abierta'));
+    const abrir = (abierto) => {
+        sidebar.classList.toggle('abierta', abierto);
+        document.body.classList.toggle('menu-abierta', abierto);
+    };
+
+    btnMenu.addEventListener('click', () => abrir(!sidebar.classList.contains('abierta')));
 
     document.addEventListener('click', (event) => {
         if (sidebar.classList.contains('abierta')
             && !sidebar.contains(event.target)
             && !btnMenu.contains(event.target)) {
-            sidebar.classList.remove('abierta');
+            abrir(false);
         }
     });
 
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('abierta')) abrir(false);
+    });
+
     document.querySelectorAll('#adminNav a').forEach((a) => {
-        a.addEventListener('click', () => sidebar.classList.remove('abierta'));
+        a.addEventListener('click', () => abrir(false));
     });
 }
 

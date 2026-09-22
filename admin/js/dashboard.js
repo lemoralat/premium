@@ -91,11 +91,11 @@ function tablaOrdenes(ordenes) {
                 <tbody>
                     ${ordenes.map((o) => `
                         <tr>
-                            <td><strong>${esc(o.numero)}</strong></td>
-                            <td>${esc(formatearFechaHora(o.created_at))}</td>
-                            <td>${esc(extraerClientes(o)?.nombre || '—')}</td>
-                            <td>$${formatearPrecio(o.total)}</td>
-                            <td><span class="estado-badge estado-${esc(o.estado.toLowerCase())}">${esc(o.estado)}</span></td>
+                            <td data-label="Número"><strong>${esc(o.numero)}</strong></td>
+                            <td data-label="Fecha">${esc(formatearFechaHora(o.created_at))}</td>
+                            <td data-label="Cliente">${esc(extraerClientes(o)?.nombre || '—')}</td>
+                            <td data-label="Total">$${formatearPrecio(o.total)}</td>
+                            <td data-label="Estado"><span class="estado-badge estado-${esc(o.estado.toLowerCase())}">${esc(o.estado)}</span></td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -122,8 +122,8 @@ function listaStockBajo(lista) {
                 <tbody>
                     ${lista.map((p) => `
                         <tr>
-                            <td>${esc(p.nombre)}</td>
-                            <td><span class="admin-stock-bajo">${esc(p.stock)}</span></td>
+                            <td data-label="Producto">${esc(p.nombre)}</td>
+                            <td data-label="Stock"><span class="admin-stock-bajo">${esc(p.stock)}</span></td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -142,9 +142,9 @@ function listaResenas(lista) {
                 <tbody>
                     ${lista.map((r) => `
                         <tr>
-                            <td>${esc(r.nombre)}</td>
-                            <td>${'★'.repeat(r.valoracion)}${'☆'.repeat(5 - r.valoracion)}</td>
-                            <td>${esc(formatearFechaHora(r.fecha))}</td>
+                            <td data-label="Cliente">${esc(r.nombre)}</td>
+                            <td data-label="Valoración">${'★'.repeat(r.valoracion)}${'☆'.repeat(5 - r.valoracion)}</td>
+                            <td data-label="Fecha">${esc(formatearFechaHora(r.fecha))}</td>
                         </tr>
                     `).join('')}
                 </tbody>

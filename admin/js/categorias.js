@@ -14,8 +14,8 @@ export async function renderizar(contenedor) {
     categorias = data || [];
 
     contenedor.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-            <p style="color:var(--text-muted); margin:0;">Organizá el catálogo por categorías</p>
+        <div class="admin-toolbar">
+            <p>Organizá el catálogo por categorías</p>
             <button type="button" class="btn btn-primary" id="btnNuevaCategoria">
                 <i class="fa-solid fa-plus"></i> Nueva categoría
             </button>
@@ -45,10 +45,10 @@ function filas() {
     }
     return categorias.map((c) => `
         <tr>
-            <td><strong>${esc(c.name)}</strong></td>
-            <td><code>${esc(c.slug)}</code></td>
-            <td>${esc(c.position)}</td>
-            <td>${c.active
+            <td data-label="Nombre"><strong>${esc(c.name)}</strong></td>
+            <td data-label="Slug"><code>${esc(c.slug)}</code></td>
+            <td data-label="Orden">${esc(c.position)}</td>
+            <td data-label="Estado">${c.active
                 ? '<span class="estado-badge estado-entregado">Activa</span>'
                 : '<span class="estado-badge estado-cancelado">Inactiva</span>'}</td>
             <td class="td-acciones">

@@ -397,6 +397,46 @@ table.admin-tabla tr:hover td { background: #f8fafc; }
     cursor: pointer;
 }
 
+/* Búsqueda y selects de filtros (reutilizables móvil/desktop) */
+.admin-busqueda {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: #fff;
+    color: var(--text);
+}
+
+.admin-select-filtro {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+}
+
+/* Inputs de URL en gestores de imágenes (comparten estilo fijo en modales) */
+.admin-url-field { flex: 1; min-width: 200px; }
+
+.admin-url-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: #fff;
+    color: var(--text);
+}
+
 .admin-error-text,
 .admin-success-text {
     padding: 0.6rem 0.85rem;
@@ -545,8 +585,30 @@ table.admin-tabla tr:hover td { background: #f8fafc; }
     padding: 1rem;
 }
 
+.admin-fila-activa > td { background: #fff7ed; }
+
 .admin-pedido-items { display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem; }
 .admin-pedido-cliente { font-size: 0.85rem; color: var(--text-muted); white-space: pre-line; }
+
+.admin-pedido-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed var(--border);
+}
+.admin-pedido-item:last-child { border-bottom: none; }
+
+.admin-estado-select {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+}
 
 /* Estados de pedido */
 .estado-badge {
@@ -752,10 +814,33 @@ body.admin-modal-abierto { overflow: hidden; }
         z-index: 90;
         transform: translateX(-100%);
         transition: transform 0.25s ease;
-        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
     .admin-sidebar.abierta { transform: translateX(0); }
+
+    /* Backdrop oscuro + bloqueo de scroll del fondo cuando el menú está abierto */
+    body.menu-abierta { overflow: hidden; }
+
+    .admin-layout::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 85;
+        background: rgba(15, 23, 42, 0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+
+    body.menu-abierta .admin-layout::before {
+        opacity: 1;
+        pointer-events: auto;
+    }
 
     .admin-menu-toggle {
         display: inline-flex;
@@ -774,4 +859,218 @@ body.admin-modal-abierto { overflow: hidden; }
 
 @media (max-width: 600px) {
     .admin-topbar-user span:first-child { display: none; }
+}
+
+/* ============================================================================
+   MÓVIL — Tablas como tarjetas (mejor UX con pulgar)
+   ============================================================================ */
+@media (max-width: 640px) {
+    /* Cada tabla se convierte en lista de tarjetas apiladas */
+    .admin-tabla-wrap {
+        overflow: visible;
+        border: none;
+        background: transparent;
+        border-radius: 0;
+    }
+
+    table.admin-tabla {
+        min-width: 0;
+        border-collapse: separate;
+        border-spacing: 0 0.65rem;
+    }
+
+    table.admin-tabla thead { display: none; }
+
+    table.admin-tabla tr {
+        display: block;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin: 0;
+    }
+
+    table.admin-tabla tr:hover td { background: transparent; }
+
+    table.admin-tabla td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0.6rem 0.85rem;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+    }
+
+    table.admin-tabla tr:last-child td { border-bottom: none; }
+
+    table.admin-tabla td::before {
+        content: attr(data-label);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        flex-shrink: 0;
+    }
+
+    table.admin-tabla td[data-label=""]::before { content: none; }
+    table.admin-tabla td.td-acciones::before { content: none; }
+    table.admin-tabla td.td-expandir::before { content: none; }
+
+    /* Celda principal (imagen + nombre): solo muestra el contenido */
+    table.admin-tabla td.td-principal {
+        justify-content: flex-start;
+        border-bottom: 1px solid var(--border);
+        padding: 0.7rem 0.85rem;
+    }
+    table.admin-tabla td.td-principal::before { content: none; }
+
+    /* Botón de expandir pedido: célula compacta */
+    table.admin-tabla td.td-expandir {
+        justify-content: flex-start;
+        padding: 0.5rem 0.85rem;
+    }
+
+    /* Acciones de fila: barra inferior siempre visible */
+    table.admin-tabla td.td-acciones {
+        justify-content: flex-end;
+        background: #fafafa;
+        border-top: 1px solid var(--border);
+        padding: 0.5rem 0.85rem;
+    }
+
+    /* Celdas de estado vacío (colspan): centrar el contenido */
+    table.admin-tabla td[colspan] {
+        display: block;
+        text-align: center;
+    }
+    table.admin-tabla td[colspan]::before { content: none; }
+
+    /* Fila expandida de pedido: ocupa todo el ancho */
+    table.admin-tabla tr.admin-fila-expandida td {
+        display: block;
+        padding: 1rem;
+        background: #fafafa;
+        text-align: left;
+    }
+    table.admin-tabla tr.admin-fila-expandida td::before { content: none; }
+
+    /* Botones de acción un poco más grandes en móvil */
+    table.admin-tabla .btn-sm { padding: 0.45rem 0.8rem; font-size: 0.8rem; }
+
+    /* Detalle de pedido expandido en 1 columna */
+    .pedido-detalle-grid { grid-template-columns: 1fr; }
+
+    /* Filtros apilados en columna */
+    .admin-filtros {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .admin-filtros .admin-chip { justify-content: center; }
+    .admin-filtros .admin-busqueda,
+    .admin-filtros .admin-select-filtro {
+        max-width: none;
+        width: 100%;
+    }
+
+    /* Chips de estado (pedidos): scroll horizontal en lugar de columna */
+    .admin-filtros-chips {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.4rem;
+        margin-bottom: 0.75rem;
+    }
+    .admin-filtros-chips .admin-chip { flex-shrink: 0; }
+
+    /* Topbar compacto */
+    .admin-topbar { padding: 0.6rem 0.85rem; }
+    .admin-topbar-title { font-size: 1rem; }
+
+    /* Modal a pantalla completa */
+    .admin-modal-panel {
+        width: 100%;
+        max-width: none;
+        max-height: 100dvh;
+        height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+    }
+    .admin-modal-acciones {
+        position: sticky;
+        bottom: 0;
+        background: var(--surface);
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+        margin-top: 0.4rem;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Toasts al pie, centrados */
+    #adminToast {
+        top: auto;
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        align-items: stretch;
+    }
+    .admin-toast-item { max-width: none; }
+
+    /* Encabezados de sección: botón a ancho completo */
+    .admin-toolbar { flex-direction: column; align-items: stretch; }
+    .admin-toolbar .btn { width: 100%; }
+    .admin-toolbar .admin-busqueda { max-width: none; width: 100%; }
+
+    .admin-stat { padding: 1rem; }
+    .admin-stat i { width: 42px; height: 42px; font-size: 1.35rem; }
+
+    .admin-repeater-row { grid-template-columns: 1fr; }
+}
+
+/* ============================================================================
+   RESPONSIVE — < 480px (celulares chicos)
+   ============================================================================ */
+@media (max-width: 480px) {
+    .login-page { padding: 1rem; }
+    .login-card { padding: 1.5rem 1.25rem; }
+
+    .admin-img-upload { flex-direction: column; align-items: stretch; }
+
+    .admin-field input[type="text"],
+    .admin-field input[type="email"],
+    .admin-field input[type="password"],
+    .admin-field input[type="number"],
+    .admin-field select,
+    .admin-field textarea { font-size: 16px; } /* evita zoom automático en iOS */
+}
+
+/* ============================================================================
+   TOOLBAR DE SECCIÓN (encabezado + botón de acción)
+   ============================================================================ */
+.admin-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.admin-toolbar p { margin: 0; color: var(--text-muted); }
+
+/* ============================================================================
+   DETALLE DE PEDIDO (grid de 2 columnas, colapsa en móvil)
+   ============================================================================ */
+.pedido-detalle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+@media (max-width: 640px) {
+    .pedido-detalle-grid { grid-template-columns: 1fr; }
 }

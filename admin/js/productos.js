@@ -49,21 +49,20 @@ function pintar(contenedor) {
     });
 
     contenedor.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+        <div class="admin-toolbar">
             <button type="button" class="btn btn-primary" id="btnNuevoProducto">
                 <i class="fa-solid fa-plus"></i> Nuevo producto
             </button>
         </div>
 
         <div class="admin-filtros">
-            <input type="text" id="prodBuscar" placeholder="Buscar por nombre…" value="${esc(busqueda)}"
-                   style="flex:1; min-width:200px; max-width:300px; padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px; font-family:inherit;">
-            <select id="prodFiltroCategoria" style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px; font-family:inherit;" aria-label="Filtrar por categoría">
+            <input type="text" id="prodBuscar" class="admin-busqueda" placeholder="Buscar por nombre…" value="${esc(busqueda)}">
+            <select id="prodFiltroCategoria" class="admin-select-filtro" aria-label="Filtrar por categoría">
                 <option value="todas">Todas las categorías</option>
                 <option value="sin">Sin categoría</option>
                 ${categorias.map((c) => `<option value="${esc(c.id)}" ${String(filtroCategoria) === String(c.id) ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
             </select>
-            <select id="prodFiltroActivo" style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px; font-family:inherit;" aria-label="Filtrar por estado">
+            <select id="prodFiltroActivo" class="admin-select-filtro" aria-label="Filtrar por estado">
                 <option value="todos">Activos e inactivos</option>
                 <option value="activos" ${filtroActivo === 'activos' ? 'selected' : ''}>Solo activos</option>
                 <option value="inactivos" ${filtroActivo === 'inactivos' ? 'selected' : ''}>Solo inactivos</option>
@@ -125,7 +124,7 @@ function filaProducto(p) {
     const stockClase = p.stock === 0 ? 'admin-stock-bajo' : p.stock < 5 ? 'admin-stock-medio' : 'admin-stock-ok';
     return `
         <tr>
-            <td>
+            <td class="td-principal">
                 <div style="display:flex; align-items:center; gap:0.7rem;">
                     <img src="${esc(imagenPrincipalDe(p))}" alt="" loading="lazy"
                          style="width:46px; height:46px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
@@ -139,11 +138,11 @@ function filaProducto(p) {
                     </div>
                 </div>
             </td>
-            <td>${esc(p.categoria?.name || '—')}</td>
-            <td><strong>$${formatearPrecio(p.precio)}</strong></td>
-            <td><span class="${stockClase}">${esc(p.stock)}</span></td>
-            <td>${nroVariantes > 0 ? esc(nroVariantes) : '<span style="color:var(--text-muted);">—</span>'}</td>
-            <td>
+            <td data-label="Categoría">${esc(p.categoria?.name || '—')}</td>
+            <td data-label="Precio"><strong>$${formatearPrecio(p.precio)}</strong></td>
+            <td data-label="Stock"><span class="${stockClase}">${esc(p.stock)}</span></td>
+            <td data-label="Variantes">${nroVariantes > 0 ? esc(nroVariantes) : '<span style="color:var(--text-muted);">—</span>'}</td>
+            <td data-label="Visible">
                 <label class="admin-check">
                     <input type="checkbox" data-toggle-activo="${esc(p.id)}" ${p.activo ? 'checked' : ''} aria-label="Activar/desactivar ${esc(p.nombre)}">
                 </label>
@@ -274,8 +273,7 @@ function abrirModalProducto(idExistente) {
                         <i class="fa-solid fa-cloud-arrow-up"></i> Subir imagen
                         <input type="file" id="prdImagenArchivo" accept="image/jpeg,image/png,image/webp" multiple>
                     </label>
-                    <input type="url" id="prdImagenUrl" placeholder="…o pegá una URL de imagen (ej: de googleusercontent.com)"
-                           style="flex:1; min-width:220px; padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+                    <input type="url" id="prdImagenUrl" class="admin-url-input" placeholder="…o pegá una URL de imagen (ej: de googleusercontent.com)">
                     <button type="button" class="btn btn-sm" id="btnAgregarUrlImagen">Agregar URL</button>
                 </div>
             </div>

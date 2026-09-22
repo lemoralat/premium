@@ -41,18 +41,15 @@ function pintar(contenedor) {
         : todos.filter((o) => o.estado === estado).length;
 
     contenedor.innerHTML = `
-        <div class="admin-filtros">
+        <div class="admin-filtros admin-filtros-chips">
             <button type="button" class="admin-chip ${filtroEstado === 'Todos' ? 'active' : ''}" data-estado="Todos">Todos (${contar('Todos')})</button>
             ${ESTADOS.map((e) => `<button type="button" class="admin-chip ${filtroEstado === e ? 'active' : ''}" data-estado="${esc(e)}">${esc(e)} (${contar(e)})</button>`).join('')}
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-            <div style="flex:1; min-width:220px; max-width:360px;">
-                <input type="text" id="pedBuscar" placeholder="Buscar por número o cliente…"
-                       value="${esc(busqueda)}"
-                       style="width:100%; padding:0.55rem 0.7rem; border:1px solid var(--border); border-radius:8px; font-family:inherit;">
-            </div>
-            <p style="color:var(--text-muted); margin:0; font-size:0.85rem;">${filtrados.length} pedido(s)</p>
+        <div class="admin-toolbar">
+            <input type="text" id="pedBuscar" class="admin-busqueda" placeholder="Buscar por número o cliente…"
+                   value="${esc(busqueda)}">
+            <p>${filtrados.length} pedido(s)</p>
         </div>
 
         ${filtrados.length === 0 ? '<div class="admin-card"><div class="admin-empty"><i class="fa-solid fa-receipt"></i><h3>Sin pedidos</h3><p>No se encontraron pedidos con estos filtros.</p></div></div>' : `
@@ -139,24 +136,23 @@ function filaPedido(o) {
 
     return `
         <tr ${expandido ? 'class="admin-fila-activa"' : ''}>
-            <td>
+            <td class="td-expandir">
                 <button type="button" class="btn btn-sm btn-outline" data-expandir="${esc(o.id)}" aria-label="Ver detalle">
                     <i class="fa-solid ${expandido ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
                 </button>
             </td>
-            <td><strong>${esc(o.numero)}</strong></td>
-            <td>${esc(formatearFechaHora(o.created_at))}</td>
-            <td>${esc(cliente?.nombre || '—')}</td>
-            <td>${esc(cantidad)}</td>
-            <td><strong>$${formatearPrecio(o.total)}</strong>
+            <td data-label="Número"><strong>${esc(o.numero)}</strong></td>
+            <td data-label="Fecha">${esc(formatearFechaHora(o.created_at))}</td>
+            <td data-label="Cliente">${esc(cliente?.nombre || '—')}</td>
+            <td data-label="Productos">${esc(cantidad)}</td>
+            <td data-label="Total"><strong>$${formatearPrecio(o.total)}</strong>
                 ${o.descuento > 0 ? `<br><span style="color:var(--success); font-size:0.75rem;">-$${formatearPrecio(o.descuento)}</span>` : ''}
             </td>
-            <td>${o.cupon && o.cupon !== 'NINGUNO'
+            <td data-label="Cupón">${o.cupon && o.cupon !== 'NINGUNO'
                 ? `<span class="estado-badge estado-pendiente">${esc(o.cupon)}</span>`
                 : '<span style="color:var(--text-muted);">—</span>'}</td>
-            <td>
-                <select class="admin-estado-select" data-estado-cambiar="${esc(o.id)}" data-anterior="${esc(o.estado)}"
-                        style="padding:0.4rem 0.6rem; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:0.8rem;">
+            <td data-label="Estado">
+                <select class="admin-estado-select" data-estado-cambiar="${esc(o.id)}" data-anterior="${esc(o.estado)}">
                     ${ESTADOS.map((e) => `<option value="${esc(e)}" ${e === o.estado ? 'selected' : ''}>${esc(e)}</option>`).join('')}
                 </select>
             </td>
@@ -164,12 +160,12 @@ function filaPedido(o) {
         ${expandido ? `
         <tr class="admin-fila-expandida">
             <td colspan="8">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.25rem;" class="pedido-detalle-grid">
+                <div class="pedido-detalle-grid">
                     <div>
                         <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Productos</h4>
                         <div class="admin-pedido-items">
                             ${items.map((i) => `
-                                <div style="display:flex; justify-content:space-between; gap:1rem; padding:0.3rem 0; border-bottom:1px dashed var(--border);">
+                                <div class="admin-pedido-item">
                                     <span>${esc(i.quantity)} × ${esc(i.nombre)}
                                         ${i.variante_texto ? `<span style="color:var(--text-muted); font-size:0.75rem;">(${esc(i.variante_texto)})</span>` : ''}
                                     </span>

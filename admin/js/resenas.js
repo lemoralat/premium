@@ -14,8 +14,8 @@ export async function renderizar(contenedor) {
     reseñas = data || [];
 
     contenedor.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-            <p style="color:var(--text-muted); margin:0;">Testimonios que se muestran en el inicio</p>
+        <div class="admin-toolbar">
+            <p>Testimonios que se muestran en el inicio</p>
             <button type="button" class="btn btn-primary" id="btnNuevaResena">
                 <i class="fa-solid fa-plus"></i> Nueva reseña
             </button>
@@ -45,17 +45,17 @@ function filas() {
     }
     return reseñas.map((r) => `
         <tr>
-            <td>
+            <td class="td-principal">
                 <div style="display:flex; align-items:center; gap:0.6rem;">
                     <img src="${esc(urlPublica(r.storage_path || r.external_url || ''))}" alt=""
-                         style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid var(--border);">
+                         style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid var(--border); flex-shrink:0;">
                     <strong>${esc(r.nombre)}</strong>
                 </div>
             </td>
-            <td><span style="color:var(--warning);">${'★'.repeat(r.valoracion)}${'☆'.repeat(5 - r.valoracion)}</span></td>
-            <td style="max-width:320px;">${esc(recCorto(r.resena))}</td>
-            <td>${esc(String(r.fecha || ''))}</td>
-            <td>${r.activo
+            <td data-label="Valoración"><span style="color:var(--warning);">${'★'.repeat(r.valoracion)}${'☆'.repeat(5 - r.valoracion)}</span></td>
+            <td data-label="Texto">${esc(recCorto(r.resena))}</td>
+            <td data-label="Fecha">${esc(String(r.fecha || ''))}</td>
+            <td data-label="Estado">${r.activo
                 ? '<span class="estado-badge estado-entregado">Activa</span>'
                 : '<span class="estado-badge estado-cancelado">Inactiva</span>'}</td>
             <td class="td-acciones">
@@ -88,8 +88,8 @@ function abrirModalResena(idExistente) {
                         <i class="fa-solid fa-cloud-arrow-up"></i> Elegir foto
                         <input type="file" id="rsnArchivo" accept="image/jpeg,image/png,image/webp">
                     </label>
-                    <input type="url" id="rsnUrl" placeholder="…o pegá una URL de foto"
-                           value="${esc(reseña && !reseña.storage_path ? (reseña.external_url || '') : '')}" style="flex:1; min-width:220px; padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+                    <input type="url" id="rsnUrl" class="admin-url-input" placeholder="…o pegá una URL de foto"
+                           value="${esc(reseña && !reseña.storage_path ? (reseña.external_url || '') : '')}">
                 </div>
             </div>
 

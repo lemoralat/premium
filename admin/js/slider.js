@@ -14,8 +14,8 @@ export async function renderizar(contenedor) {
     slides = data || [];
 
     contenedor.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-            <p style="color:var(--text-muted); margin:0;">Portada del inicio. Sin slides activos, la sección desaparece de la tienda.</p>
+        <div class="admin-toolbar">
+            <p>Portada del inicio. Sin slides activos, la sección desaparece de la tienda.</p>
             <button type="button" class="btn btn-primary" id="btnNuevoSlide">
                 <i class="fa-solid fa-plus"></i> Nuevo slide
             </button>
@@ -45,17 +45,17 @@ function filas() {
     }
     return slides.map((s) => `
         <tr>
-            <td style="width:110px;">
+            <td class="td-principal">
                 <img src="${esc(urlPublica(s.storage_path || s.external_url))}" alt=""
-                     style="width:100px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+                     style="width:100px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border); flex-shrink:0;">
             </td>
-            <td>
+            <td data-label="Título">
                 <strong>${esc(s.titulo)}</strong>
                 ${s.texto_soporte ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(recCorto(s.texto_soporte))}</span>` : ''}
                 ${s.link ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(s.link)}</span> ${s.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
             </td>
-            <td>${esc(s.position)}</td>
-            <td>${s.activo
+            <td data-label="Orden">${esc(s.position)}</td>
+            <td data-label="Estado">${s.activo
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
@@ -91,8 +91,8 @@ function abrirModalSlide(idExistente) {
                             <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
                             <input type="file" id="sldArchivo" accept="image/jpeg,image/png,image/webp">
                         </label>
-                        <div class="admin-field" style="flex:1; min-width:200px;">
-                            <input type="url" id="sldUrlExterna" placeholder="…o pegá una URL de imagen externa"
+                        <div class="admin-field admin-url-field">
+                            <input type="url" id="sldUrlExterna" class="admin-url-input" placeholder="…o pegá una URL de imagen externa"
                                    value="${esc(slide && !slide.storage_path ? (slide.external_url || '') : '')}">
                             <span class="hint">Si elegís archivo, este campo se ignora.</span>
                         </div>

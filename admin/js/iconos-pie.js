@@ -14,8 +14,8 @@ export async function renderizar(contenedor) {
     iconos = data || [];
 
     contenedor.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-            <p style="color:var(--text-muted); margin:0;">Iconos que se muestran antes del footer en el inicio</p>
+        <div class="admin-toolbar">
+            <p>Iconos que se muestran antes del footer en el inicio</p>
             <button type="button" class="btn btn-primary" id="btnNuevoIcono">
                 <i class="fa-solid fa-plus"></i> Nuevo icono
             </button>
@@ -45,16 +45,16 @@ function filas() {
     }
     return iconos.map((i) => `
         <tr>
-            <td>
+            <td class="td-principal">
                 <div style="display:flex; align-items:center; gap:0.6rem;">
                     <img src="${esc(urlPublica(i.storage_path || i.external_url || ''))}" alt=""
-                         style="width:34px; height:34px; object-fit:contain; border:1px solid var(--border); background:#fff;">
+                         style="width:34px; height:34px; object-fit:contain; border:1px solid var(--border); background:#fff; flex-shrink:0;">
                     <strong>${esc(i.titulo)}</strong>
                 </div>
             </td>
-            <td style="max-width:320px;">${esc(i.descripcion || '')}</td>
-            <td>${esc(i.position ?? 0)}</td>
-            <td>${i.activo
+            <td data-label="Descripción">${esc(i.descripcion || '')}</td>
+            <td data-label="Orden">${esc(i.position ?? 0)}</td>
+            <td data-label="Estado">${i.activo
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
@@ -83,8 +83,8 @@ function abrirModalIcono(idExistente) {
                         <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
                         <input type="file" id="icoArchivo" accept="image/jpeg,image/png,image/webp">
                     </label>
-                    <input type="url" id="icoUrl" placeholder="…o pegá una URL de imagen"
-                           value="${esc(icono && !icono.storage_path ? (icono.external_url || '') : '')}" style="flex:1; min-width:220px; padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+                    <input type="url" id="icoUrl" class="admin-url-input" placeholder="…o pegá una URL de imagen"
+                           value="${esc(icono && !icono.storage_path ? (icono.external_url || '') : '')}">
                 </div>
             </div>
 

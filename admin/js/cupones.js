@@ -16,8 +16,8 @@ export async function renderizar(contenedor) {
     cuponesCargados = true;
 
     contenedor.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-            <p style="color:var(--text-muted); margin:0;">Códigos de descuento manuales</p>
+        <div class="admin-toolbar">
+            <p>Códigos de descuento manuales</p>
             <button type="button" class="btn btn-primary" id="btnNuevoCupon">
                 <i class="fa-solid fa-plus"></i> Nuevo cupón
             </button>
@@ -50,10 +50,10 @@ function filas() {
         const vencido = c.expira < hoy;
         return `
         <tr>
-            <td><strong>${esc(c.codigo)}</strong></td>
-            <td>${esc(c.porcentaje)}%</td>
-            <td>${esc(fechaInput(c.expira))}</td>
-            <td>
+            <td data-label="Código"><strong>${esc(c.codigo)}</strong></td>
+            <td data-label="Descuento">${esc(c.porcentaje)}%</td>
+            <td data-label="Vence">${esc(fechaInput(c.expira))}</td>
+            <td data-label="Vigencia">
                 ${!c.activo
                     ? '<span class="estado-badge estado-cancelado">Inactivo</span>'
                     : vencido

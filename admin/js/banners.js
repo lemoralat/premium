@@ -14,8 +14,8 @@ export async function renderizar(contenedor) {
     banners = data || [];
 
     contenedor.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
-            <p style="color:var(--text-muted); margin:0;">El último banner activo es el que va en el carrito.</p>
+        <div class="admin-toolbar">
+            <p>El último banner activo es el que va en el carrito.</p>
             <button type="button" class="btn btn-primary" id="btnNuevoBanner">
                 <i class="fa-solid fa-plus"></i> Nuevo banner
             </button>
@@ -47,18 +47,18 @@ function filas() {
         const soloImagen = !b.logo_url && !b.logo_path && !b.badge && !b.titulo && !b.boton;
         return `
         <tr>
-            <td style="width:130px;">
+            <td class="td-principal">
                 <img src="${esc(urlPublica(b.imagen_path || b.imagen_url))}" alt=""
-                     style="width:120px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+                     style="width:120px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); flex-shrink:0;">
             </td>
-            <td>
+            <td data-label="Contenido">
                 ${soloImagen
                     ? '<span class="estado-badge estado-procesando" style="margin-bottom:0.3rem;">Solo imagen</span>'
                     : `<strong>${esc(b.titulo)}</strong>${b.badge ? ` · <span class="estado-badge estado-entregado">${esc(b.badge)}</span>` : ''}`}
                 ${b.link ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(b.link)}</span> ${b.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
             </td>
-            <td>${esc(b.position)}</td>
-            <td>${b.activo
+            <td data-label="Orden">${esc(b.position)}</td>
+            <td data-label="Estado">${b.activo
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
@@ -90,7 +90,7 @@ function abrirModalBanner(idExistente) {
                             <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
                             <input type="file" id="bnrImagenArchivo" accept="image/jpeg,image/png,image/webp">
                         </label>
-                        <input type="url" id="bnrImagenUrl" class="admin-input-inline" placeholder="…o pegá una URL externa"
+                        <input type="url" id="bnrImagenUrl" class="admin-url-input" placeholder="…o pegá una URL externa"
                                value="${esc(banner && !banner.imagen_path ? (banner.imagen_url || '') : '')}">
                     </div>
                 </div>
