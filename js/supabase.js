@@ -129,8 +129,13 @@ export async function cargarProductos() {
 // Fila de "products" (con joins) → objeto con el contrato de js/productos.json
 function mapaProducto(p) {
     const imagenes = Array.isArray(p.imagenes) ? p.imagenes : [];
-    const principal = imagenes.find(i => i.es_principal) || imagenes[0] || null;
-    const galeria = imagenes.filter(i => principal && i.id !== principal.id);
+    // Orden estable por posición (el panel las numera 0..n-1).
+    const ordenadas = [...imagenes].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    const principal = ordenadas.find(i => i.es_principal) || ordenadas[0] || null;
+    // Contrato del frontend: galeria[0] es la imagen principal (ver js/productos.json).
+    const galeria = principal
+        ? [principal, ...ordenadas.filter(i => i.id !== principal.id)]
+        : ordenadas;
 
     const opciones = Array.isArray(p.opciones) ? p.opciones : [];
     const variantes = opciones.length > 0

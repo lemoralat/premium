@@ -182,7 +182,9 @@ function abrirModalProducto(idExistente) {
     if (variantesModal.length === 0) variantesModal = [{ opcion: '', valores: '' }];
 
     // Estado inicial de imágenes
-    imagenesModal = (producto?.imagenes || []).map((i) => ({
+    imagenesModal = [...(producto?.imagenes || [])]
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map((i) => ({
         dbId: i.id,
         storage_path: i.storage_path,
         external_url: i.external_url,
