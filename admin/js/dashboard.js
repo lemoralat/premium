@@ -61,7 +61,7 @@ export async function renderizar(contenedor) {
             ${tablaOrdenes(ordenes)}
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.25rem;" class="dashboard-dos-col">
+        <div class="dashboard-dos-col">
             <div class="admin-card">
                 <h2>Stock bajo</h2>
                 <p class="card-sub">Productos con menos de 5 unidades disponibles</p>

@@ -182,6 +182,19 @@ img { max-width: 100%; }
     margin-bottom: 1.25rem;
 }
 
+/* Grilla de dos columnas del dashboard: min-width 0 en las cajas para que
+   las tablas scrolleen dentro de su contenedor (overflow-x) en vez de salir. */
+.dashboard-dos-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.dashboard-dos-col > .admin-card {
+    min-width: 0;
+    margin-bottom: 0;
+}
+
 .admin-card h2 {
     margin: 0 0 0.25rem;
     font-size: 1.05rem;
@@ -753,6 +766,8 @@ body.admin-modal-abierto { overflow: hidden; }
     .admin-content { padding: 1rem; }
 
     .admin-form-grid { grid-template-columns: 1fr; }
+
+    .dashboard-dos-col { grid-template-columns: 1fr; }
 
     .admin-repeater-row { grid-template-columns: 1fr; }
 }
