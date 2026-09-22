@@ -22,7 +22,13 @@
 --   3) En Authentication → Sign In / Providers: desactivar "Allow new users
 --      to sign up" (evita que cualquiera cree una cuenta; aunque la creen,
 --      ya NO tendría permisos de admin sin estar en `admins`).
+--
+-- RE-EJECUTABLE: cada create policy dropea antes el mismo nombre y todo corre
+-- dentro de una transacción (begin/commit): si algo falla, revierte completo y
+-- no queda un estado parcial. Podés correrla tantas veces como necesites.
 -- ============================================================================
+
+begin;
 
 -- ----------------------------------------------------------------------------
 -- 1) ADMINISTRADORES EXPLÍCITOS (V-1)
@@ -74,12 +80,14 @@ comment on column public.profiles.role is 'Rol informativo (cliente/admin). El a
 create unique index if not exists orders_token_unique_idx on public.orders (token);
 
 drop policy if exists "Pedidos: acceso de administrador" on public.orders;
+drop policy if exists "Pedidos: lectura de administrador" on public.orders;
 create policy "Pedidos: lectura de administrador"
     on public.orders for select
     to authenticated
     using (public.es_admin());
 
 drop policy if exists "Líneas pedido: acceso de administrador" on public.order_items;
+drop policy if exists "Líneas pedido: lectura de administrador" on public.order_items;
 create policy "Líneas pedido: lectura de administrador"
     on public.order_items for select
     to authenticated
@@ -95,6 +103,7 @@ revoke insert, update, delete on public.orders, public.order_items from anon, au
 -- Le devolvemos SOLO esa columna a `authenticated` y solo si es admin:
 -- no puede tocar cliente, montos, cupón ni token (privilegio a nivel columna).
 grant update (estado) on public.orders to authenticated;
+drop policy if exists "Pedidos: cambio de estado por administrador" on public.orders;
 create policy "Pedidos: cambio de estado por administrador"
     on public.orders for update
     to authenticated
@@ -391,3 +400,5 @@ create policy "Imágenes: eliminación solo admin"
     to authenticated
     using (bucket_id in ('products', 'branding', 'slider', 'banners', 'reviews')
         and public.es_admin());
+
+commit;
