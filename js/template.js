@@ -170,9 +170,17 @@ function aplicarDisenoGlobal() {
         document.querySelector('meta[name="twitter:image"]')?.setAttribute('content', CONFIG_DISENO.ogImageUrl);
     }
     const nombreSitio = obtenerNombreSitio();
-    document.querySelector('meta[property="og:title"]')?.setAttribute('content', nombreSitio);
-    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', nombreSitio);
-    document.title = `${nombreSitio} - Productos de Calidad`;
+    // Reemplaza la marca en metas y título preservando los prefijos específicos
+    // de página ("Contacto -", "Mis Favoritos -", "404 - ...").
+    document.querySelectorAll('meta[property="og:title"], meta[name="twitter:title"]').forEach((el) => {
+        const contenido = el.getAttribute('content') || '';
+        if (contenido.includes('Mi Tienda Online')) {
+            el.setAttribute('content', contenido.replace('Mi Tienda Online', nombreSitio));
+        }
+    });
+    if (document.title.includes('Mi Tienda Online')) {
+        document.title = document.title.replace('Mi Tienda Online', nombreSitio);
+    }
 }
 
 // Oscurece (o aclara con factor > 1) un color hex #RRGGBB.
