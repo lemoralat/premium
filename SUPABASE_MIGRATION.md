@@ -69,7 +69,7 @@ Reglas de oro:
 | Tabla | Propósito | Notas |
 |---|---|---|
 | `categories` | Categorías del catálogo | `name`, `slug`, `position`, `active` |
-| `products` | Productos | `id` **integer identity** (conserva los ids 1–16 del JSON original), `nombre`, `descripcion`, `descripcion_detallada`, `precio` (numeric), `precio_anterior`, `stock`, `caracteristicas` (jsonb array), `activo`, `category_id` FK → categories (ON DELETE SET NULL) |
+| `products` | Productos | `id` **integer identity** (conserva los ids 1–16 del JSON original), `nombre`, `descripcion`, `descripcion_detallada`, `precio` (numeric), `precio_anterior`, `stock`, `caracteristicas` (jsonb array), `activo`, `destacado` (default false: se muestra primero en el home mezclando categorías), `category_id` FK → categories (ON DELETE SET NULL) |
 | `product_options` | Variantes (p. ej. "Talles") | FK → products, cascada al borrar producto |
 | `product_option_values` | Valores de variante (p. ej. "40, 41, 42") | FK → product_options, cascada |
 | `product_images` | Imágenes (1 principal + galería) | `storage_path` **o** `external_url` (restricción `num_nonnulls <= 1`), `es_principal`, `position`, FK cascada |
@@ -212,6 +212,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0003_storage.sql` (buckets y políticas)
    - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
    - `migrations/0005_enlace_target.sql` (columna `target` en `sliders` y `banners`: `interno` → `_self` default, `externo` → `_blank`)
+   - `migrations/0006_productos_destacado.sql` (columna `destacado` en `products`, default false)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).

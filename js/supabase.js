@@ -107,7 +107,7 @@ export async function cargarProductos() {
             .from('products')
             .select(`
                 id, nombre, descripcion, descripcion_detallada, precio, precio_anterior,
-                stock, caracteristicas, activo,
+                stock, caracteristicas, activo, destacado,
                 categoria:categories(id, name),
                 opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
                 imagenes:product_images(id, storage_path, external_url, es_principal, position)
@@ -154,6 +154,7 @@ function mapaProducto(p) {
         variantes,
         stock: Number(p.stock),
         caracteristicas: Array.isArray(p.caracteristicas) ? p.caracteristicas : [],
+        destacado: Boolean(p.destacado),
         carpetaImagenes: '', // ya no aplica: el Storage maneja las rutas
         imagen: imagenUrl || 'img/productos/placeholder.png',
         galeria: galeriaUrls.length > 0 ? galeriaUrls : (imagenUrl ? [imagenUrl] : [])

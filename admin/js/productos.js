@@ -22,7 +22,7 @@ export async function renderizar(contenedor) {
     const [productosR, categoriasR] = await Promise.all([
         sb.from('products').select(`
             id, nombre, descripcion, descripcion_detallada, precio, precio_anterior, stock,
-            caracteristicas, activo,
+            caracteristicas, activo, destacado,
             categoria:categories(id, name),
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
             imagenes:product_images(id, storage_path, external_url, es_principal, position)
@@ -131,6 +131,7 @@ function filaProducto(p) {
                          style="width:46px; height:46px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
                     <div>
                         <strong>${esc(p.nombre)}</strong>
+                        ${p.destacado ? ' <span class="estado-badge estado-procesando" style="margin-left:0.3rem;">⭐ Destacado</span>' : ''}
                         ${p.precio_anterior != null && Number(p.precio_anterior) > Number(p.precio)
                             ? `<span style="color:var(--text-muted); font-size:0.75rem;"> antes $${formatearPrecio(p.precio_anterior)}</span>`
                             : ''}
@@ -242,6 +243,12 @@ function abrirModalProducto(idExistente) {
                     <label class="admin-check">
                         <input type="checkbox" id="prdActivo" ${producto?.activo === false ? '' : 'checked'}>
                         Producto activo (visible en la tienda)
+                    </label>
+                </div>
+                <div class="admin-field full" style="margin-top:-0.75rem;">
+                    <label class="admin-check">
+                        <input type="checkbox" id="prdDestacado" ${producto?.destacado ? 'checked' : ''}>
+                        Producto destacado <span class="hint">(se muestra primero en el home, mezclando categorías)</span>
                     </label>
                 </div>
             </div>
@@ -366,6 +373,7 @@ function abrirModalProducto(idExistente) {
             caracteristicas: $('#prdCaracteristicas').value
                 .split('\n').map((x) => x.trim()).filter(Boolean),
             activo: $('#prdActivo').checked,
+            destacado: $('#prdDestacado').checked,
             category_id: categoriaValue ? Number(categoriaValue) : null
         };
 
