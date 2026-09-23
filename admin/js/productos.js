@@ -27,7 +27,7 @@ export async function renderizar(contenedor) {
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
             imagenes:product_images(id, storage_path, external_url, es_principal, position)
         `).order('id', { ascending: true }),
-        sb.from('categories').select('id, name, active').eq('active', true).order('position', { ascending: true })
+        sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true })
     ]);
 
     if (productosR.error) throw productosR.error;
@@ -219,14 +219,25 @@ function abrirModalProducto(idExistente) {
             </div>
 
             <div class="admin-form-grid">
-                <div class="admin-field">
+                <div class="admin-field full">
                     <label for="prdCategoria">Categoría</label>
-                    <select id="prdCategoria">
-                        <option value="">Sin categoría</option>
-                        ${categorias.map((c) => `
-                            <option value="${esc(c.id)}" ${producto?.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>
-                        `).join('')}
-                    </select>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <select id="prdCategoria" style="flex:1;">
+                            <option value="">Sin categoría</option>
+                            ${categorias.map((c) => `
+                                <option value="${esc(c.id)}" ${producto?.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>
+                            `).join('')}
+                        </select>
+                        <button type="button" class="btn btn-sm btn-outline" id="btnCrearCategoria" title="Crear categoría nueva">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="nuevaCategoriaBox" hidden style="margin-top:0.6rem; gap:0.5rem; align-items:center;">
+                        <input type="text" id="nuevaCatNombre" maxlength="60" placeholder="Nombre de la categoría… (el enlace se genera solo)" style="flex:1; padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+                        <button type="button" class="btn btn-sm btn-primary" id="btnGuardarNuevaCat">Crear</button>
+                        <button type="button" class="btn btn-sm" id="btnCancelarNuevaCat">Cancelar</button>
+                    </div>
+                    <span class="hint">Si la categoría ya existe, quedará seleccionada sin duplicarla.</span>
                 </div>
                 <div class="admin-field">
                     <label for="prdStock">Stock (unidades) *</label>
@@ -289,6 +300,24 @@ function abrirModalProducto(idExistente) {
 
     renderVariantes();
     renderImagenes();
+
+    // Crear categoría inline (sin anidar modales: el producto ya está en el
+    // modal; un segundo modal lo reemplazaría y perdería los cambios).
+    const catBox = $('#nuevaCategoriaBox');
+    const catInput = $('#nuevaCatNombre');
+    $('#btnCrearCategoria').addEventListener('click', () => {
+        catBox.hidden = false;
+        catBox.style.display = 'flex';
+        catInput.focus();
+    });
+    $('#btnCancelarNuevaCat').addEventListener('click', () => ocultarCajaNuevaCategoria());
+    catInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // no debe enviar el formulario del producto
+            crearCategoriaInline($('#prdCategoria'));
+        }
+    });
+    $('#btnGuardarNuevaCat').addEventListener('click', () => crearCategoriaInline($('#prdCategoria')));
 
     $('#btnAgregarVariante').addEventListener('click', () => {
         capturarVariantes();
@@ -386,6 +415,82 @@ function abrirModalProducto(idExistente) {
             .then(() => { cerrarModal(); renderizar(contenedorActual || $('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
     });
+}
+
+// ============================================================================
+// Crear categoría desde el formulario de producto (inline, sin anidar modales)
+// ============================================================================
+
+// Mismo algoritmo que slugificar() de la tienda (js/utils.js): el slug generado
+// acá coincide con los enlaces que arma el menú de la tienda (index#cat-slug).
+function slugCategoria(texto) {
+    return String(texto ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'seccion';
+}
+
+function ocultarCajaNuevaCategoria() {
+    const box = $('#nuevaCategoriaBox');
+    if (!box) return;
+    box.hidden = true;
+    box.style.display = '';
+    const input = $('#nuevaCatNombre');
+    if (input) input.value = '';
+}
+
+async function crearCategoriaInline(selectEl) {
+    const nombre = $('#nuevaCatNombre').value.trim();
+    if (!nombre) {
+        toast('El nombre es obligatorio.', 'error');
+        return;
+    }
+
+    const slug = slugCategoria(nombre);
+
+    // Si ya existe una categoría activa con ese nombre/slug, no se duplica:
+    // solo se deja seleccionada en el formulario.
+    const nombreLower = nombre.toLowerCase();
+    const existente = categorias.find((c) => c.name.toLowerCase() === nombreLower || c.slug === slug);
+    if (existente) {
+        selectEl.value = String(existente.id);
+        ocultarCajaNuevaCategoria();
+        toast(`Ya existía "${existente.name}"; quedó seleccionada.`);
+        return;
+    }
+
+    const btn = $('#btnGuardarNuevaCat');
+    conCarga(btn, crearCategoria({ name: nombre, slug, position: categorias.length + 1, active: true }))
+        .then((nueva) => {
+            selectEl.innerHTML = `<option value="">Sin categoría</option>` + categorias.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+            selectEl.value = String(nueva.id);
+            ocultarCajaNuevaCategoria();
+            toast('Categoría creada y seleccionada.');
+        })
+        .catch((error) => toast(error.message, 'error'));
+}
+
+async function crearCategoria(payload) {
+    const sb = await clienteAdmin();
+    const { data, error } = await sb.from('categories').insert(payload).select('id').single();
+    if (error) {
+        // 23505 = unique (name/slug). Puede existir una categoría inactiva con
+        // el mismo slug, que no aparece en la lista local (solo se cargan activas).
+        if (error.code === '23505') {
+            throw new Error('Ya existe una categoría con ese nombre (puede estar inactiva). Creala o editá en la sección Categorías.');
+        }
+        throw new Error(error.message);
+    }
+
+    // Refresca las categorías activas (mismo query de renderizar) para que el
+    // formulario y los filtros usen la lista actualizada.
+    const { data: lista, error: errorLista } = await sb.from('categories')
+        .select('id, name, slug, active').eq('active', true).order('position', { ascending: true });
+    if (errorLista) throw new Error(errorLista.message);
+    categorias = lista || [];
+    return data;
 }
 
 function capturarVariantes() {
