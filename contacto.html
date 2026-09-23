@@ -68,17 +68,16 @@
                 </form>
             </div>
 
-            <!-- Columna Mapa -->
-            <div class="contact-map-container">
+            <!-- Columna Mapa (ubicación desde Configuración → Datos generales;
+                 vacía = el bloque no se muestra, sin valores por defecto) -->
+            <div class="contact-map-container sin-ubicacion">
                 <h2><i class="fa-solid fa-location-dot"></i> Nuestra Ubicación</h2>
                 <div class="contact-map">
-                    <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1702.3531941344952!2d-64.18891627807622!3d-31.42221464897834!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9432a3002b1d71e9%3A0x673a61661f05e8ff!2sEdificio%20inteligente!5e0!3m2!1ses!2sar!4v1775362819600!5m2!1ses!2sar"
-                        width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                    <iframe id="contactMapFrame" src="" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
                         referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
-                <div class="contact-address">
-                    <p><i class="fa-solid fa-map-pin"></i> Boulevard San Juan, Obispo Trejo &, Córdoba</p>
+                <div class="contact-address" hidden>
+                    <p><i class="fa-solid fa-map-pin"></i> <span id="contactAddressText"></span></p>
                 </div>
             </div>
 

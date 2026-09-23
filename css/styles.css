@@ -1205,6 +1205,11 @@ span {
     height: 100%;
 }
 
+/* Sin ubicación configurada (Configuración → Datos generales): se oculta el bloque. */
+.contact-map-container.sin-ubicacion {
+    display: none;
+}
+
 .contact-map-container h2 {
     line-height: 1.2;
     color: var(--text-color);

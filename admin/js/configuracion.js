@@ -39,8 +39,9 @@ export async function renderizar(contenedor) {
                         <input type="email" id="cfgEmail" value="${esc(s.email_contact || '')}">
                     </div>
                     <div class="admin-field full">
-                        <label for="cfgAddress">Dirección / Zona</label>
-                        <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="ej: Ciudad de Córdoba, Argentina">
+                        <label for="cfgAddress">Ubicación del negocio</label>
+                        <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="Dirección como texto o URL de Google Maps">
+                        <span class="hint">Se muestra en la página de contacto (mapa + dirección). Acepta: una dirección como texto, una URL larga de Google Maps (Compartir → copiar enlace) o un mapa embebido (Compartir → «Insertar un mapa» → copiar el <code>src</code> del iframe). Vacío = el bloque no se muestra. Los links cortos (maps.app.goo.gl) no se pueden incrustar.</span>
                     </div>
                     <div class="admin-field full">
                         <label>Redes sociales del header</label>

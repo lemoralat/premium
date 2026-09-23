@@ -80,7 +80,7 @@ Reglas de oro:
 | `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo` |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
 | `order_items` | Líneas de pedido | `product_id` (ON DELETE SET NULL: el pedido histórico sobrevive al borrado del producto), `nombre` (congelado al momento de la compra), `variante_texto`, `quantity`, `precio_unitario` |
-| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address`, redes sociales |
+| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address` (ubicación del negocio: dirección como texto o URL de Google Maps, usada en `contacto.html`), redes sociales |
 | `profiles` | Perfil del admin (una fila por usuario) | `full_name`, `role`, `created_at`. Se crea automáticamente al registrarse por el trigger `handle_new_user` |
 
 ### 3.2 Triggers y funciones
@@ -244,6 +244,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 9. **Preguntas frecuentes**: con la tabla vacía, `faq.html` muestra el contenido estático actual; al crear la primera pregunta activa pasa a la lista dinámica (con su ícono) y el acordeón sigue funcionando (delegación de eventos); si se ocultan todas, la sección desaparece.
 10. **Seguridad**: sin sesión, la API anon NO debe poder leer `orders` ni escribir en `products` (probarlo desde una pestaña anónima).
 11. **Recuperación de contraseña**: en `login.html` → "¿Olvidaste tu contraseña?" con el correo admin → el enlace llega a `admin/recuperar.html` → fijar una contraseña nueva → volver a iniciar sesión con la nueva.
+12. **Ubicación del negocio** (`contacto.html`): con `address` vacío el bloque "Nuestra Ubicación" no se muestra (sin valores por defecto); con una dirección como texto muestra el texto bajo el mapa y un mapa derivado (`maps?q=...&output=embed`); con una URL de Google Maps larga o un embed muestra el mapa exacto y el nombre del lugar bajo el mapa. Los links cortos (`maps.app.goo.gl`) se muestran como texto.
 
 ---
 
@@ -266,7 +267,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 1. Cargar las credenciales reales y desplegar (sección 5 y 8).
 2. Crear la cuenta de admin y entrar a `/admin`.
 3. Re-subir progresivamente las imágenes del catálogo al Storage desde el panel (con la opción "elegir imagen / reemplazar").
-4. Completar datos en **Configuración**: redes sociales, titular real de la transferencia, dirección/email de contacto.
+4. Completar datos en **Configuración**: redes sociales, titular real de la transferencia, ubicación del negocio (texto o URL de Google Maps) y email de contacto.
 5. Opcional: activar *Email Templates* en Auth (redactar el correo de recuperación y verificar remitente).
 6. Revisar rendimiento: índice actualizado por `created_at` en `orders`; si crece el histórico, paginar el listado del panel.
 
