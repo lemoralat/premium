@@ -121,7 +121,9 @@ function pintar(contenedor) {
 function imagenPrincipalDe(p) {
     const imgs = Array.isArray(p.imagenes) ? p.imagenes : [];
     const principal = imgs.find((i) => i.es_principal) || imgs[0] || null;
-    return urlPublica(principal ? (principal.storage_path || principal.external_url) : '');
+    // Sin imágenes → placeholder local (img/placeholder.png), el mismo que se
+    // muestra por defecto al crear un producto nuevo.
+    return urlPublica(principal ? (principal.storage_path || principal.external_url) : '') || '../img/placeholder.png';
 }
 
 function filaProducto(p) {
@@ -630,7 +632,7 @@ function renderImagenes() {
                 <div class="admin-img-card ${i.esPrincipal ? 'principal' : ''}" data-imagen-idx="${esc(i.idx)}">
                     ${i.file
                         ? `<img src="${esc(URL.createObjectURL(i.file))}" alt="">`
-                        : `<img src="${esc(urlPublica(i.storage_path || i.external_url))}" alt="">`}
+                        : `<img src="${esc(urlPublica(i.storage_path || i.external_url) || '../img/placeholder.png')}" alt="">`}
                     <div class="admin-img-acciones">
                         <label style="display:flex; align-items:center; gap:0.3rem; color:#fff; font-size:0.68rem;">
                             <input type="radio" name="imagenPrincipal" data-campo="principal" ${i.esPrincipal ? 'checked' : ''}>

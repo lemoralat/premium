@@ -239,7 +239,7 @@ function mapaProducto(p) {
         caracteristicas: Array.isArray(p.caracteristicas) ? p.caracteristicas : [],
         destacado: Boolean(p.destacado),
         carpetaImagenes: '', // ya no aplica: el Storage maneja las rutas
-        imagen: imagenUrl || 'img/productos/placeholder.png',
+        imagen: imagenUrl || 'img/placeholder.png',
         galeria: galeriaUrls.length > 0 ? galeriaUrls : (imagenUrl ? [imagenUrl] : [])
     };
 }
