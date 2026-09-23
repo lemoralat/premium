@@ -13,6 +13,28 @@
 -- y la URL pública se deriva a render-time con storage.getPublicUrl().
 -- ============================================================================
 
+-- ----------------------------------------------------------------------------
+-- Función de seguridad public.es_admin(): se define acá porque las policies de
+-- Storage de este archivo (subida/actualización/borrado) la usan. La creación
+-- "canónica" histórica está en 0007_seguridad.sql, que la re-crea con el mismo
+-- cuerpo (create or replace): re-aplicar cualquiera de los dos archivos no
+-- cambia el estado de la BD. Mantener este cuerpo IDÉNTICO al de 0007.
+-- ----------------------------------------------------------------------------
+
+create or replace function public.es_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+    select exists (
+        select 1 from public.admins where user_id = auth.uid()
+    );
+$$;
+
+grant execute on function public.es_admin() to authenticated, service_role;
+
 insert into storage.buckets (id, name, public) values
     ('products', 'products', true),
     ('branding', 'branding', true),

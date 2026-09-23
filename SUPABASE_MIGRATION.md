@@ -209,11 +209,11 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 2. **Ejecutar las migraciones** en el SQL Editor de Supabase, **en orden**:
    - `migrations/0001_schema.sql` (esquema + RLS + funciones)
    - `migrations/0002_seed.sql` (datos reales)
-   - `migrations/0007_seguridad.sql` (tabla `admins` + `public.es_admin()`, policies de escritura exigiendo admin) — **antes que 0003**, porque `0003_storage.sql` ya referencia `es_admin()`
-   - `migrations/0003_storage.sql` (buckets y políticas, con `es_admin()` resuelto)
+   - `migrations/0003_storage.sql` (buckets y políticas; ahora define `public.es_admin()` y es autosuficiente, no depende de 0007)
    - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
    - `migrations/0005_enlace_target.sql` (columna `target` en `sliders` y `banners`: `interno` → `_self` default, `externo` → `_blank`)
    - `migrations/0006_productos_destacado.sql` (columna `destacado` en `products`, default false)
+   - `migrations/0007_seguridad.sql` (tabla `admins` + re-creación de `public.es_admin()` con el mismo cuerpo, policies de escritura exigiendo admin)
    - `migrations/0008_higiene.sql` (perfil: `full_name` como única columna editable)
    - `migrations/0009_diseno.sql` (sección Diseño: `logo_path`, `favicon_path`, `og_image_path`, `color_principal` negro, `estilo_bordes`)
    - `migrations/0010_color_principal_negro.sql` (default del color principal → negro)
@@ -243,6 +243,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 8. **Popup de salida**: desde configuraciones, cambiar título/descripción/CTA/destino y desactivar → la tienda refleja el contenido nuevo (hasta 1 min por caché) y deja de mostrar la ventana si está inactiva.
 9. **Preguntas frecuentes**: con la tabla vacía, `faq.html` muestra el contenido estático actual; al crear la primera pregunta activa pasa a la lista dinámica (con su ícono) y el acordeón sigue funcionando (delegación de eventos); si se ocultan todas, la sección desaparece.
 10. **Seguridad**: sin sesión, la API anon NO debe poder leer `orders` ni escribir en `products` (probarlo desde una pestaña anónima).
+11. **Recuperación de contraseña**: en `login.html` → "¿Olvidaste tu contraseña?" con el correo admin → el enlace llega a `admin/recuperar.html` → fijar una contraseña nueva → volver a iniciar sesión con la nueva.
 
 ---
 
