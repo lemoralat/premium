@@ -159,6 +159,28 @@ function crearMarquee(textos = [], colorFondo = '#000000') {
     return marqueeBar;
 }
 
+// El marquee funciona con translateX(-50%): recorre la mitad del ancho del
+// TRACK, no el de la barra. Si el contenido duplicado (2 copias) es más
+// angosto que la barra (caso típico: un solo mensaje corto), la animación
+// solo recorre una fracción del ancho. Se duplican los "sets" (un set =
+// todos los mensajes una vez) hasta que el track mida >= 2× la barra; con
+// un número PAR de sets, el -50% cae siempre en el límite de un set y el
+// loop cierra sin salto visible.
+function asegurarCoberturaMarquee(bar, textos) {
+    const track = bar.querySelector('.marquee-track');
+    const anchoBarra = bar.clientWidth;
+    if (!anchoBarra || !textos || !textos.length) return;
+
+    const anchoSet = track.scrollWidth / 2; // base: se arranca con 2 copias
+    if (anchoSet >= anchoBarra) return;     // ya cubre el ancho completo
+
+    let sets = Math.max(2, Math.ceil((2 * anchoBarra) / anchoSet));
+    if (sets % 2 !== 0) sets += 1; // par → el -50% = set(s) exacto(s)
+
+    const setHTML = textos.map(t => `<span class="marquee-item">${escaparHtml(t)}</span>`).join('');
+    track.innerHTML = new Array(sets).fill(setHTML).join('');
+}
+
 // Aplicar branding configurable (sección "Diseño" del panel): color principal,
 // estilo de bordes, favicon y metas OpenGraph/Twitter. Se ejecuta en cada carga.
 function aplicarDisenoGlobal() {
@@ -253,7 +275,12 @@ async function initTemplate(activePage = '') {
     if (CONFIG_APP.marqueeActivo) {
         const textos = await obtenerMarquee();
         if (textos.length > 0) {
-            body.insertBefore(crearMarquee(textos, CONFIG_APP.marqueeColorFondo), header);
+            const marquee = crearMarquee(textos, CONFIG_APP.marqueeColorFondo);
+            body.insertBefore(marquee, header);
+            // Con pocos mensajes el contenido duplicado puede medir menos que
+            // la barra (un solo ítem = solo una fracción del ancho animado).
+            // Se ajusta tras insertar, con las medidas reales del DOM.
+            asegurarCoberturaMarquee(marquee, textos);
         }
     }
 
