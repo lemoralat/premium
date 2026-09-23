@@ -1,6 +1,6 @@
 // Testimonios - carrusel de reseñas (motor JS + drag/swipe)
 
-import { obtenerResenas, imagenOptimizada, escaparHtml } from './utils.js';
+import { obtenerResenas, imagenOptimizada, escaparHtml, placeholderImagenPublica } from './utils.js';
 
 const TESTIMONIOS = [
     {
@@ -98,6 +98,9 @@ function generarCard(testimonio) {
     const avatar = escaparHtml(imagenOptimizada(testimonio.avatar));
     const fecha = escaparHtml(testimonio.fecha);
     const texto = escaparHtml(testimonio.texto);
+    const avatarVisual = avatar
+        ? `<img src="${avatar}" alt="Foto de ${nombre}" class="testimonio-foto" loading="lazy" width="56" height="56">`
+        : placeholderImagenPublica('testimonio-foto testimonio-foto-placeholder');
 
     let estrellas = '';
     for (let i = 1; i <= 5; i++) {
@@ -107,7 +110,7 @@ function generarCard(testimonio) {
     card.innerHTML = `
         <div class="testimonio-body">
             <div class="testimonio-head">
-                <img src="${avatar}" alt="Foto de ${nombre}" class="testimonio-foto" loading="lazy" width="56" height="56">
+                ${avatarVisual}
                 <div class="testimonio-info">
                     <p class="testimonio-nombre">${nombre}</p>
                     <div class="testimonio-stars">${estrellas}</div>
@@ -139,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const datos = (resenas || TESTIMONIOS).map(r => ({
         nombre: r.nombre,
-        avatar: imagenOptimizada(r.imagen) || 'img/productos/profile.png',
+        avatar: imagenOptimizada(r.imagen) || '',
         rating: r.valoracion ?? r.rating ?? 5,
         fecha: r.fecha,
         texto: r.resena || r.texto

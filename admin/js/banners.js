@@ -1,6 +1,6 @@
 // banners.js — CRUD de banners promocionales (inicio y carrito).
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 let banners = [];
@@ -72,6 +72,8 @@ function filas() {
 function abrirModalBanner(idExistente) {
     const banner = idExistente ? banners.find((b) => b.id === idExistente) : null;
     const logoPreview = banner?.logo_path || banner?.logo_url || '';
+    let imagenOptimizada = null;
+    let logoOptimizada = null;
 
     abrirModal(`
         <h2>${banner ? 'Editar banner' : 'Nuevo banner'}</h2>
@@ -167,8 +169,9 @@ function abrirModalBanner(idExistente) {
         const archivo = $('#bnrImagenArchivo').files[0];
         if (!archivo) return;
         try {
-            const lista = await validarYOptimizarImagen(archivo);
-            $('#bnrImagenPreview').src = URL.createObjectURL(lista && lista.size ? lista : archivo);
+            const lista = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.bannerFondo });
+            imagenOptimizada = lista;
+            $('#bnrImagenPreview').src = URL.createObjectURL(lista);
         } catch (error) { toast(error.message, 'error'); $('#bnrImagenArchivo').value = ''; }
     });
 
@@ -176,8 +179,9 @@ function abrirModalBanner(idExistente) {
         const archivo = $('#bnrLogoArchivo').files[0];
         if (!archivo) return;
         try {
-            const lista = await validarYOptimizarImagen(archivo);
-            mostrarPreviewImagen($('#bnrLogoPreview'), URL.createObjectURL(lista && lista.size ? lista : archivo), 'Vista previa del logo');
+            const lista = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.bannerLogo });
+            logoOptimizada = lista;
+            mostrarPreviewImagen($('#bnrLogoPreview'), URL.createObjectURL(lista), 'Vista previa del logo');
         } catch (error) { toast(error.message, 'error'); $('#bnrLogoArchivo').value = ''; }
     });
 
@@ -196,9 +200,9 @@ function abrirModalBanner(idExistente) {
             activo: $('#bnrActivo').checked
         };
 
-        const imagenArchivo = $('#bnrImagenArchivo').files[0];
+        const imagenArchivo = imagenOptimizada;
         const imagenUrl = $('#bnrImagenUrl').value.trim();
-        const logoArchivo = $('#bnrLogoArchivo').files[0];
+        const logoArchivo = logoOptimizada;
         const logoUrl = $('#bnrLogoUrl').value.trim();
 
         if ((imagenArchivo && imagenUrl) || (logoArchivo && logoUrl)) {

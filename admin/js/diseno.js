@@ -12,7 +12,7 @@
 
 import {
     $, esc, toast, confirmarBorrado, conCarga, estadoCargando,
-    validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, urlPublica
+    validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, urlPublica, LIMITES_IMAGEN
 } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { renderizarGestor as renderizarGestorMarquee } from './marquee.js';
@@ -344,7 +344,12 @@ function prepararCampoImagen(r, pathActual) {
         const archivo = archivoInput.files[0];
         if (!archivo) return;
         try {
-            const optimizado = await validarYOptimizarImagen(archivo);
+            const limite = r.recurso === 'favicon'
+                ? LIMITES_IMAGEN.favicon
+                : r.recurso === 'og'
+                    ? LIMITES_IMAGEN.openGraph
+                    : LIMITES_IMAGEN.branding;
+            const optimizado = await validarYOptimizarImagen(archivo, { maxLado: limite });
             const lista = optimizado && optimizado.size ? optimizado : archivo;
             if (est.objetoUrl) URL.revokeObjectURL(est.objetoUrl);
             est.objetoUrl = URL.createObjectURL(lista);
@@ -407,19 +412,25 @@ async function guardar() {
     payload.marquee_color_fondo = marqueeHex;
     payload.marquee_activo = $('#dsnMarqueeActivo').checked;
 
-    // Recursos de imagen
+    // Recursos de imagen: subir/actualizar primero y borrar el anterior
+    // solo después de que la base de datos acepte el nuevo estado.
+    const imagenesAnteriores = [];
     for (const r of RECURSOS_IMAGEN) {
         const est = estadoImagenes[r.recurso];
         if (!est) continue;
         if (est.quitar) {
-            if (est.actual) await eliminarImagenAdmin(est.actual);
             payload[r.columna] = null;
+            if (est.actual) imagenesAnteriores.push(est.actual);
         } else if (est.archivo) {
-            if (est.actual) await eliminarImagenAdmin(est.actual);
             payload[r.columna] = await subirImagenAdmin('branding', r.carpeta, est.archivo);
+            if (est.actual) imagenesAnteriores.push(est.actual);
         }
     }
 
     const { error } = await sb.from('settings').update(payload).eq('id', 1);
     if (error) throw new Error(error.message);
+
+    for (const storagePath of imagenesAnteriores) {
+        await eliminarImagenAdmin(storagePath);
+    }
 }

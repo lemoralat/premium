@@ -21,14 +21,14 @@
     <meta property="og:url" content="https://supabase.lemora.lat/carrito.html">
     <meta property="og:title" content="Carrito de Compras - Mi Tienda Online">
     <meta property="og:description" content="Revisá tu pedido y finalizá tu compra. Envíos a todo el país.">
-    <meta property="og:image" content="https://supabase.lemora.lat/img/imagen-preview.jpg">
+    <meta property="og:image" content="https://supabase.lemora.lat/img/lemora.svg">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://supabase.lemora.lat/carrito.html">
     <meta name="twitter:title" content="Carrito de Compras - Mi Tienda Online">
     <meta name="twitter:description" content="Revisá tu pedido y finalizá tu compra. Envíos a todo el país.">
-    <meta name="twitter:image" content="https://supabase.lemora.lat/img/imagen-preview.jpg">
+    <meta name="twitter:image" content="https://supabase.lemora.lat/img/lemora.svg">
 
     <!-- CDN Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -41,30 +41,7 @@
 
     <main class="cart-page contenedor">
 
-        <!-- Banner estático DESACTIVADO: el banner del carrito ahora es el último de la hoja "Banners"
-             (js/banners.json, renderizado por js/carrito.js). Sin banners => sección oculta.
-             Para restaurar el modo estático: descomentar este bloque y borrar el contenedor dinámico de abajo.
-        <section>
-            <div class="banner banner-border">
-                <div class="banner_imagen">
-                    <a href="#">
-                        <img loading="lazy" src="img/banners/banner5.jpg" alt="banner" width="1200" height="400">
-                    </a>
-                </div>
-                <div class="banner_info">
-                    <div class="banner_info_icono banner-border">
-                        <img loading="lazy" src="img/icons/icon-banner3.png" alt="ícono personalizado" class="block" width="60" height="60">
-                    </div>
-                    <div class="banner_info_copy">
-                        <h4>Promoción</h4>
-                        <h2>pagando con tarjeta "X" <br>
-                            cuotas sin interés</h2>
-                    </div>
-                </div>
-            </div>
-        </section>
-        -->
-
+        <!-- El banner del carrito se carga dinámicamente desde Supabase/js/banners.json. -->
         <!-- Banner dinámico (último banner de la hoja "Banners"); js/carrito.js lo muestra si existe -->
         <section id="banner-carrito" hidden></section>
 

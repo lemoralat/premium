@@ -188,6 +188,11 @@ html {
     display: block;
 }
 
+.banner-image-placeholder {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+}
+
 /* Info */
 .banner_info {
     display: flex;
@@ -265,6 +270,10 @@ html {
     background-size: cover;
     background-repeat: no-repeat;
     overflow: hidden;
+}
+
+.banner-solo-imagen.sin-imagen {
+    background: var(--bg-color);
 }
 
 .banner-solo-imagen a {
@@ -3844,6 +3853,11 @@ body.zoom-active {
     display: block;
 }
 
+.slider-image-placeholder {
+    width: 100%;
+    height: 100%;
+}
+
 /* Overlay con gradiente para mejor legibilidad del texto */
 .slider-content {
     padding: 1rem 6rem;
@@ -4203,6 +4217,10 @@ body.zoom-active {
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
+}
+
+.testimonio-foto-placeholder {
+    background: var(--border-color);
 }
 
 .testimonio-info {

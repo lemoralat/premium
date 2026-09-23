@@ -2,16 +2,16 @@
   {
     "titulo": "Muchas formas de pago",
     "descripcion": "Trabajo con mercadopago, lo cuál se aceptan todos los medios de pagos de la villetera virtual número 1 de Argentina, para que compres con total confianza.",
-    "imagen": "img/icons/icono-pagos.png"
+    "icono": "fa-solid fa-credit-card"
   },
   {
     "titulo": "Envíos a toda Argentina",
     "descripcion": "Envío a toda la Argentina de norte a sur, todos los pedidos salen desde Córdoba, Argentina y pueden variar dependiendo tu ubicación.",
-    "imagen": "img/icons/icono-envios.png"
+    "icono": "fa-solid fa-truck"
   },
   {
     "titulo": "Stock siempre disponible",
     "descripcion": "Toda la web opera bajo pedido, compra con total confianza, yo me comunicaré contigo personalmente para asegurar que llegue lo que pidas.",
-    "imagen": "img/icons/icono-stock.png"
+    "icono": "fa-solid fa-box"
   }
 ]

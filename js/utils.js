@@ -67,8 +67,7 @@ export let configuracionCargada = false;
 
 // Configuración de diseño (sección "Diseño" del panel): branding aplicado en
 // template.js al cargar cada página. Si no hay configurado un recurso, la
-// tienda sigue usando los archivos por defecto (img/logo.svg, img/lemora.svg,
-// img/imagen-preview.jpg) y el color/bordes actuales.
+// tienda sigue usando los recursos disponibles y el color/bordes actuales.
 export const CONFIG_DISENO = {
     logoUrl: '',            // URL pública del logotipo (vacío ⇒ logo por defecto)
     logoTamano: 'small',     // small | medium | large → height 40/60/80px en .logo

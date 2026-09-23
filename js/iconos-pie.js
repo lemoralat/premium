@@ -1,6 +1,5 @@
 // Iconos del pie del home (sección iconos-pie).
-// Carga dinámica: Supabase primero, fallback a js/iconos-pie.json y, en última
-// instancia, a los 3 iconos estáticos originales (mismo diseño que siempre).
+// Carga dinámica: Supabase primero y fallback a iconos Font Awesome.
 
 import { obtenerIconosPie, imagenOptimizada } from './utils.js';
 
@@ -8,17 +7,17 @@ const ICONOS_ESTATICOS = [
     {
         titulo: 'Muchas formas de pago',
         descripcion: 'Trabajo con mercadopago, lo cuál se aceptan todos los medios de pagos de la villetera virtual número 1 de Argentina, para que compres con total confianza.',
-        imagen: 'img/icons/icono-pagos.png'
+        icono: 'fa-solid fa-credit-card'
     },
     {
         titulo: 'Envíos a toda Argentina',
         descripcion: 'Envío a toda la Argentina de norte a sur, todos los pedidos salen desde Córdoba, Argentina y pueden variar dependiendo tu ubicación.',
-        imagen: 'img/icons/icono-envios.png'
+        icono: 'fa-solid fa-truck'
     },
     {
         titulo: 'Stock siempre disponible',
         descripcion: 'Toda la web opera bajo pedido, compra con total confianza, yo me comunicaré contigo personalmente para asegurar que llegue lo que pidas.',
-        imagen: 'img/icons/icono-stock.png'
+        icono: 'fa-solid fa-box'
     }
 ];
 
@@ -38,7 +37,9 @@ function generarIcono(icono) {
     // Ícono de Font Awesome (configurado desde el dashboard) o imagen.
     const visual = icono.icono
         ? `<div class="icono-icono"><i class="${escapar(icono.icono)}" aria-hidden="true"></i></div>`
-        : `<img loading="lazy" src="${escapar(icono.imagen)}" alt="${titulo}" width="60" height="60">`;
+        : icono.imagen
+            ? `<img loading="lazy" src="${escapar(icono.imagen)}" alt="${titulo}" width="60" height="60">`
+            : '<div class="icono-icono"><i class="fa-regular fa-image" aria-hidden="true"></i></div>';
 
     return `
         <div class="icono">
@@ -67,8 +68,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const datos = (iconos || ICONOS_ESTATICOS).map((i) => ({
         titulo: i.titulo,
         descripcion: i.descripcion,
-        imagen: imagenOptimizada(i.imagen) || 'img/icons/icono-pagos.png',
-        icono: i.icono || ''
+        imagen: imagenOptimizada(i.imagen) || '',
+        icono: i.icono || (i.imagen ? '' : 'fa-regular fa-image')
     }));
 
     contenedor.innerHTML = datos.map(generarIcono).join('');

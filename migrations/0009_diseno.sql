@@ -10,7 +10,7 @@
 --   estilo_bordes    → redondeado (actual, 8px) | circular | recto.
 --
 -- Columnas nulas = la tienda sigue usando los recursos por defecto
--- (img/logo.svg, img/lemora.svg, img/imagen-preview.jpg).
+-- (los recursos locales disponibles y la configuración de la tienda).
 --
 -- Idempotente: se puede reaplicar en SQL Editor sin error.
 -- ============================================================================

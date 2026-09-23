@@ -1,6 +1,6 @@
 // resenas.js — CRUD de testimonios de clientes.
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 let reseñas = [];
@@ -78,6 +78,7 @@ function recCorto(texto) {
 
 function abrirModalResena(idExistente) {
     const reseña = idExistente ? reseñas.find((r) => r.id === idExistente) : null;
+    let fotoOptimizada = null;
 
     abrirModal(`
         <h2>${reseña ? 'Editar reseña' : 'Nueva reseña'}</h2>
@@ -146,8 +147,9 @@ function abrirModalResena(idExistente) {
         const archivo = $('#rsnArchivo').files[0];
         if (!archivo) return;
         try {
-            const lista = await validarYOptimizarImagen(archivo);
-            mostrarPreviewImagen($('#rsnPreview'), URL.createObjectURL(lista && lista.size ? lista : archivo), 'Vista previa de la foto');
+            const lista = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.avatar });
+            fotoOptimizada = lista;
+            mostrarPreviewImagen($('#rsnPreview'), URL.createObjectURL(lista), 'Vista previa de la foto');
         } catch (error) { toast(error.message, 'error'); $('#rsnArchivo').value = ''; }
     });
 
@@ -156,7 +158,7 @@ function abrirModalResena(idExistente) {
         const submitBtn = event.submitter || $('#resenaForm').querySelector('[type="submit"]');
 
         const idValor = $('#rsnId').value;
-        const archivo = $('#rsnArchivo').files[0];
+        const archivo = fotoOptimizada;
         const urlExterna = $('#rsnUrl').value.trim();
         if (archivo && urlExterna) {
             toast('Elegí una sola fuente de foto: archivo o URL.', 'error');

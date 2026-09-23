@@ -24,7 +24,7 @@ const CONFIG = {
     RESENAS_FOLDER_NAME: 'reseñas',
     GITHUB_RESENAS_FILE_PATH: 'js/resenas.json',
     RESENAS_MAX: 15, // Tope duro: máximos 15 reseñas publicadas
-    IMAGEN_FALLBACK_RESENAS: 'img/productos/profile.png',
+    IMAGEN_FALLBACK_RESENAS: '',
 
     // Cupones del carrito
     CUPONES_SHEET_NAME: 'Cupones',
@@ -37,7 +37,7 @@ const CONFIG = {
     SLIDER_MAX_SLIDES: 6,
     SLIDER_TITULO_MAX: 80,
     SLIDER_TEXTO_MAX: 180,
-    IMAGEN_FALLBACK_SLIDER: 'img/productos/slider.png',
+    IMAGEN_FALLBACK_SLIDER: '',
 
     // Banners intercalados del index + banner del carrito
     BANNERS_SHEET_NAME: 'Banners',

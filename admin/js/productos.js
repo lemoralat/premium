@@ -1,6 +1,6 @@
 // productos.js — CRUD completo de productos (variantes, imágenes, stock).
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, formatearPrecio, placeholderImagen } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, formatearPrecio, placeholderImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 let productos = [];
@@ -359,11 +359,17 @@ function abrirModalProducto(idExistente) {
         try {
             const lista = [];
             for (const a of archivos) {
-                const optimizada = await validarYOptimizarImagen(a);
+                const optimizada = await validarYOptimizarImagen(a, { maxLado: LIMITES_IMAGEN.producto });
                 lista.push(optimizada && optimizada.size ? optimizada : a);
             }
             capturarImagenes();
-            lista.forEach((archivo) => {
+            const slotsVacios = imagenesModal.filter((entrada) => !entrada.dbId && !tieneFuenteImagen(entrada) && !entrada.paraBorrar);
+            lista.forEach((archivo, indice) => {
+                const slot = slotsVacios[indice];
+                if (slot) {
+                    slot.file = archivo;
+                    return;
+                }
                 imagenesModal.push({
                     dbId: null, storage_path: null, external_url: null,
                     esPrincipal: false, file: archivo, paraBorrar: false, nuevoId: null
@@ -616,14 +622,21 @@ function capturarImagenes() {
     });
 }
 
+function tieneFuenteImagen(entrada) {
+    return Boolean(entrada && (entrada.file || entrada.storage_path || entrada.external_url));
+}
+
 function renderImagenes() {
     const editor = $('#imagenesEditor');
     if (!editor) return;
     const visibles = imagenesModal.map((i, idx) => ({ ...i, idx })).filter((i) => !i.paraBorrar);
-    const hayPrincipal = visibles.some((i) => i.esPrincipal);
-    if (!hayPrincipal && visibles.length > 0 && !visibles[0].esPrincipal) {
-        imagenesModal[visibles[0].idx].esPrincipal = true;
-        visibles[0].esPrincipal = true;
+    const hayPrincipal = visibles.some((i) => i.esPrincipal && tieneFuenteImagen(i));
+    if (!hayPrincipal) {
+        const primerConFuente = visibles.find((i) => tieneFuenteImagen(i));
+        if (primerConFuente) {
+            imagenesModal[primerConFuente.idx].esPrincipal = true;
+            primerConFuente.esPrincipal = true;
+        }
     }
 
     editor.innerHTML = `
@@ -717,8 +730,16 @@ async function guardarProducto(payload, id, variantes) {
         if (img.storage_path) await eliminarImagenAdmin(img.storage_path);
     }
 
-    // 3b) Insertar filas nuevas (archivo subido o URL externa)
-    const vigentes = imagenesModal.filter((i) => !i.paraBorrar);
+    // 3b) Limpiar filas históricas que no tienen ninguna fuente y filtrar
+    //      placeholders visuales antes de insertar.
+    for (const img of imagenesModal) {
+        if (img.paraBorrar || !img.dbId || tieneFuenteImagen(img)) continue;
+        const { error } = await sb.from('product_images').delete().eq('id', img.dbId);
+        if (error) throw new Error(error.message);
+    }
+
+    // 3c) Insertar filas nuevas (archivo subido o URL externa)
+    const vigentes = imagenesModal.filter((i) => !i.paraBorrar && tieneFuenteImagen(i));
     let posicion = 0;
     for (const img of vigentes) {
         // Filas existentes: solo actualizar posición
@@ -747,9 +768,9 @@ async function guardarProducto(payload, id, variantes) {
         posicion++;
     }
 
-    // 3c) Fijar la imagen principal (una sola)
+    // 3d) Fijar la imagen principal (una sola)
     await sb.from('product_images').update({ es_principal: false }).eq('product_id', productoId);
-    const principal = vigentes.find((i) => i.esPrincipal) || vigentes[0];
+    const principal = vigentes.find((i) => i.esPrincipal && tieneFuenteImagen(i)) || vigentes[0];
     const idPrincipal = principal ? (principal.nuevoId || principal.dbId) : null;
     if (idPrincipal) {
         const { error } = await sb.from('product_images').update({ es_principal: true }).eq('id', idPrincipal);

@@ -1,5 +1,5 @@
 // Renderizar productos por categorías en el index
-import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, slugificar } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, slugificar, placeholderImagenPublica } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
@@ -118,12 +118,13 @@ function generarHTMLBannerSoloImagen(banner) {
     const img = escaparHtml(imagenOptimizada(banner.imagen));
     const link = escaparHtml(banner.link || '');
     const etiqueta = banner.link ? `aria-label="${escaparHtml(banner.titulo || 'Banner')}" ` : '';
+    const visual = img
+        ? `<div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`
+        : `<div class="banner-solo-imagen banner-border sin-imagen">${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`;
 
     return `
         <section class="banner-intercalado">
-            <div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">
-                ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}
-            </div>
+            ${visual}
         </section>
     `;
 }
@@ -134,13 +135,16 @@ function generarHTMLBannerDinamico(banner) {
     const titulo = escaparHtml(banner.titulo);
     const link = escaparHtml(banner.link || '');
     const tieneBoton = Boolean(banner.boton && banner.link);
+    const imagenVisual = banner.imagen
+        ? `<img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">`
+        : placeholderImagenPublica('banner-image-placeholder');
 
     return `
         <section class="banner-intercalado">
             <div class="banner banner-border">
                 <div class="banner_imagen">
                     ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)}>` : ''}
-                        <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">
+                        ${imagenVisual}
                     ${banner.link ? '</a>' : ''}
                 </div>
 

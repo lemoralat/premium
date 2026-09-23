@@ -41,7 +41,7 @@ Ahora:
                │                     Supabase Auth (email/contraseña)
                ▼                                    ▼
 ┌──────────────────────────  SUPABASE  ─────────────────────────────┐
-│  PostgreSQL + RLS      Storage (5 buckets)      Auth              │
+│  PostgreSQL + RLS      Storage (6 buckets)      Auth              │
 │  products, categories, coupons, sliders, banners, reviews,        │
 │  orders, order_items, settings, profiles                          │
 │  RPC insertar_pedido (transacción) + triggers                     │
@@ -109,7 +109,7 @@ Se migraron todos los datos reales actuales, respetando los ids originales del J
 - **48 imágenes** de producto apuntando a Google Drive (`external_url`) para que el catálogo se vea idéntico al momento de migrar. El admin puede re-subirlas a Storage desde el panel (se irán usando `storage_path`).
 - **3 cupones**: `sale10` (10%, **inactivo** por estar vencido), `black20` (20%, activo hasta 2026-12-31), `navidad` (25%, activo hasta 2026-12-31).
 - **6 slides** de hero, **5 banners**, **12 reseñas**, todos con orden y estado reales.
-- **3 iconos del pie** (`0004`): pagos, envíos y stock, con sus rutas locales `img/icons/*.png` como `external_url` (idéntico al HTML original).
+- **3 iconos del pie** (`0004` + `0021`): pagos, envíos y stock. Los assets locales se retiraron; la migración `0021` los convierte a iconos Font Awesome configurables.
 - **Configuración** con los valores que estaban hardcodeados en el código: WhatsApp `543515957014`, umbral 100000 → 10%, alias `hola.mundo.2023`, etc.
 
 ---
@@ -136,10 +136,10 @@ Todas las tablas tienen **row level security habilitada**. Resumen:
 
 ### Storage (`0003_storage.sql`)
 
-- **5 buckets públicos de lectura**: `products`, `branding`, `slider`, `banners`, `reviews`.
+- **6 buckets públicos de lectura**: `products`, `branding`, `slider`, `banners`, `reviews`, `iconos`.
 - Lectura pública para anon/authenticated; **subida/actualización/borrado solo authenticated**.
 - Convención: la BD guarda el `storage_path` completo `"<bucket>/<ruta>"` y la URL pública se deriva en el frontend con `storage.getPublicUrl()`.
-- Carpetas por entidad: `products/<producto_id>/`, `slider/`, `banners/`, `reviews/`, `branding/`.
+- Carpetas por entidad: `products/<producto_id>/`, `slider/`, `banners/`, `reviews/`, `branding/`, `iconos/`.
 
 ---
 
@@ -228,6 +228,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0018_logo_tamano.sql` (sección Diseño: `logo_tamano` en `settings` → tamaño del logotipo del encabezado: Small 40 px / Medium 60 px / Large 80 px)
    - `migrations/0019_slider_mostrar_en.sql` (sección Slider: `mostrar_en` en `sliders` → `ambos` | `mobile` | `desktop` con check)
    - `migrations/0020_compra_minima.sql` (menú Descuentos → Compra mínima: `compra_minima_modo` 'off'|'cantidad'|'monto' y `compra_minima_valor` en `settings`; refuerza la validación en el RPC `insertar_pedido`)
+   - `migrations/0021_imagenes_storage.sql` (pipeline de imágenes: incluye `iconos` en Storage y convierte los iconos del seed a Font Awesome)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).
@@ -277,7 +278,8 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **Descuentos agrupados**: el menú "Cupones" pasó a llamarse "Descuentos" y concentra el CRUD de cupones junto a la card "Descuentos automáticos" (mudada desde Configuración). Sin cambios de esquema: `discount_threshold`/`discount_percent` se guardan en `settings` y la tienda los lee igual.
 - **Compra mínima con refuerzo server-side**: se agregó como card del menú Descuentos (modo cantidad o monto, sobre `settings`). El front la muestra en el carrito y bloquea el checkout, pero la validación real vive en `insertar_pedido` (RPC, junto al resto de la lógica de negocio): si se saltea el front, el pedido se rechaza y la transacción revierte el stock. Sin la migración 0020, la tienda no cambia (modo 'off' por defecto).
 - **Placeholders del dashboard**: productos, logos de banners, fotos de reseñas e imágenes de iconos del pie muestran `<i class="fa-regular fa-image"></i>` sobre un fondo gris cuando todavía no tienen una imagen. No se guardan placeholders en Supabase.
-- **Imágenes públicas sin archivo**: la tienda ya no depende de `img/placeholder.png` ni de `img/productos/placeholder.png`; un producto sin imagen conserva su espacio con un bloque gris neutro. El avatar predeterminado de reseñas (`img/productos/profile.png`) y los recursos visuales propios de los iconos se mantienen.
+- **Pipeline de imágenes del dashboard**: cada archivo local se valida, redimensiona según el módulo y convierte a WebP antes de subirlo a Supabase Storage. Las URLs externas permanecen como `external_url` y no se descargan.
+- **Imágenes públicas sin archivo**: la tienda no depende de assets PNG/JPG locales eliminados; un producto, slide, banner o reseña sin imagen conserva su espacio con un bloque gris neutro. Los iconos configurados usan Font Awesome.
 
 ---
 

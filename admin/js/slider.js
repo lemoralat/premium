@@ -1,6 +1,6 @@
 // slider.js — CRUD de slides del hero (portada del inicio).
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 let slides = [];
@@ -169,12 +169,14 @@ function abrirModalSlide(idExistente) {
     `);
 
     const archivoInput = $('#sldArchivo');
+    let archivoOptimizado = null;
     archivoInput.addEventListener('change', async () => {
         const archivo = archivoInput.files[0];
         if (!archivo) return;
         try {
-            const lista = await validarYOptimizarImagen(archivo);
-            $('#sldPreview').src = URL.createObjectURL(lista && lista.size ? lista : archivo);
+            const lista = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.slider });
+            archivoOptimizado = lista;
+            $('#sldPreview').src = URL.createObjectURL(lista);
             $('#sldPreview').dataset.nombre = archivo.name;
         } catch (error) {
             toast(error.message, 'error');
@@ -194,7 +196,7 @@ function abrirModalSlide(idExistente) {
         const submitBtn = event.submitter || $('#slideForm').querySelector('[type="submit"]');
 
         const idValor = $('#sldId').value;
-        const archivo = archivoInput.files[0];
+        const archivo = archivoOptimizado;
         const urlExterna = $('#sldUrlExterna').value.trim();
 
         if (archivo && urlExterna) {

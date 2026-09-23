@@ -2,7 +2,7 @@
 // Cada icono se representa o bien con una imagen (archivo subido o URL) o bien
 // con un ícono de Font Awesome elegido de un catálogo curado con buscador.
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { montarSelectorIconos } from './selector-iconos.js';
 
@@ -79,6 +79,7 @@ function filas() {
 function abrirModalIcono(idExistente) {
     const icono = idExistente ? iconos.find((i) => i.id === idExistente) : null;
     const modoInicial = icono?.icono ? 'icono' : 'imagen';
+    let imagenOptimizada = null;
 
     abrirModal(`
         <h2>${icono ? 'Editar icono' : 'Nuevo icono'}</h2>
@@ -183,8 +184,9 @@ function abrirModalIcono(idExistente) {
         const archivo = $('#icoArchivo').files[0];
         if (!archivo) return;
         try {
-            const lista = await validarYOptimizarImagen(archivo);
-            mostrarPreviewImagen($('#icoPreview'), URL.createObjectURL(lista && lista.size ? lista : archivo), 'Vista previa de la imagen');
+            const lista = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.icono });
+            imagenOptimizada = lista;
+            mostrarPreviewImagen($('#icoPreview'), URL.createObjectURL(lista), 'Vista previa de la imagen');
         } catch (error) { toast(error.message, 'error'); $('#icoArchivo').value = ''; }
     });
 
@@ -195,7 +197,7 @@ function abrirModalIcono(idExistente) {
         const idValor = $('#icoId').value;
         const modo = $('#icoSeg').querySelector('.admin-seg-btn.activo').dataset.modo;
 
-        const archivo = $('#icoArchivo').files[0];
+        const archivo = imagenOptimizada;
         const urlExterna = $('#icoUrl').value.trim();
         if (modo === 'imagen' && archivo && urlExterna) {
             toast('Elegí una sola fuente de imagen: archivo o URL.', 'error');

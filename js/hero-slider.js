@@ -2,7 +2,7 @@
 // Slides dinámicos desde la hoja "Slider" (js/slider.json).
 // Sin slides => la sección se mantiene oculta (hidden en el HTML).
 
-import { obtenerSlider, recortarTexto, imagenOptimizada, atributosEnlace, escaparHtml, urlSegura } from './utils.js';
+import { obtenerSlider, recortarTexto, imagenOptimizada, atributosEnlace, escaparHtml, urlSegura, placeholderImagenPublica } from './utils.js';
 
 class HeroSlider {
     constructor() {
@@ -125,9 +125,12 @@ class HeroSlider {
             const textoSoporte = recortarTexto(slide.textoSoporte);
             const imagen = escaparHtml(imagenOptimizada(slide.imagen));
             const link = slide.link ? urlSegura(slide.link) : '';
+            const visual = imagen
+                ? `<img src="${imagen}" alt="${escaparHtml(titulo)}" width="1920" height="1280"${i === 0 ? ' fetchpriority="high"' : ''}>`
+                : placeholderImagenPublica('slider-image-placeholder');
 
             const contenido = `
-                    <img src="${imagen}" alt="${escaparHtml(titulo)}" width="1920" height="1280"${i === 0 ? ' fetchpriority="high"' : ''}>
+                    ${visual}
 
                     <div class="slider-content">
                         <div class="slider-text">

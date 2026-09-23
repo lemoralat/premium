@@ -56,19 +56,20 @@ create policy "Iconos: admin full"
 -- (select/references a anon; all a authenticated y service_role).
 
 -- ----------------------------------------------------------------------------
--- SEED: los 3 iconos actuales del home (mismas rutas/imágenes locales)
+-- SEED: los 3 iconos actuales del home.
+-- La migración 0021 reemplaza las fuentes locales retiradas por Font Awesome.
 -- ----------------------------------------------------------------------------
 insert into public.iconos_pie (titulo, descripcion, external_url, position, activo)
 select * from (values
 ('Muchas formas de pago',
  'Trabajo con mercadopago, lo cuál se aceptan todos los medios de pagos de la villetera virtual número 1 de Argentina, para que compres con total confianza.',
- 'https://supabase.lemora.lat/img/icons/icono-pagos.png', 0, true),
+ '''', 0, true),
 ('Envíos a toda Argentina',
  'Envío a toda la Argentina de norte a sur, todos los pedidos salen desde Córdoba, Argentina y pueden variar dependiendo tu ubicación.',
- 'https://supabase.lemora.lat/img/icons/icono-envios.png', 1, true),
+ '''', 1, true),
 ('Stock siempre disponible',
  'Toda la web opera bajo pedido, compra con total confianza, yo me comunicaré contigo personalmente para asegurar que llegue lo que pidas.',
- 'https://supabase.lemora.lat/img/icons/icono-stock.png', 2, true)
+ '''', 2, true)
 ) as v(titulo, descripcion, external_url, position, activo)
 where not exists (select 1 from public.iconos_pie);
 

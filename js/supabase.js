@@ -333,7 +333,7 @@ export async function cargarSlider() {
         const slides = (data || []).map(s => ({
             titulo: s.titulo || '',
             textoSoporte: s.texto_soporte || '',
-            imagen: urlImagen(s) || 'img/sliders/slider1.jpg',
+            imagen: urlImagen(s) || '',
             link: s.link || '',
             target: s.target === 'externo' ? 'externo' : 'interno',
             mostrarEn: s.mostrar_en || 'ambos'
@@ -367,7 +367,7 @@ export async function cargarBanners() {
         if (error) throw error;
 
         const banners = (data || []).map(b => ({
-            imagen: urlImagen({ storage_path: b.imagen_path, external_url: b.imagen_url }) || 'img/banners/banner1.jpg',
+            imagen: urlImagen({ storage_path: b.imagen_path, external_url: b.imagen_url }) || '',
             logo: urlImagen({ storage_path: b.logo_path, external_url: b.logo_url }),
             badge: b.badge || '',
             titulo: b.titulo || '',

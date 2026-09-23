@@ -282,11 +282,10 @@ function renderizarBannerCarrito(banners) {
         const img = escaparHtml(imagenOptimizada(banner.imagen));
         const link = escaparHtml(banner.link || '');
         const etiqueta = banner.link ? `aria-label="${escaparHtml(banner.titulo || 'Banner')}" ` : '';
-        contenedor.innerHTML = `
-            <div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">
-                ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}
-            </div>
-        `;
+        const visual = img
+            ? `<div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`
+            : `<div class="banner-solo-imagen banner-border sin-imagen">${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`;
+        contenedor.innerHTML = visual;
         contenedor.hidden = false;
         return;
     }
@@ -294,12 +293,15 @@ function renderizarBannerCarrito(banners) {
     const titulo = escaparHtml(banner.titulo);
     const link = escaparHtml(banner.link || '');
     const tieneBoton = Boolean(banner.boton && banner.link);
+    const imagenVisual = banner.imagen
+        ? `<img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">`
+        : placeholderImagenPublica('banner-image-placeholder');
 
     contenedor.innerHTML = `
         <div class="banner banner-border">
             <div class="banner_imagen">
                 ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)}>` : ''}
-                    <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">
+                    ${imagenVisual}
                 ${banner.link ? '</a>' : ''}
             </div>
             <div class="banner_info">

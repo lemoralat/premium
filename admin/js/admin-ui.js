@@ -189,9 +189,20 @@ export function conCarga(boton, promesa) {
 // ---------- Imágenes (Subir / validar / optimizar) ----------
 export const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
 export const MAX_TAMANO_IMAGEN = 8 * 1024 * 1024; // 8 MB
+export const LIMITES_IMAGEN = Object.freeze({
+    producto: 1920,
+    slider: 1920,
+    bannerFondo: 1920,
+    bannerLogo: 1024,
+    avatar: 512,
+    icono: 1024,
+    branding: 1024,
+    favicon: 256,
+    openGraph: 1024
+});
 
-// Valida tipo y tamaño. Si es posible, reescala a máx 1920px y convierte a WebP.
-export async function validarYOptimizarImagen(archivo) {
+// Valida tipo/tamaño y devuelve siempre un File WebP redimensionado.
+export async function validarYOptimizarImagen(archivo, opciones = {}) {
     if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
         throw new Error('Formato no permitido. Usá JPG, PNG o WebP.');
     }
@@ -199,26 +210,43 @@ export async function validarYOptimizarImagen(archivo) {
         throw new Error('La imagen supera el máximo de 8 MB.');
     }
 
+    const maxLado = Number(opciones.maxLado || LIMITES_IMAGEN.producto);
+    const calidad = Number(opciones.calidad ?? 0.82);
+    if (!Number.isFinite(maxLado) || maxLado <= 0) {
+        throw new Error('El límite de redimensión no es válido.');
+    }
+    if (!Number.isFinite(calidad) || calidad <= 0 || calidad > 1) {
+        throw new Error('La calidad de imagen no es válida.');
+    }
+
+    let bitmap;
     try {
-        const bitmap = await createImageBitmap(archivo);
-        const maxLado = 1920;
+        bitmap = await createImageBitmap(archivo);
         const escala = Math.min(1, maxLado / bitmap.width, maxLado / bitmap.height);
-        if (escala >= 1) {
-            bitmap.close();
-            return archivo;
-        }
         const canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(bitmap.width * escala));
         canvas.height = Math.max(1, Math.round(bitmap.height * escala));
-        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        bitmap.close();
-        const blob = await new Promise((res) => canvas.toBlob(res, 'image/webp', 0.82));
-        if (blob) {
-            return new File([blob], archivo.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
-        }
-        return archivo;
-    } catch {
-        return archivo; // createImageBitmap no disponible: se sube el original validado
+        const contexto = canvas.getContext('2d');
+        if (!contexto) throw new Error('No se pudo crear el contexto de imagen.');
+        contexto.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+        const blob = await new Promise((resolve, reject) => {
+            canvas.toBlob((resultado) => {
+                if (resultado) resolve(resultado);
+                else reject(new Error('El navegador no pudo generar WebP.'));
+            }, 'image/webp', calidad);
+        });
+
+        return new File(
+            [blob],
+            archivo.name.replace(/\.[^.]+$/, '') + '.webp',
+            { type: 'image/webp', lastModified: Date.now() }
+        );
+    } catch (error) {
+        console.error('No se pudo optimizar la imagen:', error);
+        throw new Error('No se pudo convertir la imagen a WebP. Probá con otro archivo.');
+    } finally {
+        bitmap?.close?.();
     }
 }
 
@@ -229,8 +257,17 @@ function extensionDe(archivo) {
     return 'webp';
 }
 
-// Sube la imagen a Storage y devuelve el storage_path "<bucket>/<ruta>".
+// Sube una imagen WebP ya optimizada a Storage y devuelve "<bucket>/<ruta>".
+const BUCKETS_IMAGEN = new Set(['products', 'branding', 'slider', 'banners', 'reviews', 'iconos']);
+
 export async function subirImagenAdmin(bucket, carpeta, archivo) {
+    if (!BUCKETS_IMAGEN.has(bucket)) {
+        throw new Error(`Bucket de imágenes no permitido: ${bucket}`);
+    }
+    if (!archivo || archivo.type !== 'image/webp') {
+        throw new Error('La imagen debe estar optimizada a WebP antes de subirla.');
+    }
+
     const sb = await clienteAdmin();
     const nombre = `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extensionDe(archivo)}`;
     const path = `${carpeta}/${nombre}`;
