@@ -1,6 +1,6 @@
 // productos.js — CRUD completo de productos (variantes, imágenes, stock).
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, formatearPrecio } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, formatearPrecio, placeholderImagen } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 let productos = [];
@@ -121,9 +121,10 @@ function pintar(contenedor) {
 function imagenPrincipalDe(p) {
     const imgs = Array.isArray(p.imagenes) ? p.imagenes : [];
     const principal = imgs.find((i) => i.es_principal) || imgs[0] || null;
-    // Sin imágenes → placeholder local (img/placeholder.png), el mismo que se
-    // muestra por defecto al crear un producto nuevo.
-    return urlPublica(principal ? (principal.storage_path || principal.external_url) : '') || '../img/placeholder.png';
+    const imagen = principal ? urlPublica(principal.storage_path || principal.external_url) : '';
+    return imagen
+        ? `<img src="${esc(imagen)}" alt="" loading="lazy" style="width:46px; height:46px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">`
+        : placeholderImagen('admin-image-placeholder--thumb', 'Sin imagen');
 }
 
 function filaProducto(p) {
@@ -133,8 +134,7 @@ function filaProducto(p) {
         <tr>
             <td class="td-principal">
                 <div style="display:flex; align-items:center; gap:0.7rem;">
-                    <img src="${esc(imagenPrincipalDe(p))}" alt="" loading="lazy"
-                         style="width:46px; height:46px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
+                    ${imagenPrincipalDe(p)}
                     <div>
                         <strong>${esc(p.nombre)}</strong>
                         ${p.destacado ? ' <span class="estado-badge estado-procesando" style="margin-left:0.3rem;">⭐ Destacado</span>' : ''}
@@ -632,7 +632,9 @@ function renderImagenes() {
                 <div class="admin-img-card ${i.esPrincipal ? 'principal' : ''}" data-imagen-idx="${esc(i.idx)}">
                     ${i.file
                         ? `<img src="${esc(URL.createObjectURL(i.file))}" alt="">`
-                        : `<img src="${esc(urlPublica(i.storage_path || i.external_url) || '../img/placeholder.png')}" alt="">`}
+                        : (i.storage_path || i.external_url)
+                            ? `<img src="${esc(urlPublica(i.storage_path || i.external_url))}" alt="">`
+                            : placeholderImagen('admin-image-placeholder--card', 'Sin imagen')}
                     <div class="admin-img-acciones">
                         <label style="display:flex; align-items:center; gap:0.3rem; color:#fff; font-size:0.68rem;">
                             <input type="radio" name="imagenPrincipal" data-campo="principal" ${i.esPrincipal ? 'checked' : ''}>

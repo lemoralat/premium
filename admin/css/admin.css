@@ -619,6 +619,110 @@ table.admin-tabla tr:hover td { background: #f8fafc; }
 .admin-img-acciones button:hover { background: #fff; }
 .admin-img-acciones button.borrar { color: var(--danger); }
 
+/* Placeholder de previews del dashboard: no depende de un archivo local. */
+.admin-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-width: 1px;
+    min-height: 1px;
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+.admin-image-placeholder i {
+    font-size: 1.25rem;
+}
+
+.admin-image-placeholder--thumb {
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.admin-image-placeholder--avatar {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+
+.admin-image-placeholder--modal-avatar {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+
+.admin-image-placeholder--logo,
+.admin-image-placeholder--icon {
+    width: 72px;
+    height: 72px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.admin-image-placeholder--icon {
+    width: 34px;
+    height: 34px;
+}
+
+.admin-image-placeholder--card {
+    width: 100%;
+    height: 100%;
+}
+
+.admin-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.admin-preview--logo {
+    width: 72px;
+    height: 72px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.admin-preview--avatar {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+
+.admin-preview--icon {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.admin-preview-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-preview--logo .admin-preview-image,
+.admin-preview--icon .admin-preview-image {
+    object-fit: contain;
+}
+
+.admin-preview--avatar .admin-preview-image {
+    object-fit: cover;
+}
+
 .admin-img-upload {
     display: flex;
     gap: 0.8rem;

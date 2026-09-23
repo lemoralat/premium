@@ -429,9 +429,6 @@ export function slugificar(texto) {
 }
 
 // ================= BANNERS =================
-// Logo genérico para banners con contenido que no tienen un logo propio.
-export const PLACEHOLDER_LOGO_BANNER = 'img/placeholder.png';
-
 // Cargar banners dinámicos. [] => la web no renderiza secciones de banners.
 export async function obtenerBanners() {
     const remoto = await cargarBanners();
@@ -571,6 +568,11 @@ export function claveItemCarrito(id, varianteTexto = '') {
     return `${id}||${varianteTexto || ''}`;
 }
 
+// Bloque neutro para productos sin imagen en la tienda pública.
+export function placeholderImagenPublica(clase = 'product-image') {
+    return `<div class="${escaparHtml(clase)} public-image-placeholder" role="img" aria-label="Sin imagen"></div>`;
+}
+
 // Generar el HTML de una tarjeta de producto (estándar para toda la web)
 // Toda la tarjeta enlaza al detalle; sin botones internos.
 // Con la opción { soloNombrePrecio: true } se omiten la descripción y demás
@@ -589,7 +591,9 @@ export function generarHTMLTarjetaProducto(producto, opciones = {}) {
         <a href="producto.html?id=${producto.id}" class="product-card product-link ${esAgotado ? 'out-of-stock' : ''}" aria-label="Ver detalle de ${nombre}">
             ${esAgotado ? '<span class="out-of-stock-badge">Sin Stock</span>' : ''}
             <div class="product-image-wrapper">
-                <img src="${imagen}" alt="${nombre}" class="product-image" loading="lazy">
+                ${producto.imagen
+                    ? `<img src="${imagen}" alt="${nombre}" class="product-image" loading="lazy">`
+                    : placeholderImagenPublica('product-image')}
                 <span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
             </div>
             <div class="product-info">

@@ -1,5 +1,5 @@
 // Renderizar productos por categorías en el index
-import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, slugificar, PLACEHOLDER_LOGO_BANNER } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, slugificar } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
@@ -134,7 +134,6 @@ function generarHTMLBannerDinamico(banner) {
     const titulo = escaparHtml(banner.titulo);
     const link = escaparHtml(banner.link || '');
     const tieneBoton = Boolean(banner.boton && banner.link);
-    const logo = banner.logo || PLACEHOLDER_LOGO_BANNER;
 
     return `
         <section class="banner-intercalado">
@@ -146,9 +145,11 @@ function generarHTMLBannerDinamico(banner) {
                 </div>
 
                 <div class="banner_info">
+                    ${banner.logo ? `
                     <div class="banner_info_icono banner-border">
-                        <img loading="lazy" src="${escaparHtml(imagenOptimizada(logo))}" alt="" class="block" width="60">
+                        <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.logo))}" alt="" class="block" width="60">
                     </div>
+                    ` : ''}
 
                     <div class="banner_info_copy">
                         ${banner.badge ? `<span>${escaparHtml(recortarTexto(banner.badge))}</span>` : ''}

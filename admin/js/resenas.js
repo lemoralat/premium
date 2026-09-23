@@ -1,6 +1,6 @@
 // resenas.js — CRUD de testimonios de clientes.
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 let reseñas = [];
@@ -39,6 +39,13 @@ export async function renderizar(contenedor) {
     });
 }
 
+function fotoClienteHtml(resena) {
+    const imagen = urlPublica(resena.storage_path || resena.external_url || '');
+    return imagen
+        ? `<img src="${esc(imagen)}" alt="" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid var(--border); flex-shrink:0;">`
+        : placeholderImagen('admin-image-placeholder--avatar', 'Sin foto');
+}
+
 function filas() {
     if (!reseñas.length) {
         return `<tr><td colspan="6"><div class="admin-empty"><p>No hay reseñas.</p></div></td></tr>`;
@@ -47,8 +54,7 @@ function filas() {
         <tr>
             <td class="td-principal">
                 <div style="display:flex; align-items:center; gap:0.6rem;">
-                    <img src="${esc(urlPublica(r.storage_path || r.external_url || ''))}" alt=""
-                         style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid var(--border); flex-shrink:0;">
+                    ${fotoClienteHtml(r)}
                     <strong>${esc(r.nombre)}</strong>
                 </div>
             </td>
@@ -82,8 +88,11 @@ function abrirModalResena(idExistente) {
             <div class="admin-field full">
                 <label>Foto del cliente (opcional)</label>
                 <div class="admin-img-upload">
-                    <img src="${esc(urlPublica(reseña?.storage_path || reseña?.external_url || ''))}" alt=""
-                         id="rsnPreview" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--border);">
+                    <div id="rsnPreview" class="admin-preview admin-preview--avatar">
+                        ${reseña?.storage_path || reseña?.external_url
+                            ? `<img class="admin-preview-image" src="${esc(urlPublica(reseña.storage_path || reseña.external_url))}" alt="">`
+                            : placeholderImagen('', 'Sin foto')}
+                    </div>
                     <label class="btn btn-outline admin-file-btn">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Elegir foto
                         <input type="file" id="rsnArchivo" accept="image/jpeg,image/png,image/webp">
@@ -138,7 +147,7 @@ function abrirModalResena(idExistente) {
         if (!archivo) return;
         try {
             const lista = await validarYOptimizarImagen(archivo);
-            $('#rsnPreview').src = URL.createObjectURL(lista && lista.size ? lista : archivo);
+            mostrarPreviewImagen($('#rsnPreview'), URL.createObjectURL(lista && lista.size ? lista : archivo), 'Vista previa de la foto');
         } catch (error) { toast(error.message, 'error'); $('#rsnArchivo').value = ''; }
     });
 

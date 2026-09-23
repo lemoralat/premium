@@ -1380,8 +1380,8 @@ function procesarImagenesDesdeGDrive(productos) {
                 Logger.log(`⚠️ Advertencia: No se encontró carpeta "${producto.carpetaImagenes}" para producto ID ${producto.id}`);
                 return {
                     ...producto,
-                    imagen: 'img/placeholder.png',
-                    galeria: ['img/placeholder.png']
+                    imagen: '',
+                    galeria: []
                 };
             }
 
@@ -1420,16 +1420,16 @@ function procesarImagenesDesdeGDrive(productos) {
 
             return {
                 ...producto,
-                imagen: imagenPrincipal || thumbnailUrls[0] || 'img/placeholder.png',
-                galeria: galeriaUrls.length > 0 ? galeriaUrls : ['img/placeholder.png']
+                imagen: imagenPrincipal || thumbnailUrls[0] || '',
+                galeria: galeriaUrls.length > 0 ? galeriaUrls : []
             };
 
         } catch (error) {
             Logger.log(`❌ Error procesando imágenes de producto ${producto.id}: ${error.message}`);
             return {
                 ...producto,
-                imagen: 'img/placeholder.png',
-                galeria: ['img/placeholder.png']
+                imagen: '',
+                galeria: []
             };
         }
     });

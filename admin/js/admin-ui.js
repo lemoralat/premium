@@ -19,6 +19,18 @@ export function esc(texto) {
         .replaceAll("'", '&#039;');
 }
 
+// Placeholder visual para previews del dashboard cuando todavía no hay imagen.
+export function placeholderImagen(variante = '', etiqueta = 'Sin imagen') {
+    const clases = ['admin-image-placeholder', variante].filter(Boolean).join(' ');
+    return `<span class="${esc(clases)}" role="img" aria-label="${esc(etiqueta)}"><i class="fa-regular fa-image" aria-hidden="true"></i></span>`;
+}
+
+// Reemplaza un placeholder por la imagen elegida por el usuario.
+export function mostrarPreviewImagen(elemento, url, alt = '') {
+    if (!elemento) return;
+    elemento.innerHTML = `<img class="admin-preview-image" src="${esc(url)}" alt="${esc(alt)}">`;
+}
+
 // ---------- Formato ----------
 export function formatearPrecio(precio) {
     const n = Number(precio || 0);
@@ -131,9 +143,12 @@ export async function confirmarBorrado(mensaje) {
 // storage_path usa la convención "<bucket>/<ruta>"; external_url se usa tal cual.
 export function urlPublica(src) {
     if (!src) return '';
-    if (/^https?:\/\//i.test(String(src))) return String(src);
-    const [bucket, ...resto] = String(src).split('/');
-    if (!SUPABASE_CONFIG.url || resto.length === 0) return String(src);
+    const valor = String(src).trim();
+    if (/^(?:https?:|blob:|data:)/i.test(valor)) return valor;
+    // Las rutas locales del repositorio no son storage paths de Supabase.
+    if (/^(?:\.{0,2}\/|\/)/.test(valor) || valor.startsWith('img/')) return valor;
+    const [bucket, ...resto] = valor.split('/');
+    if (!SUPABASE_CONFIG.url || resto.length === 0) return valor;
     return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${bucket}/${resto.join('/')}`;
 }
 

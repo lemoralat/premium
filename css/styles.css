@@ -1127,6 +1127,16 @@ span {
     background: var(--border-color);
 }
 
+.public-image-placeholder {
+    display: block;
+    background: var(--border-color);
+}
+
+.product-detail-image.public-image-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+}
+
 .product-info {
     padding: 1.25rem;
     flex: 1;

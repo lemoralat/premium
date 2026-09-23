@@ -2,7 +2,7 @@
 // Cada icono se representa o bien con una imagen (archivo subido o URL) o bien
 // con un ícono de Font Awesome elegido de un catálogo curado con buscador.
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { montarSelectorIconos } from './selector-iconos.js';
 
@@ -42,6 +42,13 @@ export async function renderizar(contenedor) {
     });
 }
 
+function imagenIconoHtml(icono) {
+    const imagen = urlPublica(icono.storage_path || icono.external_url || '');
+    return imagen
+        ? `<img src="${esc(imagen)}" alt="" style="width:34px; height:34px; object-fit:contain; border:1px solid var(--border); background:#fff; flex-shrink:0;">`
+        : placeholderImagen('admin-image-placeholder--icon', 'Sin imagen');
+}
+
 function filas() {
     if (!iconos.length) {
         return `<tr><td colspan="5"><div class="admin-empty"><p>No hay iconos.</p></div></td></tr>`;
@@ -52,8 +59,7 @@ function filas() {
                 <div style="display:flex; align-items:center; gap:0.6rem;">
                     ${i.icono
                         ? `<span class="admin-icono-mini"><i class="${esc(i.icono)}" aria-hidden="true"></i></span>`
-                        : `<img src="${esc(urlPublica(i.storage_path || i.external_url || ''))}" alt=""
-                             style="width:34px; height:34px; object-fit:contain; border:1px solid var(--border); background:#fff; flex-shrink:0;">`}
+                        : imagenIconoHtml(i)}
                     <strong>${esc(i.titulo)}</strong>
                 </div>
             </td>
@@ -96,8 +102,11 @@ function abrirModalIcono(idExistente) {
             <div class="admin-field full" id="seccionImagen" ${modoInicial === 'icono' ? 'hidden' : ''}>
                 <label>Imagen</label>
                 <div class="admin-img-upload">
-                    <img src="${esc(urlPublica(icono && !icono.icono ? (icono.storage_path || icono.external_url || '') : ''))}" alt=""
-                         id="icoPreview" style="width:64px; height:64px; object-fit:contain; border:1px solid var(--border); background:#fff;">
+                    <div id="icoPreview" class="admin-preview admin-preview--icon">
+                        ${icono && !icono.icono && (icono.storage_path || icono.external_url)
+                            ? `<img class="admin-preview-image" src="${esc(urlPublica(icono.storage_path || icono.external_url))}" alt="">`
+                            : placeholderImagen('', 'Sin imagen')}
+                    </div>
                     <label class="btn btn-outline admin-file-btn">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
                         <input type="file" id="icoArchivo" accept="image/jpeg,image/png,image/webp">
@@ -175,7 +184,7 @@ function abrirModalIcono(idExistente) {
         if (!archivo) return;
         try {
             const lista = await validarYOptimizarImagen(archivo);
-            $('#icoPreview').src = URL.createObjectURL(lista && lista.size ? lista : archivo);
+            mostrarPreviewImagen($('#icoPreview'), URL.createObjectURL(lista && lista.size ? lista : archivo), 'Vista previa de la imagen');
         } catch (error) { toast(error.message, 'error'); $('#icoArchivo').value = ''; }
     });
 

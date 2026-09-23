@@ -1,6 +1,6 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, imagenOptimizada, obtenerNombreSitio } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, imagenOptimizada, obtenerNombreSitio, placeholderImagenPublica } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
@@ -174,7 +174,7 @@ function renderizarDetalleProducto(producto) {
     // Usar galería si existe, sino usar imagen principal
     const imagenesGaleria = (producto.galeria && producto.galeria.length > 0 
         ? producto.galeria 
-        : [producto.imagen]).map(imagenOptimizada);
+        : [producto.imagen]).map(imagenOptimizada).filter(Boolean);
 
     // V-2: nombre y URLs son contenido administrado → escapar antes de HTML.
     const nombreSeguro = escaparHtml(recortarTexto(producto.nombre));
@@ -184,11 +184,13 @@ function renderizarDetalleProducto(producto) {
             <div class="product-detail-image-container">
                 <!-- Imagen principal -->
                 <div class="main-image-wrapper">
-                    <img src="${escaparHtml(imagenesGaleria[0])}" 
-                         alt="${nombreSeguro}" 
-                         class="product-detail-image" 
-                         id="mainProductImage"
-                         onclick="toggleZoom()">
+                    ${imagenesGaleria.length
+                        ? `<img src="${escaparHtml(imagenesGaleria[0])}"
+                             alt="${nombreSeguro}"
+                             class="product-detail-image"
+                             id="mainProductImage"
+                             onclick="toggleZoom()">`
+                        : placeholderImagenPublica('product-detail-image')}
                     
                     ${imagenesGaleria.length > 1 ? `
                         <button class="gallery-nav-btn prev-img" onclick="cambiarImagen(-1)" aria-label="Imagen anterior">
@@ -203,10 +205,11 @@ function renderizarDetalleProducto(producto) {
                         </div>
                     ` : ''}
                     
+                    ${imagenesGaleria.length ? `
                     <div class="zoom-hint">
                         <i class="fa-solid fa-magnifying-glass-plus"></i>
                         <span>Click para ampliar</span>
-                    </div>
+                    </div>` : ''}
                 </div>
                 
                 <!-- Miniaturas -->
@@ -396,7 +399,8 @@ function toggleZoom() {
     
     const imagenesGaleria = (producto.galeria && producto.galeria.length > 0 
         ? producto.galeria 
-        : [producto.imagen]).map(imagenOptimizada);
+        : [producto.imagen]).map(imagenOptimizada).filter(Boolean);
+    if (!imagenesGaleria.length) return;
 
     // V-2: nombre y URLs administradas → escapar antes de interpolar.
     const productoNombre = escaparHtml(recortarTexto(producto.nombre));

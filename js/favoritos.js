@@ -1,6 +1,6 @@
 // favoritos.js
 
-import { obtenerProductos, generarHTMLTarjetaProducto, mostrarNotificacion, renderPrecioAnterior, imagenOptimizada, escaparHtml } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, mostrarNotificacion, renderPrecioAnterior, imagenOptimizada, escaparHtml, placeholderImagenPublica } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let allProducts = []; // Para almacenar todos los productos una vez cargados
@@ -65,7 +65,9 @@ function renderizarFavoritos() {
     // (V-2: nombre, imagen y categoría son contenido administrado → escapar)
     favoritosContainer.innerHTML = favoriteProducts.map(p => `
         <div class="favorito-item">
-            <img src="${escaparHtml(imagenOptimizada(p.imagen))}" alt="${escaparHtml(p.nombre)}" class="favorito-imagen">
+            ${p.imagen
+                ? `<img src="${escaparHtml(imagenOptimizada(p.imagen))}" alt="${escaparHtml(p.nombre)}" class="favorito-imagen">`
+                : placeholderImagenPublica('favorito-imagen')}
             <div class="favorito-info">
                 <a href="producto.html?id=${p.id}" class="favorito-nombre">${escaparHtml(p.nombre)}</a>
                 <p class="favorito-categoria">${escaparHtml(p.categoria)}</p>

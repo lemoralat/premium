@@ -1,12 +1,9 @@
 // banners.js — CRUD de banners promocionales (inicio y carrito).
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 let banners = [];
-
-// Desde /admin/, la imagen local del placeholder vive un nivel arriba.
-const PLACEHOLDER_LOGO_BANNER_ADMIN = '../img/placeholder.png';
 
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
@@ -74,7 +71,7 @@ function filas() {
 
 function abrirModalBanner(idExistente) {
     const banner = idExistente ? banners.find((b) => b.id === idExistente) : null;
-    const logoPreview = banner?.logo_path || banner?.logo_url || PLACEHOLDER_LOGO_BANNER_ADMIN;
+    const logoPreview = banner?.logo_path || banner?.logo_url || '';
 
     abrirModal(`
         <h2>${banner ? 'Editar banner' : 'Nuevo banner'}</h2>
@@ -102,11 +99,14 @@ function abrirModalBanner(idExistente) {
 
             <div class="admin-field full">
                 <label>Logo (opcional, recomendado cuadrado 240×240)</label>
-                <p class="hint">La vista previa usa img/placeholder.png si no cargás un logo. Los banners con contenido también lo muestran en la tienda.</p>
+                <p class="hint">Si no cargás un logo, se mostrará un ícono de imagen en la vista previa.</p>
                 <div class="admin-imagenes">
                     <div style="display:flex; gap:0.9rem; align-items:center;">
-                        <img src="${esc(urlPublica(logoPreview))}" alt=""
-                             id="bnrLogoPreview" style="width:72px; height:72px; object-fit:contain; border-radius:8px; border:1px solid var(--border); background:#fafafa;">
+                        <div id="bnrLogoPreview" class="admin-preview admin-preview--logo">
+                            ${logoPreview
+                                ? `<img class="admin-preview-image" src="${esc(urlPublica(logoPreview))}" alt="">`
+                                : placeholderImagen('', 'Sin logo')}
+                        </div>
                         <div class="admin-img-upload" style="flex:1; flex-direction:column; align-items:flex-start;">
                             <label class="btn btn-sm btn-outline admin-file-btn">
                                 <i class="fa-solid fa-cloud-arrow-up"></i> Elegir logo
@@ -177,7 +177,7 @@ function abrirModalBanner(idExistente) {
         if (!archivo) return;
         try {
             const lista = await validarYOptimizarImagen(archivo);
-            $('#bnrLogoPreview').src = URL.createObjectURL(lista && lista.size ? lista : archivo);
+            mostrarPreviewImagen($('#bnrLogoPreview'), URL.createObjectURL(lista && lista.size ? lista : archivo), 'Vista previa del logo');
         } catch (error) { toast(error.message, 'error'); $('#bnrLogoArchivo').value = ''; }
     });
 
