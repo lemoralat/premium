@@ -452,9 +452,12 @@ span {
 /* Header y Navegación */
 .logo {
     display: block;
-    width: 120px;
+    width: auto;
+    height: 40px; /* Small (default). Modificadores: .logo--medium / .logo--large */
     margin: 10px 0;
 }
+.logo--medium { height: 60px; }
+.logo--large { height: 80px; }
 
 @media (max-width: 768px) {
     .logo {

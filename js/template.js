@@ -22,7 +22,7 @@ function renderHeader(activePage = '', categorias = []) {
     // imagen; si no, el nombre de la tienda (settings.site_name) como texto.
     const logoSitio = CONFIG_DISENO.logoUrl
         ? `<a href="index.html" class="logo-link">
-                    <img src="${escaparHtml(CONFIG_DISENO.logoUrl)}" alt="${escaparHtml(obtenerNombreSitio())}" class="logo">
+                    <img src="${escaparHtml(CONFIG_DISENO.logoUrl)}" alt="${escaparHtml(obtenerNombreSitio())}" class="logo logo--${CONFIG_DISENO.logoTamano}">
                 </a>`
         : `<a href="index.html" class="logo-link logo-text" title="${escaparHtml(obtenerNombreSitio())}">${escaparHtml(obtenerNombreSitio())}</a>`;
 

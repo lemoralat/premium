@@ -63,6 +63,7 @@ export let configuracionCargada = false;
 // img/imagen-preview.jpg) y el color/bordes actuales.
 export const CONFIG_DISENO = {
     logoUrl: '',            // URL pública del logotipo (vacío ⇒ logo por defecto)
+    logoTamano: 'small',     // small | medium | large → height 40/60/80px en .logo
     faviconUrl: '',         // URL pública del favicon (vacío ⇒ favicon por defecto)
     ogImageUrl: '',         // URL pública de la imagen OpenGraph (vacío ⇒ por defecto)
     colorPrincipal: '#000000',
@@ -114,6 +115,11 @@ export async function cargarConfiguracionGlobal() {
 
             // Diseño (sección "Diseño" del panel)
             CONFIG_DISENO.logoUrl = c.logo_path ? urlImagen({ storage_path: c.logo_path }) : '';
+            // Tamaño del logotipo (sección Diseño). `includes`: sin la
+            // migración 0018 la columna no existe → queda 'small'.
+            if (['small', 'medium', 'large'].includes(c.logo_tamano)) {
+                CONFIG_DISENO.logoTamano = c.logo_tamano;
+            }
             CONFIG_DISENO.faviconUrl = c.favicon_path ? urlImagen({ storage_path: c.favicon_path }) : '';
             CONFIG_DISENO.ogImageUrl = c.og_image_path ? urlImagen({ storage_path: c.og_image_path }) : '';
             if (/^#[0-9a-fA-F]{6}$/.test(c.color_principal || '')) {

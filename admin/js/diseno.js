@@ -2,6 +2,7 @@
 // diseno.js — Sección "Diseño": identidad visual de la tienda.
 // Administra sobre la fila única `settings` (id=1):
 //   - logotipo      → logo_path      (bucket branding/logo)
+//   - tamaño logo   → logo_tamano     (small | medium | large)
 //   - favicon       → favicon_path   (bucket branding/favicon)
 //   - color         → color_principal (#RRGGBB → --primary-color)
 //   - bordes        → estilo_bordes  (redondeado | circular | recto)
@@ -44,6 +45,13 @@ const BORDES = [
     { valor: 'recto', nombre: 'Sin bordes', desc: 'Esquinas rectas en toda la tienda.', clase: 'muestra-recto' }
 ];
 
+// Tamaños del logotipo del encabezado (la tienda aplica height: 40/60/80px)
+const LOGO_TAMANOS = [
+    { valor: 'small', nombre: 'Small', px: 40 },
+    { valor: 'medium', nombre: 'Medium', px: 60 },
+    { valor: 'large', nombre: 'Large', px: 80 }
+];
+
 // Estado por recurso de imagen: path actual, archivo nuevo pendiente y "quitar".
 const estadoImagenes = {};
 
@@ -58,7 +66,10 @@ export async function renderizar(contenedor) {
     const color = /^#[0-9a-fA-F]{6}$/.test(s.color_principal || '') ? s.color_principal : COLOR_DEFECTO;
     const marqueeColor = /^#[0-9a-fA-F]{6}$/.test(s.marquee_color_fondo || '') ? s.marquee_color_fondo : COLOR_DEFECTO;
     const bordesHTML = BORDES.map((b) => bordeOpcion(b, s.estilo_bordes)).join('');
-    const imagenesHTML = RECURSOS_IMAGEN.map((r) => campoImagen(r, s[r.columna])).join('');
+    // El selector de tamaño va junto a la subida del logo (primer recurso)
+    const imagenesHTML = RECURSOS_IMAGEN.map((r, i) =>
+        campoImagen(r, s[r.columna]) + (i === 0 ? campoTamanoLogo(s.logo_tamano) : '')
+    ).join('');
 
     contenedor.innerHTML = `
         <style>
@@ -90,6 +101,21 @@ export async function renderizar(contenedor) {
             .muestra-redondeado { border-radius: 10px; }
             .muestra-circular { border-radius: 999px; }
             .muestra-recto { border-radius: 0; }
+            .diseno-tamano { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+            .diseno-tamano-opcion {
+                position: relative; display: flex; gap: 0.55rem; align-items: center;
+                border: 2px solid var(--border); border-radius: 12px; padding: 0.7rem 0.9rem; cursor: pointer;
+                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+            .diseno-tamano-opcion:has(input:checked),
+            .diseno-tamano-opcion.activa { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); }
+            .diseno-tamano-opcion input { position: absolute; opacity: 0; pointer-events: none; }
+            .diseno-tamano-muestra { width: 34px; background: var(--primary); border-radius: 4px; flex: 0 0 auto; }
+            .diseno-tamano-muestra.tamano-small { height: 10px; }
+            .diseno-tamano-muestra.tamano-medium { height: 15px; }
+            .diseno-tamano-muestra.tamano-large { height: 20px; }
+            .diseno-tamano-nombre { font-size: 0.9rem; font-weight: 600; }
+            .diseno-tamano-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: 0.78rem; margin-top: 0.15rem; }
         </style>
 
         <div class="admin-card">
@@ -171,6 +197,13 @@ export async function renderizar(contenedor) {
         });
     });
 
+    // --- Tamaño de logo: resaltar la opción elegida ---
+    document.querySelectorAll('input[name="logoTamano"]').forEach((radio) => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('input[name="logoTamano"]').forEach((r) => r.closest('.diseno-tamano-opcion').classList.toggle('activa', r.checked));
+        });
+    });
+
     // --- Imágenes: preparar estado y eventos por recurso ---
     RECURSOS_IMAGEN.forEach((r) => prepararCampoImagen(r, s[r.columna]));
 
@@ -235,6 +268,29 @@ function bordeOpcion(b, actual) {
             <span class="diseno-borde-muestra ${esc(b.clase)}" aria-hidden="true"></span>
             <span class="diseno-borde-nombre">${esc(b.nombre)}<em>${esc(b.desc)}</em></span>
         </label>`;
+}
+
+// Selector de tamaño del logotipo (Small / Medium / Large). Va justo después
+// del campo de subida del logo; la tienda lo aplica como height en .logo
+// (css/styles.css: .logo--medium / .logo--large).
+function campoTamanoLogo(actual) {
+    const sel = LOGO_TAMANOS.some((t) => t.valor === actual) ? actual : 'small';
+    const opciones = LOGO_TAMANOS.map((t) => {
+        const activo = t.valor === sel;
+        return `
+        <label class="diseno-tamano-opcion ${activo ? 'activa' : ''}">
+            <input type="radio" name="logoTamano" value="${t.valor}" ${activo ? 'checked' : ''}>
+            <span class="diseno-tamano-muestra tamano-${t.valor}" aria-hidden="true"></span>
+            <span class="diseno-tamano-nombre">${t.nombre}<em>${t.px} px</em></span>
+        </label>`;
+    }).join('');
+
+    return `
+        <div class="admin-field full">
+            <label>Tamaño del logotipo</label>
+            <div class="diseno-tamano">${opciones}</div>
+            <span class="hint">Altura del logotipo en el encabezado de la tienda; el ancho se ajusta solo.</span>
+        </div>`;
 }
 
 // Arma el estado y los eventos de subida / reemplazo / quita por recurso.
@@ -339,6 +395,11 @@ async function guardar() {
     const estilo = document.querySelector('input[name="estiloBordes"]:checked');
     if (!estilo) throw new Error('Elegí un estilo de bordes.');
     payload.estilo_bordes = estilo.value;
+
+    // Tamaño del logotipo
+    const tamano = document.querySelector('input[name="logoTamano"]:checked');
+    if (!tamano) throw new Error('Elegí un tamaño de logotipo.');
+    payload.logo_tamano = tamano.value;
 
     // Marquee: color de fondo + mostrar/ocultar
     const marqueeHex = $('#dsnMarqueeColor').value.trim().toLowerCase();
