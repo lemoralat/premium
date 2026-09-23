@@ -478,6 +478,21 @@ table.admin-tabla tr:hover td { background: #f8fafc; }
     align-items: center;
 }
 
+/* Características: el repeater tiene UNA columna de texto (2 celdas), no 3
+   como variantes. Sin esto, el botón de quitar caería en la columna `2fr`
+   (la del medio) y quedaría el doble de ancho. */
+.repeater-caracteristica-row {
+    grid-template-columns: 1fr auto;
+}
+
+.repeater-caracteristica-row .btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    flex-shrink: 0;
+    justify-content: center;
+}
+
 /* ============================================================================
    IMÁGENES (gestor)
    ============================================================================ */

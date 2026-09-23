@@ -531,7 +531,7 @@ function renderCaracteristicas() {
     const repeater = $('#caracteristicasRepeater');
     if (!repeater) return;
     repeater.innerHTML = caracteristicasModal.map((c, idx) => `
-        <div class="admin-repeater-row" data-caracteristica-row="${idx}">
+        <div class="admin-repeater-row repeater-caracteristica-row" data-caracteristica-row="${idx}">
             <input type="text" data-campo="texto" placeholder="ej: Material: algodón 100%" value="${esc(c)}"
                    style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
             <button type="button" class="btn btn-sm btn-danger" data-quitar-caracteristica="${idx}" aria-label="Quitar característica">
