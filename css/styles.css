@@ -2972,6 +2972,14 @@ body.searching .products-section {
     transition: transform 0.3s ease;
 }
 
+/* Ícono FontAwesome opcional que acompaña al título de cada pregunta
+   (ítems dinámicos desde Configuración → Preguntas frecuentes). */
+.faq-question .faq-question-icon {
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
 .faq-answer {
     max-height: 0;
     overflow: hidden;

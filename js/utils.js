@@ -442,13 +442,20 @@ async function iconosPieDesdeJSON() {
 }
 
 // ================= PREGUNTAS FRECUENTES =================
+// Devuelve { datos, total } cuando hay Supabase, o null si está caído.
+//   - datos: preguntas activas (lo que se muestra).
+//   - total: filas totales (incluye ocultas) vía RPC. Con total = 0 la tabla
+//            está vacía y faq.html mantiene su contenido estático.
 export async function obtenerPreguntasFrecuentes() {
     const remoto = await cargarPreguntasFrecuentes();
     if (remoto.ok) {
-        return remoto.datos;
+        return {
+            datos: remoto.datos,
+            total: remoto.total
+        };
     }
-    // Sin fallback JSON a propósito: si Supabase está caído o la tabla está
-    // vacía, faq.html mantiene el contenido estático actual.
+    // Sin fallback JSON a propósito: si Supabase está caído, faq.html mantiene
+    // el contenido estático actual.
     return null;
 }
 

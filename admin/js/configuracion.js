@@ -2,6 +2,7 @@
 
 import { $, esc, toast, conCarga, estadoCargando } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
+import { renderizarGestor as renderizarGestorPreguntas } from './preguntas-frecuentes.js';
 
 // Defaults del popup de salida (replican el contenido que la tienda mostraba
 // antes de que fuese configurable). Se usan si la columna aún no existe (la
@@ -175,6 +176,12 @@ export async function renderizar(contenedor) {
                 </div>
             </form>
         </div>
+
+        <div class="admin-card">
+            <h2>Preguntas frecuentes</h2>
+            <p class="card-sub">Preguntas y respuestas que se muestran en la página de ayuda (faq.html). Mientras no haya preguntas activas, la tienda mantiene el contenido estático actual.</p>
+            <div id="gestorPreguntasFrecuentes"></div>
+        </div>
     `;
 
     const campos = () => ({
@@ -222,6 +229,10 @@ export async function renderizar(contenedor) {
     vincular('#configFormComercio');
     vincular('#configFormTransferencia');
     vincular('#configFormPopup', camposPopup);
+
+    // Gestor de preguntas frecuentes (widget que se re-renderiza a sí mismo).
+    renderizarGestorPreguntas($('#gestorPreguntasFrecuentes'))
+        .catch((error) => toast(error.message, 'error'));
 }
 
 async function guardarConfig(payload) {

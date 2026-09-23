@@ -1,26 +1,32 @@
-// preguntas-frecuentes.js — CRUD de las preguntas frecuentes (página faq.html).
+// preguntas-frecuentes.js — Gestor de preguntas frecuentes (widget reutilizable).
+// Se monta dentro de la sección "Configuración" del panel (configuracion.js),
+// debajo del formulario del popup de salida.
+//
 // Repeater field: cada fila es una pregunta con respuesta y un ícono FontAwesome
 // opcional (selector curado con buscador, compartido con la sección "Iconos").
-// La sección arranca vacía: mientras no haya filas, la tienda mantiene el
-// contenido estático actual de faq.html como fallback.
+// Mientras no haya preguntas activas, la tienda mantiene el contenido estático
+// actual de faq.html como fallback.
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { montarSelectorIconos } from './selector-iconos.js';
 
 let preguntas = [];
 
-export async function renderizar(contenedor) {
-    estadoCargando(contenedor);
-    const sb = await clienteAdmin();
+// Renderiza el gestor completo dentro de `contenedor` (el <div> de un
+// .admin-card de Configuración). Al guardar/borrar se re-renderiza SOLO este
+// contenedor, para no descartar cambios sin guardar de los demás formularios.
+export async function renderizarGestor(contenedor) {
+    contenedor.innerHTML = '<p class="admin-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando preguntas…</p>';
 
+    const sb = await clienteAdmin();
     const { data, error } = await sb.from('preguntas_frecuentes').select('*').order('position', { ascending: true });
     if (error) throw error;
     preguntas = data || [];
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
-            <p>Preguntas y respuestas que se muestran en la página de ayuda (faq.html)</p>
+            <p>Se muestran en la página de ayuda (faq.html). Mientras no haya preguntas activas, la tienda usa el contenido estático actual.</p>
             <button type="button" class="btn btn-primary" id="btnNuevaPregunta">
                 <i class="fa-solid fa-plus"></i> Nueva pregunta
             </button>
@@ -35,9 +41,9 @@ export async function renderizar(contenedor) {
         </div>
     `;
 
-    $('#btnNuevaPregunta').addEventListener('click', () => abrirModalPregunta(null));
+    $('#btnNuevaPregunta').addEventListener('click', () => abrirModalPregunta(null, contenedor));
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
-        btn.addEventListener('click', () => abrirModalPregunta(Number(btn.dataset.editar)));
+        btn.addEventListener('click', () => abrirModalPregunta(Number(btn.dataset.editar), contenedor));
     });
     contenedor.querySelectorAll('[data-borrar]').forEach((btn) => {
         btn.addEventListener('click', () => borrarPregunta(Number(btn.dataset.borrar), contenedor));
@@ -46,7 +52,7 @@ export async function renderizar(contenedor) {
 
 function filas() {
     if (!preguntas.length) {
-        return `<tr><td colspan="4"><div class="admin-empty"><p>No hay preguntas todavía.</p></div></td></tr>`;
+        return `<tr><td colspan="4"><div class="admin-empty"><p>No hay preguntas todavía. Creá la primera para empezar a alimentar la página de ayuda.</p></div></td></tr>`;
     }
     return preguntas.map((p) => `
         <tr>
@@ -70,7 +76,7 @@ function filas() {
     `).join('');
 }
 
-function abrirModalPregunta(idExistente) {
+function abrirModalPregunta(idExistente, contenedor) {
     const pregunta = idExistente ? preguntas.find((p) => p.id === idExistente) : null;
 
     abrirModal(`
@@ -146,7 +152,7 @@ function abrirModalPregunta(idExistente) {
         };
 
         conCarga(submitBtn, guardarPregunta(payload, $('#pfId').value ? Number($('#pfId').value) : null))
-            .then(() => { cerrarModal(); renderizar($('#adminView')); })
+            .then(() => { cerrarModal(); return renderizarGestor(contenedor); })
             .catch((error) => toast(error.message, 'error'));
     });
 }
@@ -172,5 +178,5 @@ async function borrarPregunta(id, contenedor) {
         return;
     }
     toast('Pregunta eliminada.');
-    renderizar(contenedor);
+    renderizarGestor(contenedor).catch((error) => toast(error.message, 'error'));
 }

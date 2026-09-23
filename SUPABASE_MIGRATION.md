@@ -196,7 +196,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
   - **pedidos** — filtros por estado, búsqueda, detalle del pedido (productos, descuentos, datos del cliente) y **cambio de estado** inline.
   - **cupones** — CRUD con vencimiento y vigencia.
   - **slider / banners / resenas / iconos-pie** — CRUD con preview y subida de imágenes.
-  - **configuracion** — WhatsApp, descuentos, transferencia y redes (los cambios se reflejan en la tienda en ≤ 1 min por la caché).
+  - **configuracion** — WhatsApp, descuentos, transferencia, redes, **popup de salida** (título, descripción, CTA, destino y estado) y **preguntas frecuentes** (repetidor con pregunta, respuesta, orden y ícono FontAwesome opcional). Los cambios se reflejan en la tienda en ≤ 1 min por la caché.
   - **cuenta** — perfil, cambio de contraseña y cierre de sesión.
 - **Estilo**: `admin/css/admin.css` usa los tokens visuales de la tienda (primario `#2563eb`, éxito `#00a650`, peligro `#ef4444`).
 - **Seguridad**: la sesión se persiste con `persistSession`; escrita contra RLS de `authenticated`.
@@ -209,16 +209,19 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 2. **Ejecutar las migraciones** en el SQL Editor de Supabase, **en orden**:
    - `migrations/0001_schema.sql` (esquema + RLS + funciones)
    - `migrations/0002_seed.sql` (datos reales)
-   - `migrations/0003_storage.sql` (buckets y políticas)
+   - `migrations/0007_seguridad.sql` (tabla `admins` + `public.es_admin()`, policies de escritura exigiendo admin) — **antes que 0003**, porque `0003_storage.sql` ya referencia `es_admin()`
+   - `migrations/0003_storage.sql` (buckets y políticas, con `es_admin()` resuelto)
    - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
    - `migrations/0005_enlace_target.sql` (columna `target` en `sliders` y `banners`: `interno` → `_self` default, `externo` → `_blank`)
    - `migrations/0006_productos_destacado.sql` (columna `destacado` en `products`, default false)
-   - `migrations/0007_seguridad.sql` (policies admin exigiendo `es_admin()`, tabla `admins`)
    - `migrations/0008_higiene.sql` (perfil: `full_name` como única columna editable)
    - `migrations/0009_diseno.sql` (sección Diseño: `logo_path`, `favicon_path`, `og_image_path`, `color_principal` negro, `estilo_bordes`)
    - `migrations/0010_color_principal_negro.sql` (default del color principal → negro)
    - `migrations/0011_redes_sociales.sql` (redes del header: YouTube, X, Pinterest, LinkedIn, WhatsApp y Otra sobre las 3 existentes)
    - `migrations/0012_iconos_fontawesome.sql` (sección Iconos: columna `icono` FontAwesome en `iconos_pie`, con selector curado + buscador en el dashboard)
+   - `migrations/0013_popup_salida.sql` (Configuración → Popup de salida: `popup_titulo`, `popup_descripcion`, `popup_cta`, `popup_cta_url`, `popup_activo`)
+   - `migrations/0014_preguntas_frecuentes.sql` (tabla `preguntas_frecuentes` + RLS; sin seed: la tienda mantiene el HTML estático de faq.html como fallback inicial)
+   - `migrations/0015_preguntas_frecuentes_rpc.sql` (RPC `contar_preguntas_frecuentes()` para que la tienda distinga "tabla vacía" de "todas ocultas")
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).
@@ -237,7 +240,9 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 5. **Stock insuficiente**: pedir más unidades de las que hay → respuesta de error (409) y la transacción revierte todo.
 6. **Cupones**: `black20` aplica 20%; intentar `sale10` (inactivo) → no aplica; umbral 100000 y cupón juntos → aplica el mayor, no suma.
 7. **Admin**: login, CRUD de cada sección, subida/reemplazo de imágenes, cambio de estado de pedido y cierre de sesión.
-8. **Seguridad**: sin sesión, la API anon NO debe poder leer `orders` ni escribir en `products` (probarlo desde una pestaña anónima).
+8. **Popup de salida**: desde configuraciones, cambiar título/descripción/CTA/destino y desactivar → la tienda refleja el contenido nuevo (hasta 1 min por caché) y deja de mostrar la ventana si está inactiva.
+9. **Preguntas frecuentes**: con la tabla vacía, `faq.html` muestra el contenido estático actual; al crear la primera pregunta activa pasa a la lista dinámica (con su ícono) y el acordeón sigue funcionando (delegación de eventos); si se ocultan todas, la sección desaparece.
+10. **Seguridad**: sin sesión, la API anon NO debe poder leer `orders` ni escribir en `products` (probarlo desde una pestaña anónima).
 
 ---
 

@@ -420,26 +420,39 @@ export async function cargarPreguntasFrecuentes() {
     if (!sb) return { ok: false };
 
     const cacheado = leerCache('preguntas-frecuentes');
-    if (cacheado) return { ok: true, datos: cacheado };
+    if (cacheado) return { ok: true, datos: cacheado.datos, total: cacheado.total };
 
     try {
-        const { data, error } = await sb
-            .from('preguntas_frecuentes')
-            .select('id, icono, pregunta, respuesta')
-            .eq('activo', true)
-            .order('position', { ascending: true });
+        // Consulta paralela: las preguntas activas (visibles) y el TOTAL de
+        // filas vía la RPC security definer (migración 0015). La tienda usa el
+        // total para distinguir "tabla vacía" (fallback estático) de "todas
+        // ocultas" (ocultar la sección), algo que la RLS no permite por SELECT.
+        const [seleccion, conteo] = await Promise.all([
+            sb
+                .from('preguntas_frecuentes')
+                .select('id, icono, pregunta, respuesta')
+                .eq('activo', true)
+                .order('position', { ascending: true }),
+            sb.rpc('contar_preguntas_frecuentes')
+        ]);
 
-        if (error) throw error;
+        if (seleccion.error) throw seleccion.error;
 
-        const preguntas = (data || []).map(p => ({
+        const preguntas = (seleccion.data || []).map(p => ({
             id: p.id,
             icono: p.icono || '',
             pregunta: p.pregunta || '',
             respuesta: p.respuesta || ''
         }));
 
-        cachear('preguntas-frecuentes', preguntas);
-        return { ok: true, datos: preguntas };
+        // Si el RPC falla (migración 0015 sin aplicar) se degrada a
+        // "total = visibles": equivale al comportamiento anterior y no rompe el
+        // render, solo pierde la distinción vacía/todas-ocultas.
+        const total = (conteo.error ? preguntas.length : (conteo.data ?? preguntas.length));
+
+        const resultado = { datos: preguntas, total };
+        cachear('preguntas-frecuentes', resultado);
+        return { ok: true, ...resultado };
     } catch (error) {
         console.warn('⚠️ Supabase: no se pudieron cargar las preguntas frecuentes, usando contenido estático.', error);
         return { ok: false, error };

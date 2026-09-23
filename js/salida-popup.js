@@ -52,7 +52,16 @@
         modalEl.querySelector('.exit-intent-desc').textContent = cfg.descripcion;
         const cta = modalEl.querySelector('.exit-intent__cta');
         cta.textContent = cfg.cta;
-        cta.href = cfg.ctaUrl;
+        // El destino lo escribe el admin en Configuración → Popup de salida.
+        // Solo se permiten enlaces internos (index.html#…, ./…, /…) o URLs
+        // http(s): se bloquean esquemas tipo javascript: (hardening V-2).
+        const destino = enlacePermitido(cfg.ctaUrl) ? cfg.ctaUrl : 'index.html#tienda';
+        cta.href = destino;
+    }
+
+    // ¿El enlace usa un esquema/path seguro? (anclas, relativos o http/https)
+    function enlacePermitido(url) {
+        return /^(\.{0,2}\/|#|https?:\/\/)/i.test(String(url || '').trim());
     }
 
     function openModal() {
