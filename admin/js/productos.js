@@ -11,6 +11,7 @@ let filtroActivo = 'todos';
 
 // Estado del formulario abierto
 let variantesModal = [];
+let caracteristicasModal = [];
 let imagenesModal = [];
 let contenedorActual = null;
 
@@ -195,9 +196,12 @@ function abrirModalProducto(idExistente) {
     }));
     if (imagenesModal.length === 0) imagenesModal = [{ dbId: null, storage_path: null, external_url: null, esPrincipal: true, file: null, paraBorrar: false, nuevoId: null }];
 
-    const caracteristicasTexto = Array.isArray(producto?.caracteristicas)
-        ? producto.caracteristicas.join('\n')
-        : '';
+    // Estado inicial de características (repeater): cada fila es una string.
+    // Se filtra vacío por si algún producto histórico trae huecos.
+    caracteristicasModal = Array.isArray(producto?.caracteristicas)
+        ? producto.caracteristicas.map((c) => String(c || '').trim()).filter(Boolean)
+        : [];
+    if (caracteristicasModal.length === 0) caracteristicasModal = [''];
 
     abrirModal(`
         <h2>${producto ? 'Editar producto' : 'Nuevo producto'}</h2>
@@ -266,8 +270,11 @@ function abrirModalProducto(idExistente) {
             </div>
 
             <div class="admin-field full">
-                <label for="prdCaracteristicas">Características <span class="hint">(una por línea)</span></label>
-                <textarea id="prdCaracteristicas">${esc(caracteristicasTexto)}</textarea>
+                <label>Características <span class="hint">(cada fila se muestra como un ítem, ej: Material: algodón)</span></label>
+                <div class="admin-repeater" id="caracteristicasRepeater"></div>
+                <button type="button" class="btn btn-sm btn-outline" id="btnAgregarCaracteristica" style="align-self:flex-start; margin-top:0.5rem;">
+                    <i class="fa-solid fa-plus"></i> Agregar característica
+                </button>
             </div>
 
             <div class="admin-field full">
@@ -299,6 +306,7 @@ function abrirModalProducto(idExistente) {
     `);
 
     renderVariantes();
+    renderCaracteristicas();
     renderImagenes();
 
     // Crear categoría inline (sin anidar modales: el producto ya está en el
@@ -323,6 +331,12 @@ function abrirModalProducto(idExistente) {
         capturarVariantes();
         variantesModal.push({ opcion: '', valores: '' });
         renderVariantes();
+    });
+
+    $('#btnAgregarCaracteristica').addEventListener('click', () => {
+        capturarCaracteristicas();
+        caracteristicasModal.push('');
+        renderCaracteristicas();
     });
 
     $('#prdImagenArchivo').addEventListener('change', async () => {
@@ -366,6 +380,7 @@ function abrirModalProducto(idExistente) {
         const submitBtn = event.submitter || $('#productoForm').querySelector('[type="submit"]');
 
         capturarVariantes();
+        capturarCaracteristicas();
         capturarImagenes();
 
         const idValor = $('#prdId').value;
@@ -399,8 +414,9 @@ function abrirModalProducto(idExistente) {
             precio,
             precio_anterior: precioAnteriorValor !== '' ? Number(precioAnteriorValor) : null,
             stock,
-            caracteristicas: $('#prdCaracteristicas').value
-                .split('\n').map((x) => x.trim()).filter(Boolean),
+            caracteristicas: caracteristicasModal
+                .map((c) => String(c || '').trim())
+                .filter(Boolean),
             activo: $('#prdActivo').checked,
             destacado: $('#prdDestacado').checked,
             category_id: categoriaValue ? Number(categoriaValue) : null
@@ -499,6 +515,43 @@ function capturarVariantes() {
         const opcion = fila.querySelector('[data-campo="opcion"]').value;
         const valores = fila.querySelector('[data-campo="valores"]').value;
         variantesModal[idx] = { opcion, valores };
+    });
+}
+
+// ---------- Características (repeater, espejo de las variantes) ----------
+
+function capturarCaracteristicas() {
+    document.querySelectorAll('[data-caracteristica-row]').forEach((fila) => {
+        const idx = Number(fila.dataset.caracteristicaRow);
+        caracteristicasModal[idx] = fila.querySelector('[data-campo="texto"]').value;
+    });
+}
+
+function renderCaracteristicas() {
+    const repeater = $('#caracteristicasRepeater');
+    if (!repeater) return;
+    repeater.innerHTML = caracteristicasModal.map((c, idx) => `
+        <div class="admin-repeater-row" data-caracteristica-row="${idx}">
+            <input type="text" data-campo="texto" placeholder="ej: Material: algodón 100%" value="${esc(c)}"
+                   style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+            <button type="button" class="btn btn-sm btn-danger" data-quitar-caracteristica="${idx}" aria-label="Quitar característica">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `).join('');
+
+    repeater.querySelectorAll('[data-quitar-caracteristica]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            capturarCaracteristicas();
+            caracteristicasModal.splice(Number(btn.dataset.quitarCaracteristica), 1);
+            if (caracteristicasModal.length === 0) caracteristicasModal = [''];
+            renderCaracteristicas();
+        });
+    });
+
+    // Sincronizar el estado a medida que se edita (para el submit)
+    repeater.querySelectorAll('input').forEach((input) => {
+        input.addEventListener('input', () => capturarCaracteristicas());
     });
 }
 
