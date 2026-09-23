@@ -22,6 +22,7 @@ html {
     --bg-color: #f5f5f5;
     --text-color: #1e293b;
     --border-color: #e2e8f0;
+    --product-card-aspect-ratio: 1 / 1;
 
     /* Sombras */
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -808,7 +809,7 @@ span {
        se vean demasiado altas en el panel de 480px) */
     .mobile-results .product-image {
         height: auto;
-        aspect-ratio: 5 / 4;
+        aspect-ratio: var(--product-card-aspect-ratio);
     }
 }
 
@@ -1131,7 +1132,8 @@ span {
 
 .product-image {
     width: 100%;
-    height: 250px;
+    height: auto;
+    aspect-ratio: var(--product-card-aspect-ratio);
     object-fit: cover;
     background: var(--border-color);
 }
@@ -2027,7 +2029,8 @@ footer p {
     }
 
     .product-image {
-        height: clamp(132px, 40vw, 168px);
+        height: auto;
+        aspect-ratio: var(--product-card-aspect-ratio);
     }
 
     .product-info {

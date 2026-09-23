@@ -2,6 +2,12 @@
 
 import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar, obtenerMarquee, placeholderImagenPublica } from './utils.js';
 
+const CARD_ASPECT_RATIOS = Object.freeze({
+    '1:1': '1 / 1',
+    '3:2': '3 / 2',
+    '4:5': '4 / 5'
+});
+
 // Renderizar Header
 function renderHeader(activePage = '', categorias = []) {
     const header = document.createElement('div');
@@ -191,6 +197,10 @@ function aplicarDisenoGlobal() {
     document.body.classList.remove('diseno-circular', 'diseno-recto');
     if (CONFIG_DISENO.estiloBordes === 'circular') document.body.classList.add('diseno-circular');
     if (CONFIG_DISENO.estiloBordes === 'recto') document.body.classList.add('diseno-recto');
+
+    // Formato de imágenes de los cards de catálogo.
+    const aspectRatio = CARD_ASPECT_RATIOS[CONFIG_DISENO.cardImageFormat] || CARD_ASPECT_RATIOS['1:1'];
+    document.documentElement.style.setProperty('--product-card-aspect-ratio', aspectRatio);
 
     // Favicon dinámico (todas las páginas usan template.js)
     if (CONFIG_DISENO.faviconUrl) {

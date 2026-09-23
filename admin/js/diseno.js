@@ -52,6 +52,12 @@ const LOGO_TAMANOS = [
     { valor: 'large', nombre: 'Large', px: 80 }
 ];
 
+const CARD_FORMATS = [
+    { valor: '1:1', nombre: 'Cuadrado', desc: '1:1', aspecto: '1 / 1' },
+    { valor: '3:2', nombre: 'Horizontal', desc: '3:2', aspecto: '3 / 2' },
+    { valor: '4:5', nombre: 'Vertical', desc: '4:5', aspecto: '4 / 5' }
+];
+
 // Estado por recurso de imagen: path actual, archivo nuevo pendiente y "quitar".
 const estadoImagenes = {};
 
@@ -70,6 +76,7 @@ export async function renderizar(contenedor) {
     const imagenesHTML = RECURSOS_IMAGEN.map((r, i) =>
         campoImagen(r, s[r.columna]) + (i === 0 ? campoTamanoLogo(s.logo_tamano) : '')
     ).join('');
+    const cardFormatHTML = campoFormatoCard(s.card_image_format);
 
     contenedor.innerHTML = `
         <style>
@@ -116,6 +123,18 @@ export async function renderizar(contenedor) {
             .diseno-tamano-muestra.tamano-large { height: 20px; }
             .diseno-tamano-nombre { font-size: 0.9rem; font-weight: 600; }
             .diseno-tamano-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: 0.78rem; margin-top: 0.15rem; }
+            .diseno-formatos { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+            .diseno-formato-opcion {
+                position: relative; display: flex; gap: 0.65rem; align-items: center;
+                border: 2px solid var(--border); border-radius: 12px; padding: 0.7rem 0.9rem; cursor: pointer;
+                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+            .diseno-formato-opcion:has(input:checked),
+            .diseno-formato-opcion.activa { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); }
+            .diseno-formato-opcion input { position: absolute; opacity: 0; pointer-events: none; }
+            .diseno-formato-muestra { width: 42px; max-height: 58px; background: var(--primary); border-radius: 4px; flex: 0 0 auto; }
+            .diseno-formato-nombre { font-size: 0.9rem; font-weight: 600; }
+            .diseno-formato-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: 0.78rem; margin-top: 0.15rem; }
         </style>
 
         <div class="admin-card">
@@ -124,6 +143,7 @@ export async function renderizar(contenedor) {
             <form class="admin-form" id="disenoForm">
                 <div class="admin-form-grid">
                     ${imagenesHTML}
+                    ${cardFormatHTML}
                     <div class="admin-field full">
                         <label for="dsnColor">Color principal</label>
                         <div class="diseno-color">
@@ -201,6 +221,13 @@ export async function renderizar(contenedor) {
     document.querySelectorAll('input[name="logoTamano"]').forEach((radio) => {
         radio.addEventListener('change', () => {
             document.querySelectorAll('input[name="logoTamano"]').forEach((r) => r.closest('.diseno-tamano-opcion').classList.toggle('activa', r.checked));
+        });
+    });
+
+    // --- Formato de cards: resaltar la opción elegida ---
+    document.querySelectorAll('input[name="cardImageFormat"]').forEach((radio) => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('input[name="cardImageFormat"]').forEach((r) => r.closest('.diseno-formato-opcion').classList.toggle('activa', r.checked));
         });
     });
 
@@ -290,6 +317,26 @@ function campoTamanoLogo(actual) {
             <label>Tamaño del logotipo</label>
             <div class="diseno-tamano">${opciones}</div>
             <span class="hint">Altura del logotipo en el encabezado de la tienda; el ancho se ajusta solo.</span>
+        </div>`;
+}
+
+function campoFormatoCard(actual) {
+    const valor = CARD_FORMATS.some((formato) => formato.valor === actual) ? actual : '1:1';
+    const opciones = CARD_FORMATS.map((formato) => {
+        const activo = formato.valor === valor;
+        return `
+        <label class="diseno-formato-opcion ${activo ? 'activa' : ''}">
+            <input type="radio" name="cardImageFormat" value="${esc(formato.valor)}" ${activo ? 'checked' : ''}>
+            <span class="diseno-formato-muestra" style="aspect-ratio:${formato.aspecto};" aria-hidden="true"></span>
+            <span class="diseno-formato-nombre">${esc(formato.nombre)}<em>${esc(formato.desc)}</em></span>
+        </label>`;
+    }).join('');
+
+    return `
+        <div class="admin-field full">
+            <label>Formato de las imágenes de los cards</label>
+            <div class="diseno-formatos">${opciones}</div>
+            <span class="hint">Se aplica a los cards del catálogo, búsqueda y productos relacionados.</span>
         </div>`;
 }
 
@@ -405,6 +452,12 @@ async function guardar() {
     const tamano = document.querySelector('input[name="logoTamano"]:checked');
     if (!tamano) throw new Error('Elegí un tamaño de logotipo.');
     payload.logo_tamano = tamano.value;
+
+    const formatoCard = document.querySelector('input[name="cardImageFormat"]:checked');
+    if (!formatoCard || !CARD_FORMATS.some((formato) => formato.valor === formatoCard.value)) {
+        throw new Error('Elegí un formato válido para las imágenes de los cards.');
+    }
+    payload.card_image_format = formatoCard.value;
 
     // Marquee: color de fondo + mostrar/ocultar
     const marqueeHex = $('#dsnMarqueeColor').value.trim().toLowerCase();

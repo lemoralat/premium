@@ -73,6 +73,7 @@ export const CONFIG_DISENO = {
     logoTamano: 'small',     // small | medium | large → height 40/60/80px en .logo
     faviconUrl: '',         // URL pública del favicon (vacío ⇒ favicon por defecto)
     ogImageUrl: '',         // URL pública de la imagen OpenGraph (vacío ⇒ por defecto)
+    cardImageFormat: '1:1', // 1:1 | 3:2 | 4:5 para los cards de catálogo
     colorPrincipal: '#000000',
     estiloBordes: 'redondeado' // redondeado | circular | recto
 };
@@ -135,6 +136,9 @@ export async function cargarConfiguracionGlobal() {
             }
             CONFIG_DISENO.faviconUrl = c.favicon_path ? urlImagen({ storage_path: c.favicon_path }) : '';
             CONFIG_DISENO.ogImageUrl = c.og_image_path ? urlImagen({ storage_path: c.og_image_path }) : '';
+            if (['1:1', '3:2', '4:5'].includes(c.card_image_format)) {
+                CONFIG_DISENO.cardImageFormat = c.card_image_format;
+            }
             if (/^#[0-9a-fA-F]{6}$/.test(c.color_principal || '')) {
                 CONFIG_DISENO.colorPrincipal = c.color_principal.toLowerCase();
             }
