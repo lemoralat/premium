@@ -222,6 +222,16 @@ async function initTemplate(activePage = '') {
     // WhatsApp, descuentos, transferencia y redes — antes de renderizar el template.
     await cargarConfiguracionGlobal();
 
+    // Popup de salida: la config remota se expone para el script clásico
+    // salida-popup.js (lee window.POPUP_CONFIG al abrir la ventana).
+    window.POPUP_CONFIG = {
+        titulo: CONFIG_APP.popupTitulo,
+        descripcion: CONFIG_APP.popupDescripcion,
+        cta: CONFIG_APP.popupCta,
+        ctaUrl: CONFIG_APP.popupCtaUrl,
+        activo: CONFIG_APP.popupActivo
+    };
+
     // Aplicar branding configurable (sección "Diseño" del panel): color, bordes,
     // favicon y metas OpenGraph/Twitter.
     aplicarDisenoGlobal();

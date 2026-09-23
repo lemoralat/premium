@@ -31,8 +31,34 @@
         }
     }
 
+    // Configuración del popup (Configuración → Popup de salida). La expone
+    // template.js en window.POPUP_CONFIG; mientras no esté lista se usan los
+    // mismos valores que la tienda mostró siempre.
+    function configPopup() {
+        const c = window.POPUP_CONFIG || {};
+        return {
+            titulo: c.titulo || '¿Te vas tan pronto?',
+            descripcion: c.descripcion || 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
+            cta: c.cta || 'Ver productos',
+            ctaUrl: c.ctaUrl || 'index.html#tienda',
+            activo: c.activo !== false
+        };
+    }
+
+    function aplicarConfigPopup() {
+        if (!modalEl) return;
+        const cfg = configPopup();
+        modalEl.querySelector('#exit-intent-title').textContent = cfg.titulo;
+        modalEl.querySelector('.exit-intent-desc').textContent = cfg.descripcion;
+        const cta = modalEl.querySelector('.exit-intent__cta');
+        cta.textContent = cfg.cta;
+        cta.href = cfg.ctaUrl;
+    }
+
     function openModal() {
         if (!modalEl) return;
+        // La config remota pudo llegar después del build del modal.
+        aplicarConfigPopup();
         previousFocus = document.activeElement;
         modalEl.classList.add('active');
         modalEl.setAttribute('aria-hidden', 'false');
@@ -42,6 +68,7 @@
     }
 
     function tryShowExitIntent() {
+        if (configPopup().activo === false) return;
         if (sessionStorage.getItem(STORAGE_KEY) === '1') return;
         if (!isFinePointer()) return;
         sessionStorage.setItem(STORAGE_KEY, '1');
@@ -65,7 +92,7 @@
             <div class="exit-intent-dialog">
                 <button type="button" class="exit-intent-close" aria-label="Cerrar">&times;</button>
                 <h2 id="exit-intent-title">¿Te vas tan pronto?</h2>
-                <p>Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?</p>
+                <p class="exit-intent-desc">Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?</p>
                 <div class="exit-intent-actions">
                     <a href="index.html#tienda" class="exit-intent__cta">Ver productos</a>
                     <button type="button" class="exit-intent__secondary" data-exit-close>Seguir navegando</button>

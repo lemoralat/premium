@@ -3,6 +3,17 @@
 import { $, esc, toast, conCarga, estadoCargando } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
+// Defaults del popup de salida (replican el contenido que la tienda mostraba
+// antes de que fuese configurable). Se usan si la columna aún no existe (la
+// migración 0013 todavía no aplicada) o si el admin la deja vacía.
+const DEFAULT_POPUP = {
+    titulo: '¿Te vas tan pronto?',
+    descripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
+    cta: 'Ver productos',
+    ctaUrl: 'index.html#tienda',
+    activo: true
+};
+
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
@@ -129,6 +140,41 @@ export async function renderizar(contenedor) {
                 </div>
             </form>
         </div>
+
+        <div class="admin-card">
+            <h2>Popup de salida</h2>
+            <p class="card-sub">Ventana que aparece al intentar abandonar la tienda. Se puede personalizar o desactivar.</p>
+            <form class="admin-form" id="configFormPopup">
+                <div class="admin-form-grid">
+                    <div class="admin-field">
+                        <label for="cfgPopupTitulo">Título</label>
+                        <input type="text" id="cfgPopupTitulo" value="${esc(s.popup_titulo ?? DEFAULT_POPUP.titulo)}">
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgPopupCta">Texto del botón</label>
+                        <input type="text" id="cfgPopupCta" value="${esc(s.popup_cta ?? DEFAULT_POPUP.cta)}">
+                    </div>
+                    <div class="admin-field full">
+                        <label for="cfgPopupDescripcion">Descripción</label>
+                        <textarea id="cfgPopupDescripcion" rows="3">${esc(s.popup_descripcion ?? DEFAULT_POPUP.descripcion)}</textarea>
+                    </div>
+                    <div class="admin-field full">
+                        <label for="cfgPopupCtaUrl">Destino del botón</label>
+                        <input type="text" id="cfgPopupCtaUrl" value="${esc(s.popup_cta_url ?? DEFAULT_POPUP.ctaUrl)}" placeholder="ej: index.html#tienda o https://…">
+                        <span class="hint">Página interna (ej. index.html#tienda) o URL externa completa.</span>
+                    </div>
+                    <div class="admin-field full">
+                        <label class="admin-check">
+                            <input type="checkbox" id="cfgPopupActivo" ${s.popup_activo === false ? '' : 'checked'}>
+                            Popup activo (se muestra al intentar salir de la tienda)
+                        </label>
+                    </div>
+                </div>
+                <div class="admin-modal-acciones">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
     `;
 
     const campos = () => ({
@@ -153,11 +199,20 @@ export async function renderizar(contenedor) {
         transfer_holder: $('#cfgTitular').value.trim()
     });
 
-    const vincular = (formId) => {
+    const camposPopup = () => ({
+        popup_titulo: $('#cfgPopupTitulo').value.trim() || DEFAULT_POPUP.titulo,
+        popup_descripcion: $('#cfgPopupDescripcion').value.trim() || DEFAULT_POPUP.descripcion,
+        popup_cta: $('#cfgPopupCta').value.trim() || DEFAULT_POPUP.cta,
+        popup_cta_url: $('#cfgPopupCtaUrl').value.trim() || DEFAULT_POPUP.ctaUrl,
+        popup_activo: $('#cfgPopupActivo').checked
+    });
+
+    const vincular = (formId, obtenerCampos = null) => {
         $(formId).addEventListener('submit', async (event) => {
             event.preventDefault();
             const submitBtn = event.submitter || $(formId).querySelector('[type="submit"]');
-            conCarga(submitBtn, guardarConfig(campos()))
+            const payload = obtenerCampos ? obtenerCampos() : campos();
+            conCarga(submitBtn, guardarConfig(payload))
                 .then(() => toast('Configuración guardada.'))
                 .catch((error) => toast(error.message, 'error'));
         });
@@ -166,6 +221,7 @@ export async function renderizar(contenedor) {
     vincular('#configFormGeneral');
     vincular('#configFormComercio');
     vincular('#configFormTransferencia');
+    vincular('#configFormPopup', camposPopup);
 }
 
 async function guardarConfig(payload) {

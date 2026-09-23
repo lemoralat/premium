@@ -413,6 +413,40 @@ export async function cargarIconosPie() {
 }
 
 // ============================================================================
+// PREGUNTAS FRECUENTES (página faq.html)
+// ============================================================================
+export async function cargarPreguntasFrecuentes() {
+    const sb = await obtenerClienteSupabase();
+    if (!sb) return { ok: false };
+
+    const cacheado = leerCache('preguntas-frecuentes');
+    if (cacheado) return { ok: true, datos: cacheado };
+
+    try {
+        const { data, error } = await sb
+            .from('preguntas_frecuentes')
+            .select('id, icono, pregunta, respuesta')
+            .eq('activo', true)
+            .order('position', { ascending: true });
+
+        if (error) throw error;
+
+        const preguntas = (data || []).map(p => ({
+            id: p.id,
+            icono: p.icono || '',
+            pregunta: p.pregunta || '',
+            respuesta: p.respuesta || ''
+        }));
+
+        cachear('preguntas-frecuentes', preguntas);
+        return { ok: true, datos: preguntas };
+    } catch (error) {
+        console.warn('⚠️ Supabase: no se pudieron cargar las preguntas frecuentes, usando contenido estático.', error);
+        return { ok: false, error };
+    }
+}
+
+// ============================================================================
 // CONFIGURACIÓN GLOBAL (settings de fila única)
 // ============================================================================
 export async function cargarConfiguracion() {

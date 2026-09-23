@@ -4,7 +4,7 @@
 
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
-import { ICONOS_FONT_AWESOME } from './iconos-fa.js';
+import { montarSelectorIconos } from './selector-iconos.js';
 
 let iconos = [];
 
@@ -153,7 +153,7 @@ function abrirModalIcono(idExistente) {
         });
         $('#seccionImagen').hidden = modo !== 'imagen';
         $('#seccionIcono').hidden = modo !== 'icono';
-        if (modo === 'icono') renderGrillaIconos($('#icoBuscar').value);
+        if (modo === 'icono') selectorIconos.render($('#icoBuscar').value);
     };
     $('#icoSeg').addEventListener('click', (event) => {
         const boton = event.target.closest('.admin-seg-btn');
@@ -161,29 +161,14 @@ function abrirModalIcono(idExistente) {
         setModo(boton.dataset.modo);
     });
 
-    // Grilla de íconos del catálogo curado (más buscador en español/inglés)
-    const renderGrillaIconos = (filtro = '') => {
-        const busca = filtro.toLowerCase().trim();
-        const lista = busca
-            ? ICONOS_FONT_AWESOME.filter((i) =>
-                i.clase.toLowerCase().includes(busca) || i.etiqueta.toLowerCase().includes(busca))
-            : ICONOS_FONT_AWESOME;
-        const seleccion = $('#icoIcono').value;
-        $('#icoGrilla').innerHTML = lista.map((i) => `
-            <button type="button" role="option" class="admin-icono-opcion ${i.clase === seleccion ? 'seleccionado' : ''}"
-                    data-clase="${esc(i.clase)}" title="${esc(i.etiqueta)}" aria-label="${esc(i.etiqueta)}" aria-selected="${i.clase === seleccion}">
-                <i class="${esc(i.clase)}" aria-hidden="true"></i>
-            </button>`).join('');
-        $('#icoVacio').hidden = lista.length > 0;
-    };
-    $('#icoGrilla').addEventListener('click', (event) => {
-        const boton = event.target.closest('.admin-icono-opcion');
-        if (!boton) return;
-        $('#icoIcono').value = boton.dataset.clase;
-        renderGrillaIconos($('#icoBuscar').value);
+    // Selector de íconos del catálogo curado (buscador + grilla), compartido
+    // con la sección "Preguntas frecuentes" vía admin/js/selector-iconos.js.
+    const selectorIconos = montarSelectorIconos({
+        inputId: 'icoIcono',
+        buscarId: 'icoBuscar',
+        grillaId: 'icoGrilla',
+        vacioId: 'icoVacio'
     });
-    $('#icoBuscar').addEventListener('input', () => renderGrillaIconos($('#icoBuscar').value));
-    renderGrillaIconos();
 
     $('#icoArchivo').addEventListener('change', async () => {
         const archivo = $('#icoArchivo').files[0];

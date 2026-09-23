@@ -1214,3 +1214,8 @@ body.admin-modal-abierto { overflow: hidden; }
     color: var(--primary);
     font-size: 1.05rem;
 }
+
+.admin-icono-mini.sin-icono {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}

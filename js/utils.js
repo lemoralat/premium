@@ -4,7 +4,7 @@
 // (modo dual controlado) para que la tienda siga funcionando si Supabase no
 // está configurado o hay un corte de red.
 import {
-    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, urlImagen
+    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, urlImagen
 } from './supabase.js';
 
 // Configuración de descuentos (se refresca desde Supabase settings)
@@ -41,7 +41,14 @@ export const CONFIG_APP = {
     socialPinterest: '',
     socialLinkedin: '',
     socialWhatsapp: '',
-    socialOtra: ''
+    socialOtra: '',
+    // Popup de salida (Configuración → Popup de salida). Defaults = contenido
+    // que la tienda mostró siempre.
+    popupTitulo: '¿Te vas tan pronto?',
+    popupDescripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
+    popupCta: 'Ver productos',
+    popupCtaUrl: 'index.html#tienda',
+    popupActivo: true
 };
 
 export let configuracionCargada = false;
@@ -86,6 +93,13 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.socialLinkedin = c.social_linkedin || '';
             CONFIG_APP.socialWhatsapp = c.social_whatsapp || '';
             CONFIG_APP.socialOtra = c.social_otra || '';
+
+            // Popup de salida (Configuración → Popup de salida)
+            CONFIG_APP.popupTitulo = c.popup_titulo || CONFIG_APP.popupTitulo;
+            CONFIG_APP.popupDescripcion = c.popup_descripcion || CONFIG_APP.popupDescripcion;
+            CONFIG_APP.popupCta = c.popup_cta || CONFIG_APP.popupCta;
+            CONFIG_APP.popupCtaUrl = c.popup_cta_url || CONFIG_APP.popupCtaUrl;
+            CONFIG_APP.popupActivo = c.popup_activo !== false;
 
             // Diseño (sección "Diseño" del panel)
             CONFIG_DISENO.logoUrl = c.logo_path ? urlImagen({ storage_path: c.logo_path }) : '';
@@ -425,6 +439,17 @@ async function iconosPieDesdeJSON() {
         if (cachedData) return JSON.parse(cachedData);
         return null; // Sin datos: la sección usa el fallback estático
     }
+}
+
+// ================= PREGUNTAS FRECUENTES =================
+export async function obtenerPreguntasFrecuentes() {
+    const remoto = await cargarPreguntasFrecuentes();
+    if (remoto.ok) {
+        return remoto.datos;
+    }
+    // Sin fallback JSON a propósito: si Supabase está caído o la tabla está
+    // vacía, faq.html mantiene el contenido estático actual.
+    return null;
 }
 
 // Comportamiento de enlace de banners/sliders:

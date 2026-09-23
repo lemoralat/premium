@@ -18,6 +18,7 @@ import * as slider from './slider.js';
 import * as banners from './banners.js';
 import * as resenas from './resenas.js';
 import * as iconosPie from './iconos-pie.js';
+import * as preguntasFrecuentes from './preguntas-frecuentes.js';
 import * as configuracion from './configuracion.js';
 import * as cuenta from './cuenta.js';
 
@@ -32,6 +33,7 @@ const secciones = {
     banners:       { ...banners,       titulo: 'Banners' },
     resenas:       { ...resenas,       titulo: 'Reseñas' },
     'iconos-pie':  { ...iconosPie,     titulo: 'Iconos' },
+    'preguntas-frecuentes': { ...preguntasFrecuentes, titulo: 'Preguntas frecuentes' },
     configuracion: { ...configuracion, titulo: 'Configuración' },
     cuenta:        { ...cuenta,        titulo: 'Mi cuenta' }
 };
