@@ -13,6 +13,10 @@ let filtroActivo = 'todos';
 let variantesModal = [];
 let caracteristicasModal = [];
 let imagenesModal = [];
+
+// Límites de cantidad por producto
+const MAX_VARIANTES = 4;
+const MAX_CARACTERISTICAS = 8;
 let contenedorActual = null;
 
 export async function renderizar(contenedor) {
@@ -270,7 +274,7 @@ function abrirModalProducto(idExistente) {
             </div>
 
             <div class="admin-field full">
-                <label>Características <span class="hint">(cada fila se muestra como un ítem, ej: Material: algodón)</span></label>
+                <label>Características <span class="hint">(cada fila se muestra como un ítem, ej: Material: algodón · máx. ${MAX_CARACTERISTICAS})</span></label>
                 <div class="admin-repeater" id="caracteristicasRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarCaracteristica" style="align-self:flex-start; margin-top:0.5rem;">
                     <i class="fa-solid fa-plus"></i> Agregar característica
@@ -278,7 +282,7 @@ function abrirModalProducto(idExistente) {
             </div>
 
             <div class="admin-field full">
-                <label>Variantes <span class="hint">(opción + valores separados por coma; ej: Talles → 40, 41, 42, 43, 44)</span></label>
+                <label>Variantes <span class="hint">(opción + valores separados por coma; ej: Talles → 40, 41, 42, 43, 44 · máx. ${MAX_VARIANTES})</span></label>
                 <div class="admin-repeater" id="variantesRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarVariante" style="align-self:flex-start; margin-top:0.5rem;">
                     <i class="fa-solid fa-plus"></i> Agregar variante
@@ -329,12 +333,20 @@ function abrirModalProducto(idExistente) {
 
     $('#btnAgregarVariante').addEventListener('click', () => {
         capturarVariantes();
+        if (variantesModal.length >= MAX_VARIANTES) {
+            toast(`Máximo ${MAX_VARIANTES} variantes por producto.`, 'error');
+            return;
+        }
         variantesModal.push({ opcion: '', valores: '' });
         renderVariantes();
     });
 
     $('#btnAgregarCaracteristica').addEventListener('click', () => {
         capturarCaracteristicas();
+        if (caracteristicasModal.length >= MAX_CARACTERISTICAS) {
+            toast(`Máximo ${MAX_CARACTERISTICAS} características por producto.`, 'error');
+            return;
+        }
         caracteristicasModal.push('');
         renderCaracteristicas();
     });
@@ -553,6 +565,10 @@ function renderCaracteristicas() {
     repeater.querySelectorAll('input').forEach((input) => {
         input.addEventListener('input', () => capturarCaracteristicas());
     });
+
+    // Deshabilitar "Agregar" al llegar al máximo
+    const btnAgregarCaract = $('#btnAgregarCaracteristica');
+    if (btnAgregarCaract) btnAgregarCaract.disabled = caracteristicasModal.length >= MAX_CARACTERISTICAS;
 }
 
 function renderVariantes() {
@@ -583,6 +599,10 @@ function renderVariantes() {
     repeater.querySelectorAll('input').forEach((input) => {
         input.addEventListener('input', () => capturarVariantes());
     });
+
+    // Deshabilitar "Agregar" al llegar al máximo
+    const btnAgregarVar = $('#btnAgregarVariante');
+    if (btnAgregarVar) btnAgregarVar.disabled = variantesModal.length >= MAX_VARIANTES;
 }
 
 function capturarImagenes() {
