@@ -277,6 +277,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **Descuentos agrupados**: el menú "Cupones" pasó a llamarse "Descuentos" y concentra el CRUD de cupones junto a la card "Descuentos automáticos" (mudada desde Configuración). Sin cambios de esquema: `discount_threshold`/`discount_percent` se guardan en `settings` y la tienda los lee igual.
 - **Compra mínima con refuerzo server-side**: se agregó como card del menú Descuentos (modo cantidad o monto, sobre `settings`). El front la muestra en el carrito y bloquea el checkout, pero la validación real vive en `insertar_pedido` (RPC, junto al resto de la lógica de negocio): si se saltea el front, el pedido se rechaza y la transacción revierte el stock. Sin la migración 0020, la tienda no cambia (modo 'off' por defecto).
 - **Imagen por defecto de producto**: `img/placeholder.png` es el placeholder único. El formulario de producto (al crear uno nuevo, sin imagen cargada) y la miniatura de la tabla del admin lo muestran por defecto (`../img/placeholder.png`), y la tienda usa la misma ruta cuando un producto no tiene imágenes en `product_images` (antes apuntaba a `img/productos/placeholder.png`, inexistente).
+- **Logo por defecto de banners**: al crear o editar un banner sin logo propio, el panel muestra `img/placeholder.png` como fallback. La tienda y el banner del carrito usan esa misma imagen cuando el banner tiene contenido, sin guardar una ruta artificial en Supabase; los banners de tipo "solo imagen" conservan su renderizado a ancho completo.
 
 ---
 

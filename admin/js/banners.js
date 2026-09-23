@@ -5,6 +5,9 @@ import { clienteAdmin } from './admin-supabase.js';
 
 let banners = [];
 
+// Desde /admin/, la imagen local del placeholder vive un nivel arriba.
+const PLACEHOLDER_LOGO_BANNER_ADMIN = '../img/placeholder.png';
+
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
@@ -71,6 +74,7 @@ function filas() {
 
 function abrirModalBanner(idExistente) {
     const banner = idExistente ? banners.find((b) => b.id === idExistente) : null;
+    const logoPreview = banner?.logo_path || banner?.logo_url || PLACEHOLDER_LOGO_BANNER_ADMIN;
 
     abrirModal(`
         <h2>${banner ? 'Editar banner' : 'Nuevo banner'}</h2>
@@ -98,9 +102,10 @@ function abrirModalBanner(idExistente) {
 
             <div class="admin-field full">
                 <label>Logo (opcional, recomendado cuadrado 240×240)</label>
+                <p class="hint">La vista previa usa img/placeholder.png si no cargás un logo. Los banners con contenido también lo muestran en la tienda.</p>
                 <div class="admin-imagenes">
                     <div style="display:flex; gap:0.9rem; align-items:center;">
-                        <img src="${esc(urlPublica(banner?.logo_path || banner?.logo_url || ''))}" alt=""
+                        <img src="${esc(urlPublica(logoPreview))}" alt=""
                              id="bnrLogoPreview" style="width:72px; height:72px; object-fit:contain; border-radius:8px; border:1px solid var(--border); background:#fafafa;">
                         <div class="admin-img-upload" style="flex:1; flex-direction:column; align-items:flex-start;">
                             <label class="btn btn-sm btn-outline admin-file-btn">

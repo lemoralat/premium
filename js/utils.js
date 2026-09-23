@@ -429,6 +429,9 @@ export function slugificar(texto) {
 }
 
 // ================= BANNERS =================
+// Logo genérico para banners con contenido que no tienen un logo propio.
+export const PLACEHOLDER_LOGO_BANNER = 'img/placeholder.png';
+
 // Cargar banners dinámicos. [] => la web no renderiza secciones de banners.
 export async function obtenerBanners() {
     const remoto = await cargarBanners();

@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, PLACEHOLDER_LOGO_BANNER } from './utils.js';
 
 let productosGlobales = [];
 
@@ -292,6 +292,7 @@ function renderizarBannerCarrito(banners) {
     const titulo = escaparHtml(banner.titulo);
     const link = escaparHtml(banner.link || '');
     const tieneBoton = Boolean(banner.boton && banner.link);
+    const logo = banner.logo || PLACEHOLDER_LOGO_BANNER;
 
     contenedor.innerHTML = `
         <div class="banner banner-border">
@@ -301,11 +302,9 @@ function renderizarBannerCarrito(banners) {
                 ${banner.link ? '</a>' : ''}
             </div>
             <div class="banner_info">
-                ${banner.logo ? `
                 <div class="banner_info_icono banner-border">
-                    <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.logo))}" alt="" class="block" width="60">
+                    <img loading="lazy" src="${escaparHtml(imagenOptimizada(logo))}" alt="" class="block" width="60">
                 </div>
-                ` : ''}
 
                 <div class="banner_info_copy">
                     ${banner.badge ? `<span>${escaparHtml(recortarTexto(banner.badge))}</span>` : ''}
