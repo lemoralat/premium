@@ -4,7 +4,7 @@
 // (modo dual controlado) para que la tienda siga funcionando si Supabase no
 // está configurado o hay un corte de red.
 import {
-    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, urlImagen
+    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, urlImagen
 } from './supabase.js';
 
 // Configuración de descuentos (se refresca desde Supabase settings)
@@ -48,7 +48,11 @@ export const CONFIG_APP = {
     popupDescripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
     popupCta: 'Ver productos',
     popupCtaUrl: 'index.html#tienda',
-    popupActivo: true
+    popupActivo: true,
+    // Marquee promocional (sección "Diseño" del panel). Conservadores: antes de
+    // la migración 0017 (columna ausente) la barra queda oculta.
+    marqueeActivo: false,
+    marqueeColorFondo: '#000000'
 };
 
 export let configuracionCargada = false;
@@ -100,6 +104,13 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.popupCta = c.popup_cta || CONFIG_APP.popupCta;
             CONFIG_APP.popupCtaUrl = c.popup_cta_url || CONFIG_APP.popupCtaUrl;
             CONFIG_APP.popupActivo = c.popup_activo !== false;
+
+            // Marquee (sección "Diseño" del panel). `=== true`: sin la
+            // migración 0017 la columna no existe → barra oculta.
+            CONFIG_APP.marqueeActivo = c.marquee_activo === true;
+            if (/^#[0-9a-fA-F]{6}$/.test(c.marquee_color_fondo || '')) {
+                CONFIG_APP.marqueeColorFondo = c.marquee_color_fondo.toLowerCase();
+            }
 
             // Diseño (sección "Diseño" del panel)
             CONFIG_DISENO.logoUrl = c.logo_path ? urlImagen({ storage_path: c.logo_path }) : '';
@@ -457,6 +468,15 @@ export async function obtenerPreguntasFrecuentes() {
     // Sin fallback JSON a propósito: si Supabase está caído, faq.html mantiene
     // el contenido estático actual.
     return null;
+}
+
+// ================= MARQUEE =================
+// Devuelve los textos activos del marquee (repetidos en la barra). Sin ítems o
+// con Supabase caído devuelve [] → la barra queda oculta (nada hardcodeado).
+export async function obtenerMarquee() {
+    const remoto = await cargarMarquee();
+    if (remoto.ok) return remoto.datos;
+    return [];
 }
 
 // Comportamiento de enlace de banners/sliders:

@@ -14,6 +14,7 @@ import {
     validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, urlPublica
 } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
+import { renderizarGestor as renderizarGestorMarquee } from './marquee.js';
 
 const COLOR_DEFECTO = '#000000';
 
@@ -55,6 +56,7 @@ export async function renderizar(contenedor) {
     const s = data;
 
     const color = /^#[0-9a-fA-F]{6}$/.test(s.color_principal || '') ? s.color_principal : COLOR_DEFECTO;
+    const marqueeColor = /^#[0-9a-fA-F]{6}$/.test(s.marquee_color_fondo || '') ? s.marquee_color_fondo : COLOR_DEFECTO;
     const bordesHTML = BORDES.map((b) => bordeOpcion(b, s.estilo_bordes)).join('');
     const imagenesHTML = RECURSOS_IMAGEN.map((r) => campoImagen(r, s[r.columna])).join('');
 
@@ -106,6 +108,21 @@ export async function renderizar(contenedor) {
                         <span class="hint">Se aplica a botones, enlaces y acentos de la tienda.</span>
                     </div>
                     <div class="admin-field full">
+                        <label for="dsnMarqueeColor">Color de fondo del marquee</label>
+                        <div class="diseno-color">
+                            <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" aria-label="Selector de color de fondo del marquee">
+                            <input type="text" id="dsnMarqueeColor" value="${esc(marqueeColor)}" maxlength="7" spellcheck="false" aria-label="Color del marquee en hexadecimal">
+                            <button type="button" class="btn btn-sm btn-outline" id="dsnMarqueeColorRestaurar">Restaurar (#000000)</button>
+                        </div>
+                        <span class="hint">Se aplica a la barra marquee superior. El texto se mantiene blanco.</span>
+                    </div>
+                    <div class="admin-field full">
+                        <label class="admin-check">
+                            <input type="checkbox" id="dsnMarqueeActivo" ${s.marquee_activo === true ? 'checked' : ''}>
+                            Mostrar marquee en la tienda
+                        </label>
+                    </div>
+                    <div class="admin-field full">
                         <label>Estilo de bordes</label>
                         <div class="diseno-bordes">${bordesHTML}</div>
                     </div>
@@ -114,6 +131,12 @@ export async function renderizar(contenedor) {
                     <button type="submit" class="btn btn-primary">Guardar diseño</button>
                 </div>
             </form>
+        </div>
+
+        <div class="admin-card">
+            <h2>Marquee promocional</h2>
+            <p class="card-sub">Barra animada sobre el encabezado. La activación y el color se guardan con "Guardar diseño".</p>
+            <div id="marqueeGestor"></div>
         </div>
     `;
 
@@ -129,6 +152,18 @@ export async function renderizar(contenedor) {
         texto.value = COLOR_DEFECTO;
     });
 
+    // --- Color del marquee: sincronizar picker ↔ text y restaurar ---
+    const mqPicker = $('#dsnMarqueeColorPicker');
+    const mqTexto = $('#dsnMarqueeColor');
+    mqPicker.addEventListener('input', () => { mqTexto.value = mqPicker.value; });
+    mqTexto.addEventListener('input', () => {
+        if (/^#[0-9a-fA-F]{6}$/.test(mqTexto.value.trim())) mqPicker.value = mqTexto.value.trim();
+    });
+    $('#dsnMarqueeColorRestaurar').addEventListener('click', () => {
+        mqPicker.value = COLOR_DEFECTO;
+        mqTexto.value = COLOR_DEFECTO;
+    });
+
     // --- Bordes: resaltar la opción elegida ---
     document.querySelectorAll('input[name="estiloBordes"]').forEach((radio) => {
         radio.addEventListener('change', () => {
@@ -138,6 +173,9 @@ export async function renderizar(contenedor) {
 
     // --- Imágenes: preparar estado y eventos por recurso ---
     RECURSOS_IMAGEN.forEach((r) => prepararCampoImagen(r, s[r.columna]));
+
+    // --- Marquee: gestor de mensajes (widget propio, re-render local) ---
+    renderizarGestorMarquee($('#marqueeGestor')).catch((error) => toast(error.message, 'error'));
 
     // --- Guardar ---
     $('#disenoForm').addEventListener('submit', (event) => {
@@ -301,6 +339,12 @@ async function guardar() {
     const estilo = document.querySelector('input[name="estiloBordes"]:checked');
     if (!estilo) throw new Error('Elegí un estilo de bordes.');
     payload.estilo_bordes = estilo.value;
+
+    // Marquee: color de fondo + mostrar/ocultar
+    const marqueeHex = $('#dsnMarqueeColor').value.trim().toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(marqueeHex)) throw new Error('Color del marquee inválido. Usá formato #RRGGBB.');
+    payload.marquee_color_fondo = marqueeHex;
+    payload.marquee_activo = $('#dsnMarqueeActivo').checked;
 
     // Recursos de imagen
     for (const r of RECURSOS_IMAGEN) {

@@ -78,9 +78,11 @@ Reglas de oro:
 | `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `target` (`interno` default / `externo`), `position`, `activo` |
 | `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`/`external_url`, `position`, `activo` |
 | `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo` |
+| `preguntas_frecuentes` | Preguntas de la página faq.html (sección Configuración) | `icono` (clase FontAwesome, opcional), `pregunta`, `respuesta`, `position`, `activo` |
+| `marquee_items` | Mensajes de la barra marquee (sección Diseño) | `texto` (obligatorio), `position`, `activo`; sin filas activas la barra no se muestra |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
 | `order_items` | Líneas de pedido | `product_id` (ON DELETE SET NULL: el pedido histórico sobrevive al borrado del producto), `nombre` (congelado al momento de la compra), `variante_texto`, `quantity`, `precio_unitario` |
-| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address` (ubicación del negocio: dirección como texto o URL de mapas; se resuelve en `api/ubicacion.js` y se muestra en OpenStreetMap en `contacto.html`), redes sociales |
+| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address` (ubicación del negocio: dirección como texto o URL de mapas; se resuelve en `api/ubicacion.js` y se muestra en OpenStreetMap en `contacto.html`), redes sociales, popup de salida (`popup_titulo/descripcion/cta/cta_url/activo`), marquee (`marquee_activo`, `marquee_color_fondo` — sección Diseño) |
 | `profiles` | Perfil del admin (una fila por usuario) | `full_name`, `role`, `created_at`. Se crea automáticamente al registrarse por el trigger `handle_new_user` |
 
 ### 3.2 Triggers y funciones
@@ -222,6 +224,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0013_popup_salida.sql` (Configuración → Popup de salida: `popup_titulo`, `popup_descripcion`, `popup_cta`, `popup_cta_url`, `popup_activo`)
    - `migrations/0014_preguntas_frecuentes.sql` (tabla `preguntas_frecuentes` + RLS; sin seed: la tienda mantiene el HTML estático de faq.html como fallback inicial)
    - `migrations/0015_preguntas_frecuentes_rpc.sql` (RPC `contar_preguntas_frecuentes()` para que la tienda distinga "tabla vacía" de "todas ocultas")
+   - `migrations/0017_marquee.sql` (sección Diseño: tabla `marquee_items` + `marquee_activo`/`marquee_color_fondo` en `settings`; sin ítems activos la barra no se muestra)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).
@@ -245,6 +248,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 10. **Seguridad**: sin sesión, la API anon NO debe poder leer `orders` ni escribir en `products` (probarlo desde una pestaña anónima).
 11. **Recuperación de contraseña**: en `login.html` → "¿Olvidaste tu contraseña?" con el correo admin → el enlace llega a `admin/recuperar.html` → fijar una contraseña nueva → volver a iniciar sesión con la nueva.
 12. **Ubicación del negocio** (`contacto.html` + `api/ubicacion.js`): con `address` vacío el bloque "Nuestra Ubicación" no se muestra (sin valores por defecto); con una dirección como texto, un link corto (`maps.app.goo.gl/…`) o una URL de mapas larga, `/api/ubicacion` la resuelve a coordenadas (sigue redirecciones server-side y/o geocodifica con Nominatim) y la página muestra un mapa de OpenStreetMap con el nombre del lugar bajo el mapa. Si no se puede resolver, se muestra el valor como texto sin mapa.
+13. **Marquee promocional** (sección Diseño): con "Mostrar marquee" marcado y al menos un mensaje activo, la tienda muestra la barra superior animada (textos duplicados, pausa al hover) con el color de fondo elegido; si se desactiva el toggle, se ocultan todos los mensajes o no hay ninguno, la barra desaparece. La caché de la tienda (60 s, 5 min en configuración) limita la verificación inmediata.
 
 ---
 
@@ -260,6 +264,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **Sin ventanas nativas del navegador** (solo UI propia): las confirmaciones usan el modal del panel (`confirmarDialogo` en `admin-ui.js`) y las notificaciones de la tienda usan los toasts propios (`mostrarNotificacion`).
 - **`sale10` quedó inactivo** (vencido el 2026-08-30) respetando la realidad de la planilla.
 - **Mapa de contacto con OpenStreetMap**: Google deshabilitó el embed keyless (`maps?q=…&output=embed` muestra "Este contenido está bloqueado") y los links cortos no son embebibles desde el navegador (CORS en la redirección). La tienda resuelve la ubicación server-side (`api/ubicacion.js`: sigue redirecciones de `maps.app.goo.gl`, extrae coordenadas de URLs y geocodifica texto con Nominatim, con cache y respeto a su política de uso) y la muestra con el embed de OpenStreetMap, que no requiere API key ni restricciones de referrer.
+- **Marquee administrable**: la barra promocional estaba comentada/desactivada en el código con textos hardcodeados. Ahora el contenido, la activación y el color de fondo se administran desde la sección "Diseño" del panel (repeater de mensajes + toggle + selector de color junto al color principal), y la tienda renderiza la barra solo si hay mensajes activos (sin valores por defecto).
 
 ---
 

@@ -4060,10 +4060,9 @@ body.zoom-active {
 /* Responsive - Nosotros Page */
 
 /* ===================================
-   MARQUEE PROMOCIONAL (desactivado)
+   MARQUEE PROMOCIONAL (dinámico)
    =================================== */
 
-/*
 .marquee-bar {
     background-color: #000000;
     color: #ffffff;
@@ -4071,7 +4070,7 @@ body.zoom-active {
     white-space: nowrap;
     width: 100%;
     position: relative;
-    z-index: var(--z-marquee);
+    z-index: 1010;
     padding: 10px 0;
     font-size: var(--fs-label);
     line-height: 1.2;
@@ -4108,10 +4107,8 @@ body.zoom-active {
     position: relative;
     top: -1px;
 }
-*/
 
 /* Animación de desplazamiento continuo */
-/*
 @keyframes marquee-scroll {
     0% {
         transform: translateX(0);
@@ -4121,7 +4118,6 @@ body.zoom-active {
         transform: translateX(-50%);
     }
 }
-*/
 
 /* ============ Testimonios (carrusel de reseñas) ============ */
 
@@ -4244,7 +4240,6 @@ body.zoom-active {
 }
 
 /* Responsive */
-/*
 @media (max-width: 768px) {
     .marquee-bar {
         padding: 8px 0;
@@ -4258,9 +4253,7 @@ body.zoom-active {
         animation-duration: 20s;
     }
 }
-*/
 
-/*
 @media (max-width: 480px) {
     .marquee-bar {
         padding: 7px 0;
@@ -4274,7 +4267,6 @@ body.zoom-active {
         animation-duration: 18s;
     }
 }
-*/
 
 /* ========================
         Página 404

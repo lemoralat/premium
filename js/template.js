@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar, obtenerMarquee } from './utils.js';
 
 // Renderizar Header
 function renderHeader(activePage = '', categorias = []) {
@@ -139,28 +139,25 @@ function renderFooter() {
     return footer;
 }
 
-/*
-// Función para inicializar el Marquee (integrada para evitar conflictos de orden)
-function initMarquee() {
-    const textos = [
-        '🔥 ¡20% OFF en toda la tienda con el código PROMO20!',
-        '🚚 Envío gratis en compras mayores a $100.000',
-        '⭐ Nuevos productos disponibles — ¡Descubrí las novedades!'
-    ];
-
+// Barra superior animada (marquee promocional, sección "Diseño" del panel).
+// Los textos vienen de la BD (marquee_items) y el color de fondo del settings.
+function crearMarquee(textos = [], colorFondo = '#000000') {
     const marqueeBar = document.createElement('div');
     marqueeBar.className = 'marquee-bar';
+    marqueeBar.style.backgroundColor = colorFondo;
+    // z-index directo: la variable --z-marquee está comentada en el CSS.
+    marqueeBar.style.zIndex = '1010';
 
     const marqueeTrack = document.createElement('div');
     marqueeTrack.className = 'marquee-track';
 
-    const contenido = textos.map(t => `<span class="marquee-item">${t}</span>`).join('');
-    marqueeTrack.innerHTML = contenido + contenido; // Duplicado para loop infinito
+    // Contenido administrado → escapar. Se duplica para el scroll infinito.
+    const contenido = textos.map(t => `<span class="marquee-item">${escaparHtml(t)}</span>`).join('');
+    marqueeTrack.innerHTML = contenido + contenido;
 
     marqueeBar.appendChild(marqueeTrack);
     return marqueeBar;
 }
-*/
 
 // Aplicar branding configurable (sección "Diseño" del panel): color principal,
 // estilo de bordes, favicon y metas OpenGraph/Twitter. Se ejecuta en cada carga.
@@ -244,15 +241,21 @@ async function initTemplate(activePage = '') {
         productosRef = productos;
     } catch (e) { console.error("Error cargando categorías para el menú", e); }
 
-    // 1. Insertar Marquee (desactivado)
-    // const marquee = initMarquee();
-    // body.insertBefore(marquee, body.firstChild);
-
-    // 2. Insertar Header (primero, ya que el marquee está desactivado)
+    // 1. Insertar Header
     const header = renderHeader(activePage, categorias);
     body.insertBefore(header, body.firstChild);
     // Avisar a módulos (ej. búsqueda) de que el header ya está en el DOM
     document.dispatchEvent(new CustomEvent('lemora:header-ready'));
+
+    // 2. Marquee promocional (sección "Diseño" del panel): se inserta ANTES
+    // del header para quedar como barra superior. Solo se muestra si está
+    // activo y hay mensajes (vacíos no renderiza nada).
+    if (CONFIG_APP.marqueeActivo) {
+        const textos = await obtenerMarquee();
+        if (textos.length > 0) {
+            body.insertBefore(crearMarquee(textos, CONFIG_APP.marqueeColorFondo), header);
+        }
+    }
 
     // Insertar footer al final del body
     const footer = renderFooter();

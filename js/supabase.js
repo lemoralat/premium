@@ -460,6 +460,33 @@ export async function cargarPreguntasFrecuentes() {
 }
 
 // ============================================================================
+// MARQUEE PROMOCIONAL (barra superior, sección "Diseño" del panel)
+// ============================================================================
+export async function cargarMarquee() {
+    const sb = await obtenerClienteSupabase();
+    if (!sb) return { ok: false };
+
+    const cacheado = leerCache('marquee');
+    if (cacheado) return { ok: true, datos: cacheado.datos };
+
+    try {
+        const { data, error } = await sb
+            .from('marquee_items')
+            .select('texto')
+            .eq('activo', true)
+            .order('position', { ascending: true });
+        if (error || !data) return { ok: false, error };
+
+        const textos = data.map((m) => String(m.texto || '').trim()).filter(Boolean);
+        cachear('marquee', { datos: textos });
+        return { ok: true, datos: textos };
+    } catch (error) {
+        console.warn('⚠️ Supabase: no se pudo cargar el marquee promocional, quedará oculto.', error);
+        return { ok: false, error };
+    }
+}
+
+// ============================================================================
 // CONFIGURACIÓN GLOBAL (settings de fila única)
 // ============================================================================
 export async function cargarConfiguracion() {
