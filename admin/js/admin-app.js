@@ -101,16 +101,27 @@ function configurarMenuMovil() {
     });
 }
 
-// Logo del panel: usa el logotipo configurado en Diseño (settings.logo_path);
-// si no hay, queda el default de lemora (../img/lemora.svg). También actualiza
-// el favicon, igual que la tienda. No bloquea el arranque del panel.
-async function aplicarLogoPanel() {
+// Branding del panel: usa el logotipo configurado en Diseño (settings.logo_path)
+// y el nombre de la tienda (Configuración → Datos generales, settings.site_name);
+// si no hay logotipo cargado queda el default de lemora (../img/lemora.svg) y si
+// no hay nombre, se mantiene "Lemora Administración". También actualiza el
+// favicon, igual que la tienda. No bloquea el arranque del panel.
+async function aplicarBrandingPanel() {
     const img = document.querySelector('.admin-brand img');
+    const nombreEl = document.querySelector('#adminBrandName');
     const iconos = document.querySelectorAll('link[rel="icon"]');
     const ruta = await (async () => {
         try {
             const sb = await clienteAdmin();
-            const { data } = await sb.from('settings').select('logo_path').eq('id', 1).single();
+            const { data } = await sb.from('settings').select('logo_path, site_name').eq('id', 1).single();
+
+            const nombre = (data?.site_name || '').trim();
+            if (nombre && nombreEl) {
+                // Reemplaza "Lemora" por el nombre real de la tienda, conservando
+                // la segunda línea "Administración" (bloque de marca del panel).
+                nombreEl.innerHTML = `${esc(nombre)}<br>Administración`;
+            }
+
             return data?.logo_path || '';
         } catch {
             return ''; // sin acceso o sin configuración: default
@@ -138,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     configurarMenuMovil();
 
-    aplicarLogoPanel(); // no bloquea el routing
+    aplicarBrandingPanel(); // no bloquea el routing
 
     window.addEventListener('hashchange', navegar);
     navegar();
