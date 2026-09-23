@@ -317,9 +317,14 @@ export async function cargarSlider() {
     if (cacheado) return { ok: true, datos: cacheado };
 
     try {
+        // `select('*')` en vez de columnas fijas: la columna `mostrar_en`
+        // (migración 0019: mostrar slide en móvil/desktop/ambos) puede no
+        // existir todavía; con una lista fija el query fallaría y toda la
+        // portada volvería al JSON local. Con '*' las columnas ausentes
+        // simplemente no llegan y `mostrarEn` queda en 'ambos'.
         const { data, error } = await sb
             .from('sliders')
-            .select('id, titulo, texto_soporte, storage_path, external_url, link, target')
+            .select('*')
             .eq('activo', true)
             .order('position', { ascending: true });
 
@@ -330,7 +335,8 @@ export async function cargarSlider() {
             textoSoporte: s.texto_soporte || '',
             imagen: urlImagen(s) || 'img/sliders/slider1.jpg',
             link: s.link || '',
-            target: s.target === 'externo' ? 'externo' : 'interno'
+            target: s.target === 'externo' ? 'externo' : 'interno',
+            mostrarEn: s.mostrar_en || 'ambos'
         }));
 
         cachear('slider', slides);

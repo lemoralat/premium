@@ -493,6 +493,40 @@ table.admin-tabla tr:hover td { background: #f8fafc; }
     justify-content: center;
 }
 
+/* Slider: selector "Mostrar en" (ambos / móvil / escritorio) */
+.slider-dispositivos {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+.sld-dispositivo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 0.55rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sld-dispositivo:has(input:checked),
+.sld-dispositivo.activa {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.sld-dispositivo input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.sld-dispositivo i { color: var(--text-muted, #64748b); }
+.sld-dispositivo.activa i { color: var(--primary); }
+
 /* ============================================================================
    IMÁGENES (gestor)
    ============================================================================ */

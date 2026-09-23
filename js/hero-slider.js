@@ -30,38 +30,90 @@ class HeroSlider {
 
     async setup() {
         this.slider = document.querySelector('.hero-slider');
-        if (!this.slider) return;
+        if (!this.slider || this.eventosVinculados) return;
 
         // La sección llega oculta del HTML (hidden): solo se muestra con slides reales.
         // El administrador decide desde la hoja "Slider": hoja vacía => slider.json con []
         // => la sección desaparece por completo (sin estático, sin JSON viejo).
         const datos = await obtenerSlider();
+        this.datosCompletos = Array.isArray(datos) ? datos : [];
 
-        if (!Array.isArray(datos) || datos.length === 0) {
+        if (this.datosCompletos.length === 0) {
+            this.slider.hidden = true;
+            return;
+        }
+
+        this.eventosVinculados = true;
+
+        // Configurar eventos (el .hero-slider es un elemento persistente: se
+        // vinculan una sola vez; la reconstrucción solo reemplaza el track).
+        this.setupNavigation();
+        this.setupAutoplay();
+        this.setupTouch();
+        this.setupKeyboard();
+
+        // Pintar según dispositivo (móvil ≤ 768px / escritorio) y escuchar
+        // cambios de tamaño: el conjunto de slides visibles puede cambiar y
+        // hay que reconstruir el track con el índice inicial en 0.
+        this.ultimoEsMovil = this.esMovil();
+        this.pintarSegunDispositivo();
+        this.registrarResize();
+    }
+
+    // ¿El viewport actual es móvil? Mismo breakpoint que css/styles.css.
+    esMovil() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    // Un slide sin `mostrarEn` (o con valor desconocido) se muestra en ambos.
+    esVisibleEnDispositivo(slide) {
+        const m = (slide.mostrarEn || 'ambos').toLowerCase();
+        if (m === 'ambos') return true;
+        return this.esMovil() ? m === 'mobile' : m === 'desktop';
+    }
+
+    // Filtra por dispositivo, reconstruye el track y reinicia el índice.
+    pintarSegunDispositivo() {
+        const visibles = (this.datosCompletos || []).filter((s) => this.esVisibleEnDispositivo(s));
+
+        if (visibles.length === 0) {
+            this.stopAutoplay();
             this.slider.hidden = true;
             return;
         }
 
         this.track = this.slider.querySelector('.slider-track');
-        this.construirSlides(datos);
+        this.construirSlides(visibles);
 
         this.slides = this.slider.querySelectorAll('.slider-slide');
-
         if (this.slides.length === 0) {
             this.slider.hidden = true;
             return;
         }
 
         this.slider.hidden = false;
-
-        // Configurar eventos
-        this.setupNavigation();
-        this.setupAutoplay();
-        this.setupTouch();
-        this.setupKeyboard();
-
-        // Mostrar primer slide
+        this.isTransitioning = false;
+        this.stopAutoplay();
         this.goToSlide(0);
+        this.startAutoplay();
+    }
+
+    // Al cruzar el breakpoint (≤768px), repinta con el set que corresponda.
+    registrarResize() {
+        if (this.resizeVinculado) return;
+        this.resizeVinculado = true;
+
+        let timer = null;
+        window.addEventListener('resize', () => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => {
+                const movilAhora = this.esMovil();
+                if (movilAhora !== this.ultimoEsMovil) {
+                    this.ultimoEsMovil = movilAhora;
+                    this.pintarSegunDispositivo();
+                }
+            }, 200);
+        }, { passive: true });
     }
 
     // Misma estructura de clases que los slides estáticos del index.html

@@ -5,6 +5,12 @@ import { clienteAdmin } from './admin-supabase.js';
 
 let slides = [];
 
+const OPCIONES_MOSTRAR = [
+    { valor: 'ambos', nombre: 'Ambos', icono: 'fa-solid fa-mobile-screen' },
+    { valor: 'mobile', nombre: 'Móvil', icono: 'fa-solid fa-mobile-screen-button' },
+    { valor: 'desktop', nombre: 'Escritorio', icono: 'fa-solid fa-desktop' }
+];
+
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
@@ -23,7 +29,7 @@ export async function renderizar(contenedor) {
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
-                    <tr><th>Imagen</th><th>Título</th><th>Orden</th><th>Estado</th><th></th></tr>
+                    <tr><th>Imagen</th><th>Título</th><th>Orden</th><th>Visible en</th><th>Estado</th><th></th></tr>
                 </thead>
                 <tbody>${filas()}</tbody>
             </table>
@@ -55,6 +61,7 @@ function filas() {
                 ${s.link ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(s.link)}</span> ${s.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
             </td>
             <td data-label="Orden">${esc(s.position)}</td>
+            <td data-label="Visible en">${etiquetaMostrarEn(s.mostrar_en)}</td>
             <td data-label="Estado">${s.activo
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
@@ -70,8 +77,16 @@ function recCorto(texto) {
     return String(texto || '');
 }
 
+function etiquetaMostrarEn(valor) {
+    const v = (valor || '').toLowerCase();
+    if (v === 'mobile') return 'Solo móvil';
+    if (v === 'desktop') return 'Solo escritorio';
+    return 'Ambos';
+}
+
 function abrirModalSlide(idExistente) {
     const slide = idExistente ? slides.find((s) => s.id === idExistente) : null;
+    const mostrarEnActual = ['ambos', 'mobile', 'desktop'].includes(slide?.mostrar_en) ? slide.mostrar_en : 'ambos';
 
     abrirModal(`
         <h2>${slide ? 'Editar slide' : 'Nuevo slide'}</h2>
@@ -130,6 +145,21 @@ function abrirModalSlide(idExistente) {
                         Slide activo
                     </label>
                 </div>
+                <div class="admin-field full">
+                    <label>Mostrar en</label>
+                    <div class="slider-dispositivos" id="sldDispositivos">
+                        ${OPCIONES_MOSTRAR.map((o) => {
+                            const activo = o.valor === mostrarEnActual;
+                            return `
+                            <label class="sld-dispositivo ${activo ? 'activa' : ''}">
+                                <input type="radio" name="sldMostrarEn" value="${o.valor}" ${activo ? 'checked' : ''}>
+                                <i class="${o.icono}"></i>
+                                <span>${o.nombre}</span>
+                            </label>`;
+                        }).join('')}
+                    </div>
+                    <span class="hint">Móvil = hasta 768px de ancho de pantalla; escritorio = más de 768px.</span>
+                </div>
             </div>
             <div class="admin-modal-acciones">
                 <button type="button" class="btn" onclick="document.querySelector('#adminModal [data-cerrar-modal]').click()">Cancelar</button>
@@ -152,6 +182,13 @@ function abrirModalSlide(idExistente) {
         }
     });
 
+    // Resaltar la opción elegida de "Mostrar en"
+    document.querySelectorAll('input[name="sldMostrarEn"]').forEach((radio) => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('input[name="sldMostrarEn"]').forEach((r) => r.closest('.sld-dispositivo').classList.toggle('activa', r.checked));
+        });
+    });
+
     $('#slideForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         const submitBtn = event.submitter || $('#slideForm').querySelector('[type="submit"]');
@@ -171,7 +208,8 @@ function abrirModalSlide(idExistente) {
             link: $('#sldLink').value.trim(),
             target: $('#sldTarget').value,
             position: parseInt($('#sldPosition').value) || 0,
-            activo: $('#sldActivo').checked
+            activo: $('#sldActivo').checked,
+            mostrar_en: document.querySelector('input[name="sldMostrarEn"]:checked')?.value || 'ambos'
         };
 
         conCarga(submitBtn, guardarSlide(payload, idValor ? Number(idValor) : null, archivo, urlExterna))

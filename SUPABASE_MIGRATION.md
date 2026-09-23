@@ -74,7 +74,7 @@ Reglas de oro:
 | `product_option_values` | Valores de variante (p. ej. "40, 41, 42") | FK → product_options, cascada |
 | `product_images` | Imágenes (1 principal + galería) | `storage_path` **o** `external_url` (restricción `num_nonnulls <= 1`), `es_principal`, `position`, FK cascada |
 | `coupons` | Cupones manuales | `codigo`, `porcentaje`, `expira` (date), `activo` |
-| `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`/`external_url`, `link`, `target` (`interno` default / `externo`), `position`, `activo` |
+| `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`/`external_url`, `link`, `target` (`interno` default / `externo`), `position`, `activo`, `mostrar_en` (`ambos` default / `mobile` / `desktop`, filtrado por dispositivo en la tienda) |
 | `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `target` (`interno` default / `externo`), `position`, `activo` |
 | `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`/`external_url`, `position`, `activo` |
 | `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo` |
@@ -225,6 +225,8 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0014_preguntas_frecuentes.sql` (tabla `preguntas_frecuentes` + RLS; sin seed: la tienda mantiene el HTML estático de faq.html como fallback inicial)
    - `migrations/0015_preguntas_frecuentes_rpc.sql` (RPC `contar_preguntas_frecuentes()` para que la tienda distinga "tabla vacía" de "todas ocultas")
    - `migrations/0017_marquee.sql` (sección Diseño: tabla `marquee_items` + `marquee_activo`/`marquee_color_fondo` en `settings`; sin ítems activos la barra no se muestra)
+   - `migrations/0018_logo_tamano.sql` (sección Diseño: `logo_tamano` en `settings` → tamaño del logotipo del encabezado: Small 40 px / Medium 60 px / Large 80 px)
+   - `migrations/0019_slider_mostrar_en.sql` (sección Slider: `mostrar_en` en `sliders` → `ambos` | `mobile` | `desktop` con check)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).
@@ -250,6 +252,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 12. **Ubicación del negocio** (`contacto.html` + `api/ubicacion.js`): con `address` vacío el bloque "Nuestra Ubicación" no se muestra (sin valores por defecto); con una dirección como texto, un link corto (`maps.app.goo.gl/…`) o una URL de mapas larga, `/api/ubicacion` la resuelve a coordenadas (sigue redirecciones server-side y/o geocodifica con Nominatim) y la página muestra un mapa de OpenStreetMap con el nombre del lugar bajo el mapa. Si no se puede resolver, se muestra el valor como texto sin mapa.
 13. **Marquee promocional** (sección Diseño): con "Mostrar marquee" marcado y al menos un mensaje activo, la tienda muestra la barra superior animada (textos duplicados, pausa al hover) con el color de fondo elegido; si se desactiva el toggle, se ocultan todos los mensajes o no hay ninguno, la barra desaparece. La caché de la tienda (60 s, 5 min en configuración) limita la verificación inmediata.
 14. **Tamaño del logotipo** (sección Diseño → Logotipo): elegir Small (40px), Medium (60px) o Large (80px) aplica la altura correspondiente al header de la tienda al guardar; el ancho se ajusta automáticamente (`width: auto`). En móvil se conserva solo el ajuste de márgenes.
+15. **Slider por dispositivo**: desde el panel (sección Slider) marcar un slide "Solo móvil" y otro "Solo escritorio" → en escritorio solo se ve el de escritorio y los "Ambos"; al achicar la ventana por debajo de 768px (o probarlo con DevTools responsive), el set cambia automáticamente y el slider reinicia en el primer slide visible. Si ningún slide aplica al viewport, la portada se oculta.
 
 ---
 
