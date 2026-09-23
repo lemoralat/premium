@@ -253,6 +253,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 13. **Marquee promocional** (sección Diseño): con "Mostrar marquee" marcado y al menos un mensaje activo, la tienda muestra la barra superior animada (textos duplicados, pausa al hover) con el color de fondo elegido; si se desactiva el toggle, se ocultan todos los mensajes o no hay ninguno, la barra desaparece. La caché de la tienda (60 s, 5 min en configuración) limita la verificación inmediata.
 14. **Tamaño del logotipo** (sección Diseño → Logotipo): elegir Small (40px), Medium (60px) o Large (80px) aplica la altura correspondiente al header de la tienda al guardar; el ancho se ajusta automáticamente (`width: auto`). En móvil se conserva solo el ajuste de márgenes.
 15. **Slider por dispositivo**: desde el panel (sección Slider) marcar un slide "Solo móvil" y otro "Solo escritorio" → en escritorio solo se ve el de escritorio y los "Ambos"; al achicar la ventana por debajo de 768px (o probarlo con DevTools responsive), el set cambia automáticamente y el slider reinicia en el primer slide visible. Si ningún slide aplica al viewport, la portada se oculta.
+16. **WhatsApp en ficha propia** (Configuración → WhatsApp): el número, el mensaje por defecto y el enlace (red social) se editan juntos en su card; la barra social del header ya **no muestra el ícono de WhatsApp** (lo demás sigue igual: botón de contacto y checkout usan el número).
 
 ---
 
@@ -269,6 +270,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **`sale10` quedó inactivo** (vencido el 2026-08-30) respetando la realidad de la planilla.
 - **Mapa de contacto con OpenStreetMap**: Google deshabilitó el embed keyless (`maps?q=…&output=embed` muestra "Este contenido está bloqueado") y los links cortos no son embebibles desde el navegador (CORS en la redirección). La tienda resuelve la ubicación server-side (`api/ubicacion.js`: sigue redirecciones de `maps.app.goo.gl`, extrae coordenadas de URLs y geocodifica texto con Nominatim, con cache y respeto a su política de uso) y la muestra con el embed de OpenStreetMap, que no requiere API key ni restricciones de referrer.
 - **Marquee administrable**: la barra promocional estaba comentada/desactivada en el código con textos hardcodeados. Ahora el contenido, la activación y el color de fondo se administran desde la sección "Diseño" del panel (repeater de mensajes + toggle + selector de color junto al color principal), y la tienda renderiza la barra solo si hay mensajes activos (sin valores por defecto).
+- **WhatsApp sin ícono en el header**: por pedido, la barra social del header dejó de mostrar el ícono de WhatsApp; el canal de contacto sigue vivo solo con el número (`whatsapp_number`) en el botón de WhatsApp y el checkout. En Configuración, número, mensaje y enlace se editan en una ficha propia (sin cambios de esquema; las columnas son las mismas).
 
 ---
 

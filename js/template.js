@@ -36,7 +36,6 @@ function renderHeader(activePage = '', categorias = []) {
         { campo: 'socialX', clase: 'fa-brands fa-x-twitter', label: 'X' },
         { campo: 'socialPinterest', clase: 'fa-brands fa-pinterest-p', label: 'Pinterest' },
         { campo: 'socialLinkedin', clase: 'fa-brands fa-linkedin-in', label: 'LinkedIn' },
-        { campo: 'socialWhatsapp', clase: 'fa-brands fa-whatsapp', label: 'WhatsApp' },
         { campo: 'socialOtra', clase: 'fa-solid fa-globe', label: 'Otra' }
     ];
     const redesHTML = REDES_HEADER.map((r) => CONFIG_APP[r.campo]

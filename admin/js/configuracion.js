@@ -45,7 +45,7 @@ export async function renderizar(contenedor) {
                     </div>
                     <div class="admin-field full">
                         <label>Redes sociales del header</label>
-                        <span class="hint">Se muestran en la barra superior del header. Dejá vacía la que no uses.</span>
+                        <span class="hint">Se muestran en la barra superior del header. Dejá vacía la que no uses. WhatsApp se administra en su propia ficha.</span>
                     </div>
                     <div class="admin-field">
                         <label for="cfgInstagram">Instagram</label>
@@ -76,10 +76,6 @@ export async function renderizar(contenedor) {
                         <input type="url" id="cfgLinkedin" value="${esc(s.social_linkedin || '')}" placeholder="https://linkedin.com/in/tucuenta">
                     </div>
                     <div class="admin-field">
-                        <label for="cfgWhatsappRed">WhatsApp</label>
-                        <input type="url" id="cfgWhatsappRed" value="${esc(s.social_whatsapp || '')}" placeholder="https://wa.me/54XXXXXXXXXX">
-                    </div>
-                    <div class="admin-field">
                         <label for="cfgOtra">Otra</label>
                         <input type="url" id="cfgOtra" value="${esc(s.social_otra || '')}" placeholder="https://tu-sitio-o-red.com">
                     </div>
@@ -91,18 +87,35 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>WhatsApp y descuentos</h2>
-            <p class="card-sub">El checkout usa WhatsApp; los descuentos se recalculan en el servidor con estos valores.</p>
-            <form class="admin-form" id="configFormComercio">
+            <h2>WhatsApp</h2>
+            <p class="card-sub">Canal de contacto: el número y el mensaje alimentan el botón de WhatsApp y el checkout; el enlace queda guardado como dato de la marca.</p>
+            <form class="admin-form" id="configFormWhatsapp">
                 <div class="admin-form-grid">
+                    <div class="admin-field">
+                        <label for="cfgWhatsappRed">Enlace de WhatsApp (red social)</label>
+                        <input type="url" id="cfgWhatsappRed" value="${esc(s.social_whatsapp || '')}" placeholder="https://wa.me/54XXXXXXXXXX">
+                    </div>
                     <div class="admin-field">
                         <label for="cfgWhatsapp">Número de WhatsApp (código país + número)</label>
                         <input type="text" id="cfgWhatsapp" value="${esc(s.whatsapp_number || '')}" placeholder="ej: 543515957014">
                     </div>
-                    <div class="admin-field">
+                    <div class="admin-field full">
                         <label for="cfgWhatsappMsg">Mensaje por defecto</label>
                         <input type="text" id="cfgWhatsappMsg" value="${esc(s.whatsapp_default_message || '')}">
+                        <span class="hint">Se precompleta en el enlace de WhatsApp de contacto y de cada pedido.</span>
                     </div>
+                </div>
+                <div class="admin-modal-acciones">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h2>Descuentos automáticos</h2>
+            <p class="card-sub">Se aplican sobre el total del carrito y se recalculan en el servidor al confirmar el pedido.</p>
+            <form class="admin-form" id="configFormComercio">
+                <div class="admin-form-grid">
                     <div class="admin-field">
                         <label for="cfgUmbral">Umbral para descuento automático ($)</label>
                         <input type="number" id="cfgUmbral" min="0" step="1000" value="${esc(s.discount_threshold || '')}">
@@ -185,7 +198,7 @@ export async function renderizar(contenedor) {
         </div>
     `;
 
-    const campos = () => ({
+    const camposGenerales = () => ({
         site_name: $('#cfgSiteName').value.trim(),
         email_contact: $('#cfgEmail').value.trim(),
         address: $('#cfgAddress').value.trim(),
@@ -196,12 +209,21 @@ export async function renderizar(contenedor) {
         social_x: $('#cfgX').value.trim(),
         social_pinterest: $('#cfgPinterest').value.trim(),
         social_linkedin: $('#cfgLinkedin').value.trim(),
+        social_otra: $('#cfgOtra').value.trim()
+    });
+
+    const camposWhatsapp = () => ({
         social_whatsapp: $('#cfgWhatsappRed').value.trim(),
-        social_otra: $('#cfgOtra').value.trim(),
         whatsapp_number: $('#cfgWhatsapp').value.trim(),
-        whatsapp_default_message: $('#cfgWhatsappMsg').value.trim(),
+        whatsapp_default_message: $('#cfgWhatsappMsg').value.trim()
+    });
+
+    const camposDescuentos = () => ({
         discount_threshold: parseFloat($('#cfgUmbral').value) || 0,
-        discount_percent: parseFloat($('#cfgPorcentaje').value) || 0,
+        discount_percent: parseFloat($('#cfgPorcentaje').value) || 0
+    });
+
+    const camposTransferencia = () => ({
         transfer_alias: $('#cfgAlias').value.trim(),
         transfer_entity: $('#cfgEntidad').value.trim(),
         transfer_holder: $('#cfgTitular').value.trim()
@@ -215,20 +237,21 @@ export async function renderizar(contenedor) {
         popup_activo: $('#cfgPopupActivo').checked
     });
 
-    const vincular = (formId, obtenerCampos = null) => {
+    const vincular = (formId, obtenerCampos) => {
         $(formId).addEventListener('submit', async (event) => {
             event.preventDefault();
             const submitBtn = event.submitter || $(formId).querySelector('[type="submit"]');
-            const payload = obtenerCampos ? obtenerCampos() : campos();
+            const payload = obtenerCampos();
             conCarga(submitBtn, guardarConfig(payload))
                 .then(() => toast('Configuración guardada.'))
                 .catch((error) => toast(error.message, 'error'));
         });
     };
 
-    vincular('#configFormGeneral');
-    vincular('#configFormComercio');
-    vincular('#configFormTransferencia');
+    vincular('#configFormGeneral', camposGenerales);
+    vincular('#configFormWhatsapp', camposWhatsapp);
+    vincular('#configFormComercio', camposDescuentos);
+    vincular('#configFormTransferencia', camposTransferencia);
     vincular('#configFormPopup', camposPopup);
 
     // Gestor de preguntas frecuentes (widget que se re-renderiza a sí mismo).
