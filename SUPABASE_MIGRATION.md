@@ -80,7 +80,7 @@ Reglas de oro:
 | `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo` |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
 | `order_items` | Líneas de pedido | `product_id` (ON DELETE SET NULL: el pedido histórico sobrevive al borrado del producto), `nombre` (congelado al momento de la compra), `variante_texto`, `quantity`, `precio_unitario` |
-| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address` (ubicación del negocio: dirección como texto o URL de Google Maps, usada en `contacto.html`), redes sociales |
+| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address` (ubicación del negocio: dirección como texto o URL de mapas; se resuelve en `api/ubicacion.js` y se muestra en OpenStreetMap en `contacto.html`), redes sociales |
 | `profiles` | Perfil del admin (una fila por usuario) | `full_name`, `role`, `created_at`. Se crea automáticamente al registrarse por el trigger `handle_new_user` |
 
 ### 3.2 Triggers y funciones
@@ -244,7 +244,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 9. **Preguntas frecuentes**: con la tabla vacía, `faq.html` muestra el contenido estático actual; al crear la primera pregunta activa pasa a la lista dinámica (con su ícono) y el acordeón sigue funcionando (delegación de eventos); si se ocultan todas, la sección desaparece.
 10. **Seguridad**: sin sesión, la API anon NO debe poder leer `orders` ni escribir en `products` (probarlo desde una pestaña anónima).
 11. **Recuperación de contraseña**: en `login.html` → "¿Olvidaste tu contraseña?" con el correo admin → el enlace llega a `admin/recuperar.html` → fijar una contraseña nueva → volver a iniciar sesión con la nueva.
-12. **Ubicación del negocio** (`contacto.html`): con `address` vacío el bloque "Nuestra Ubicación" no se muestra (sin valores por defecto); con una dirección como texto muestra el texto bajo el mapa y un mapa derivado (`maps?q=...&output=embed`); con una URL de Google Maps larga o un embed muestra el mapa exacto y el nombre del lugar bajo el mapa. Los links cortos (`maps.app.goo.gl`) se muestran como texto.
+12. **Ubicación del negocio** (`contacto.html` + `api/ubicacion.js`): con `address` vacío el bloque "Nuestra Ubicación" no se muestra (sin valores por defecto); con una dirección como texto, un link corto (`maps.app.goo.gl/…`) o una URL de mapas larga, `/api/ubicacion` la resuelve a coordenadas (sigue redirecciones server-side y/o geocodifica con Nominatim) y la página muestra un mapa de OpenStreetMap con el nombre del lugar bajo el mapa. Si no se puede resolver, se muestra el valor como texto sin mapa.
 
 ---
 
@@ -259,6 +259,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **Metas SEO**: se corrigieron los placeholders `tusitio.com` → `supabase.lemora.lat` en los 8 HTML.
 - **Sin ventanas nativas del navegador** (solo UI propia): las confirmaciones usan el modal del panel (`confirmarDialogo` en `admin-ui.js`) y las notificaciones de la tienda usan los toasts propios (`mostrarNotificacion`).
 - **`sale10` quedó inactivo** (vencido el 2026-08-30) respetando la realidad de la planilla.
+- **Mapa de contacto con OpenStreetMap**: Google deshabilitó el embed keyless (`maps?q=…&output=embed` muestra "Este contenido está bloqueado") y los links cortos no son embebibles desde el navegador (CORS en la redirección). La tienda resuelve la ubicación server-side (`api/ubicacion.js`: sigue redirecciones de `maps.app.goo.gl`, extrae coordenadas de URLs y geocodifica texto con Nominatim, con cache y respeto a su política de uso) y la muestra con el embed de OpenStreetMap, que no requiere API key ni restricciones de referrer.
 
 ---
 

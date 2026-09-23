@@ -14,55 +14,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // ————— Ubicación del negocio (Configuración → Datos generales → "Ubicación del negocio") —————
-// El campo acepta una dirección como texto o una URL de Google Maps. Sin
-// valores por defecto: con el campo vacío el bloque de ubicación no se muestra
-// en la página de contacto (sin fallback hardcodeado).
+// El campo acepta una dirección como texto o una URL de mapas (Google Maps u
+// otro proveedor). `/api/ubicacion` la resuelve a coordenadas (sigue links
+// cortos server-side y geocodifica texto con Nominatim) y acá se renderiza un
+// mapa embebido de OpenStreetMap, que no requiere API key ni restricciones de
+// referrer. Sin valores por defecto: campo vacío = bloque oculto.
 
-function esURL(valor) {
-    return /^https?:\/\//i.test(valor);
-}
-
-// Convierte una URL de Google Maps a una URL embebible para el iframe.
-// Devuelve null si la URL no se puede incrustar (ej. links cortos goo.gl).
-function urlMapaEmbebible(url) {
-    // Ya es un mapa embebido (iframe de "Compartir → Insertar un mapa").
-    if (url.includes('/maps/embed') || /[?&]output=embed/.test(url)) {
-        return url;
-    }
-    // Enlace largo con coordenadas (@lat,lng): se embebe apuntando a ellas.
-    const coord = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-    if (coord) {
-        return `https://maps.google.com/maps?q=${coord[1]},${coord[2]}&z=16&output=embed`;
-    }
-    // Enlace largo con el nombre del lugar: /maps/place/Edificio+inteligente/@...
-    const lugar = url.match(/\/maps\/place\/([^/?@]+)/);
-    if (lugar) {
-        return `https://maps.google.com/maps?q=${encodeURIComponent(lugar[1])}&output=embed`;
-    }
-    // Los links cortos de compartir (maps.app.goo.gl) requieren una redirección
-    // que el navegador no puede seguir desde un iframe; no son embebibles.
-    if (url.includes('maps.app.goo.gl')) {
-        return null;
-    }
-    // Cualquier otra URL se usa tal cual (best effort). En producción el CSP
-    // del deploy limita los iframes a https://www.google.com.
-    return url;
-}
-
-// Nombre legible del lugar dentro de una URL de Google Maps (/maps/place/...).
-function nombreLugar(url) {
-    const lugar = url.match(/\/maps\/place\/([^/?@]+)/);
-    if (!lugar) return '';
-    try {
-        return decodeURIComponent(lugar[1]).replace(/\+/g, ' ');
-    } catch {
-        return lugar[1].replace(/\+/g, ' ');
-    }
-}
-
-// Aplica la ubicación del negocio al bloque de mapa de contacto.html:
-// dirección como texto → dirección + mapa derivado (maps?q=...&output=embed);
-// URL de Google Maps → mapa embebido exacto (y nombre del lugar si aplica).
 async function aplicarUbicacion() {
     const contenedor = document.querySelector('.contact-map-container');
     if (!contenedor) return;
@@ -78,32 +35,45 @@ async function aplicarUbicacion() {
 
     contenedor.classList.remove('sin-ubicacion');
 
+    const zonaMapa = document.querySelector('.contact-map');
     const mapaFrame = document.getElementById('contactMapFrame');
     const bloqueDireccion = document.querySelector('.contact-address');
     const direccionTexto = document.getElementById('contactAddressText');
 
-    if (esURL(ubicacion)) {
-        const src = urlMapaEmbebible(ubicacion);
-        const nombre = nombreLugar(ubicacion);
+    try {
+        const respuesta = await fetch('/api/ubicacion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ valor: ubicacion })
+        });
+        const data = await respuesta.json();
 
-        if (src && mapaFrame) {
-            mapaFrame.src = src;
+        if (!respuesta.ok || data.status !== 'success' || typeof data.lat !== 'number' || typeof data.lng !== 'number') {
+            throw new Error((data && data.message) || 'No se pudo ubicar el negocio');
         }
-        if (nombre && direccionTexto) {
-            // Con mapa y nombre legible: se muestra el nombre bajo el mapa.
-            direccionTexto.textContent = nombre;
+
+        // Vista tipo "bloque" alrededor de las coordenadas.
+        const dLat = 0.005;
+        const dLng = 0.008;
+        mapaFrame.src =
+            'https://www.openstreetmap.org/export/embed.html?' +
+            `bbox=${(data.lng - dLng).toFixed(6)}%2C${(data.lat - dLat).toFixed(6)}%2C` +
+            `${(data.lng + dLng).toFixed(6)}%2C${(data.lat + dLat).toFixed(6)}` +
+            `&layer=mapnik&marker=${data.lat}%2C${data.lng}`;
+        if (zonaMapa) zonaMapa.style.display = '';
+
+        if (direccionTexto) {
+            direccionTexto.textContent = data.nombre || ubicacion;
             if (bloqueDireccion) bloqueDireccion.hidden = false;
-        } else if (!src && direccionTexto) {
-            // URL que no se pudo incrustar (ej. link corto): se muestra tal cual.
+        }
+    } catch (error) {
+        // No se pudo resolver: se muestra el valor como texto, sin mapa.
+        console.warn('⚠️ No se pudo resolver la ubicación del negocio.', error);
+        if (zonaMapa) zonaMapa.style.display = 'none';
+        if (direccionTexto) {
             direccionTexto.textContent = ubicacion;
             if (bloqueDireccion) bloqueDireccion.hidden = false;
         }
-        // Con mapa embebido y sin nombre extraíble → solo el mapa.
-    } else if (mapaFrame) {
-        // Dirección como texto: mapa derivado + el texto bajo el mapa.
-        mapaFrame.src = `https://maps.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed`;
-        if (direccionTexto) direccionTexto.textContent = ubicacion;
-        if (bloqueDireccion) bloqueDireccion.hidden = false;
     }
 }
 
