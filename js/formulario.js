@@ -1,6 +1,6 @@
 // Gestión del formulario de envío y WhatsApp
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, obtenerCupones, obtenerUrlWhatsApp } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, obtenerCupones, obtenerUrlWhatsApp } from './utils.js';
 
 // ============ CONFIGURACIÓN ============
 const CONFIG_PEDIDOS = {
@@ -91,6 +91,15 @@ async function enviarPedidoWhatsApp(e) {
 
     // Validar datos del cliente antes de enviar
     if (!validarDatos(datosCliente)) {
+        if (btnSubmit) btnSubmit.classList.remove('loading');
+        return;
+    }
+
+    // Validar compra mínima (mismo criterio que el carrito): si no se cumple,
+    // no se abre WhatsApp ni se registra el pedido.
+    const min = estadoCompraMinima(cart);
+    if (!min.cumple) {
+        mostrarNotificacion(min.mensaje, 'error');
         if (btnSubmit) btnSubmit.classList.remove('loading');
         return;
     }

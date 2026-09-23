@@ -109,10 +109,10 @@ module.exports = async function handler(request, response) {
         const detalle = String(error.message || '');
         // Solo exponemos mensajes de la RPC que controlamos nosotros; el resto
         // (errores de BD, etc.) se devuelve genérico pero se loguea completo.
-        const amistoso = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida|demasiados pedidos|intentá de nuevo)/i.test(detalle)
+        const amistoso = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida|demasiados pedidos|intentá de nuevo|mínimo)/i.test(detalle)
             ? detalle
             : 'No se pudo registrar el pedido.';
-        const conflicto = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida)/i.test(detalle);
+        const conflicto = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida|mínimo)/i.test(detalle);
         const limiteTasa = /demasiados pedidos|intentá de nuevo/i.test(detalle);
         console.error('❌ Error registrando pedido en Supabase:', detalle);
         return response.status(limiteTasa ? 429 : (conflicto ? 409 : 500)).json({ status: 'error', message: amistoso });

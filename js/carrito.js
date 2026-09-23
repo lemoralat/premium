@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace } from './utils.js';
 
 let productosGlobales = [];
 
@@ -204,6 +204,15 @@ function actualizarTotales() {
 
     const { subtotal, descuento, total, esCupon, porcentaje } = calcularTotales(cart, cupon);
 
+    // Compra mínima (si está configurada): aviso y bloqueo del checkout.
+    const min = estadoCompraMinima(cart);
+    const minAviso = document.getElementById('minCompraAviso');
+    if (minAviso) {
+        const mostrarAviso = cart.length > 0 && !min.cumple;
+        minAviso.textContent = min.mensaje || '';
+        minAviso.hidden = !mostrarAviso;
+    }
+
     const subtotalElement = document.getElementById('subtotal');
     const descuentoElement = document.getElementById('descuento');
     const descuentoRow = document.getElementById('descuentoRow');
@@ -228,10 +237,10 @@ function actualizarTotales() {
         totalElement.textContent = `$${formatearPrecio(total)}`;
     }
 
-    // Habilitar/deshabilitar botón de checkout
+    // Habilitar/deshabilitar botón de checkout (vacío, sin stock o sin mínimo)
     const checkoutBtn = document.getElementById('checkoutBtn');
     if (checkoutBtn) {
-        checkoutBtn.disabled = cart.length === 0 || haySinStock;
+        checkoutBtn.disabled = cart.length === 0 || haySinStock || !min.cumple;
     }
 }
 

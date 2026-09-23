@@ -1456,6 +1456,19 @@ span {
     line-height: 1.15;
 }
 
+/* Compra mínima (carrito): aviso cuando no se alcanza el mínimo configurado
+   en el panel (menú "Descuentos" → Compra mínima) */
+.compra-minima-aviso {
+    margin: 1rem 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--danger-color);
+    border-radius: var(--curva-sm);
+    background: color-mix(in srgb, var(--danger-color) 8%, white);
+    color: var(--danger-color);
+    font-size: var(--fs-small, 0.9rem);
+    line-height: 1.45;
+}
+
 /* Coupon Section */
 .coupon-section {
     display: flex;
