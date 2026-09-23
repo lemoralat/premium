@@ -104,27 +104,6 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Descuentos automáticos</h2>
-            <p class="card-sub">Se aplican sobre el total del carrito y se recalculan en el servidor al confirmar el pedido.</p>
-            <form class="admin-form" id="configFormComercio">
-                <div class="admin-form-grid">
-                    <div class="admin-field">
-                        <label for="cfgUmbral">Umbral para descuento automático ($)</label>
-                        <input type="number" id="cfgUmbral" min="0" step="1000" value="${esc(s.discount_threshold || '')}">
-                        <span class="hint">Compras desde este monto obtienen descuento.</span>
-                    </div>
-                    <div class="admin-field">
-                        <label for="cfgPorcentaje">Porcentaje de descuento automático (%)</label>
-                        <input type="number" id="cfgPorcentaje" min="1" max="100" step="1" value="${esc(s.discount_percent || '')}">
-                    </div>
-                </div>
-                <div class="admin-modal-acciones">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="admin-card">
             <h2>Datos para la transferencia (gracias.html)</h2>
             <p class="card-sub">Se muestran al cliente después de confirmar el pedido.</p>
             <form class="admin-form" id="configFormTransferencia">
@@ -209,11 +188,6 @@ export async function renderizar(contenedor) {
         whatsapp_default_message: $('#cfgWhatsappMsg').value.trim()
     });
 
-    const camposDescuentos = () => ({
-        discount_threshold: parseFloat($('#cfgUmbral').value) || 0,
-        discount_percent: parseFloat($('#cfgPorcentaje').value) || 0
-    });
-
     const camposTransferencia = () => ({
         transfer_alias: $('#cfgAlias').value.trim(),
         transfer_entity: $('#cfgEntidad').value.trim(),
@@ -241,7 +215,6 @@ export async function renderizar(contenedor) {
 
     vincular('#configFormGeneral', camposGenerales);
     vincular('#configFormRedes', camposRedes);
-    vincular('#configFormComercio', camposDescuentos);
     vincular('#configFormTransferencia', camposTransferencia);
     vincular('#configFormPopup', camposPopup);
 

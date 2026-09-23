@@ -27,7 +27,7 @@ const secciones = {
     productos:     { ...productos,     titulo: 'Productos' },
     categorias:    { ...categorias,    titulo: 'Categorías' },
     pedidos:       { ...pedidos,       titulo: 'Pedidos' },
-    cupones:       { ...cupones,       titulo: 'Cupones' },
+    cupones:       { ...cupones,       titulo: 'Descuentos' },
     slider:        { ...slider,        titulo: 'Slider' },
     banners:       { ...banners,       titulo: 'Banners' },
     resenas:       { ...resenas,       titulo: 'Reseñas' },

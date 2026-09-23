@@ -10,12 +10,37 @@ export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
 
-    const { data, error } = await sb.from('coupons').select('*').order('id', { ascending: true });
-    if (error) throw error;
-    cupones = data || [];
+    const [rCupones, rSettings] = await Promise.all([
+        sb.from('coupons').select('*').order('id', { ascending: true }),
+        sb.from('settings').select('*').eq('id', 1).single()
+    ]);
+    if (rCupones.error) throw rCupones.error;
+    if (rSettings.error) throw rSettings.error;
+    cupones = rCupones.data || [];
     cuponesCargados = true;
+    const s = rSettings.data;
 
     contenedor.innerHTML = `
+        <div class="admin-card">
+            <h2>Descuentos automáticos</h2>
+            <p class="card-sub">Se aplican sobre el total del carrito y se recalculan en el servidor al confirmar el pedido.</p>
+            <form class="admin-form" id="formDescuentosAuto">
+                <div class="admin-form-grid">
+                    <div class="admin-field">
+                        <label for="cfgUmbral">Umbral para descuento automático ($)</label>
+                        <input type="number" id="cfgUmbral" min="0" step="1000" value="${esc(s.discount_threshold || '')}">
+                        <span class="hint">Compras desde este monto obtienen descuento.</span>
+                    </div>
+                    <div class="admin-field">
+                        <label for="cfgPorcentaje">Porcentaje de descuento automático (%)</label>
+                        <input type="number" id="cfgPorcentaje" min="1" max="100" step="1" value="${esc(s.discount_percent || '')}">
+                    </div>
+                </div>
+                <div class="admin-modal-acciones">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
         <div class="admin-toolbar">
             <p>Códigos de descuento manuales</p>
             <button type="button" class="btn btn-primary" id="btnNuevoCupon">
@@ -31,6 +56,16 @@ export async function renderizar(contenedor) {
             </table>
         </div>
     `;
+
+    $('#formDescuentosAuto').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        conCarga(event.submitter, guardarDescuentos({
+            discount_threshold: parseFloat($('#cfgUmbral').value) || 0,
+            discount_percent: parseFloat($('#cfgPorcentaje').value) || 0
+        }))
+            .then(() => toast('Descuentos automáticos guardados.'))
+            .catch((error) => toast(error.message, 'error'));
+    });
 
     $('#btnNuevoCupon').addEventListener('click', () => abrirModalCupon(null));
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
@@ -135,6 +170,12 @@ async function guardarCupon(payload, id) {
         : await sb.from('coupons').insert(payload);
     if (error) throw new Error(error.message);
     toast(id ? 'Cupón actualizado.' : 'Cupón creado.');
+}
+
+async function guardarDescuentos(payload) {
+    const sb = await clienteAdmin();
+    const { error } = await sb.from('settings').update(payload).eq('id', 1);
+    if (error) throw new Error(error.message);
 }
 
 async function borrarCupon(id, contenedor) {
