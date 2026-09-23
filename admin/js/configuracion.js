@@ -43,10 +43,18 @@ export async function renderizar(contenedor) {
                         <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="Dirección como texto o URL de Google Maps">
                         <span class="hint">¿Tu negocio tiene una ubicación física? Indicá la dirección o agregá la URL de Google Maps.</span>
                     </div>
-                    <div class="admin-field full">
-                        <label>Redes sociales del header</label>
-                        <span class="hint">Se muestran en la barra superior del header. Dejá vacía la que no uses. WhatsApp se administra en su propia ficha.</span>
-                    </div>
+                </div>
+                <div class="admin-modal-acciones">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h2>Redes y WhatsApp</h2>
+            <p class="card-sub">Redes sociales que se muestran en la barra superior del header (dejá vacía la que no uses) y canal de WhatsApp para contacto y checkout (número + mensaje).</p>
+            <form class="admin-form" id="configFormRedes">
+                <div class="admin-form-grid">
                     <div class="admin-field">
                         <label for="cfgInstagram">Instagram</label>
                         <input type="url" id="cfgInstagram" value="${esc(s.social_instagram || '')}" placeholder="https://instagram.com/tucuenta">
@@ -78,22 +86,6 @@ export async function renderizar(contenedor) {
                     <div class="admin-field">
                         <label for="cfgOtra">Otra</label>
                         <input type="url" id="cfgOtra" value="${esc(s.social_otra || '')}" placeholder="https://tu-sitio-o-red.com">
-                    </div>
-                </div>
-                <div class="admin-modal-acciones">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="admin-card">
-            <h2>WhatsApp</h2>
-            <p class="card-sub">Canal de contacto: el número y el mensaje alimentan el botón de WhatsApp y el checkout; el enlace queda guardado como dato de la marca.</p>
-            <form class="admin-form" id="configFormWhatsapp">
-                <div class="admin-form-grid">
-                    <div class="admin-field">
-                        <label for="cfgWhatsappRed">Enlace de WhatsApp (red social)</label>
-                        <input type="url" id="cfgWhatsappRed" value="${esc(s.social_whatsapp || '')}" placeholder="https://wa.me/54XXXXXXXXXX">
                     </div>
                     <div class="admin-field">
                         <label for="cfgWhatsapp">Número de WhatsApp (código país + número)</label>
@@ -201,19 +193,18 @@ export async function renderizar(contenedor) {
     const camposGenerales = () => ({
         site_name: $('#cfgSiteName').value.trim(),
         email_contact: $('#cfgEmail').value.trim(),
-        address: $('#cfgAddress').value.trim(),
-        social_facebook: $('#cfgFacebook').value.trim(),
+        address: $('#cfgAddress').value.trim()
+    });
+
+    const camposRedes = () => ({
         social_instagram: $('#cfgInstagram').value.trim(),
+        social_facebook: $('#cfgFacebook').value.trim(),
         social_tiktok: $('#cfgTiktok').value.trim(),
         social_youtube: $('#cfgYoutube').value.trim(),
         social_x: $('#cfgX').value.trim(),
         social_pinterest: $('#cfgPinterest').value.trim(),
         social_linkedin: $('#cfgLinkedin').value.trim(),
-        social_otra: $('#cfgOtra').value.trim()
-    });
-
-    const camposWhatsapp = () => ({
-        social_whatsapp: $('#cfgWhatsappRed').value.trim(),
+        social_otra: $('#cfgOtra').value.trim(),
         whatsapp_number: $('#cfgWhatsapp').value.trim(),
         whatsapp_default_message: $('#cfgWhatsappMsg').value.trim()
     });
@@ -249,7 +240,7 @@ export async function renderizar(contenedor) {
     };
 
     vincular('#configFormGeneral', camposGenerales);
-    vincular('#configFormWhatsapp', camposWhatsapp);
+    vincular('#configFormRedes', camposRedes);
     vincular('#configFormComercio', camposDescuentos);
     vincular('#configFormTransferencia', camposTransferencia);
     vincular('#configFormPopup', camposPopup);
