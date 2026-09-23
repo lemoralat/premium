@@ -59,7 +59,7 @@ async function aplicarUbicacion() {
             'https://www.openstreetmap.org/export/embed.html?' +
             `bbox=${(data.lng - dLng).toFixed(6)}%2C${(data.lat - dLat).toFixed(6)}%2C` +
             `${(data.lng + dLng).toFixed(6)}%2C${(data.lat + dLat).toFixed(6)}` +
-            `&layer=mapnik&marker=${data.lat}%2C${data.lng}`;
+            `&layer=hot&marker=${data.lat}%2C${data.lng}`;
         if (zonaMapa) zonaMapa.style.display = '';
 
         if (direccionTexto) {
