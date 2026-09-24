@@ -2503,13 +2503,17 @@ footer p {
     outline: none;
 }
 
-/* En desktop las variantes se reparten en 2 columnas (espejo de características).
-   Dentro de cada celda el label va sobre el select (a ancho de celda) para que los
-   selectos sigan siendo usables en tablet; en móvil la base (una bajo la otra,
-   label + select en línea) no se toca. */
+/* Grilla de variaciones: el título "Elegí tu opción" va FUERA de la grilla
+   (espejo de características: <h3> + <ul>). En móvil las variaciones se
+   apilan una bajo la otra; en desktop se reparten en 2 columnas. */
+.variant-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+}
+
 @media (min-width: 769px) {
-    .variant-selector {
-        display: grid;
+    .variant-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.9rem 2.5rem;
     }

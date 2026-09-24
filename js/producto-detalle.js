@@ -256,17 +256,19 @@ function renderizarDetalleProducto(producto) {
                 ${tieneVariantes(producto) ? `
                 <div class="variant-selector">
                     <h3>Elegí tu opción:</h3>
-                    ${producto.variantes.map((v, i) => `
-                        <div class="variant-group">
-                            <label for="variantSelect${i}">${escaparHtml(v.opcion)}:</label>
-                            <select id="variantSelect${i}" class="variant-select">
-                                <option value="">Seleccioná ${escaparHtml(v.opcion)}</option>
-                                ${v.valores.map(val => `
-                                    <option value="${escaparHtml(val)}">${escaparHtml(val)}</option>
-                                `).join('')}
-                            </select>
-                        </div>
-                    `).join('')}
+                    <div class="variant-grid">
+                        ${producto.variantes.map((v, i) => `
+                            <div class="variant-group">
+                                <label for="variantSelect${i}">${escaparHtml(v.opcion)}:</label>
+                                <select id="variantSelect${i}" class="variant-select">
+                                    <option value="">Seleccioná ${escaparHtml(v.opcion)}</option>
+                                    ${v.valores.map(val => `
+                                        <option value="${escaparHtml(val)}">${escaparHtml(val)}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
                 ` : ''}
                 
