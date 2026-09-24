@@ -1249,6 +1249,14 @@ body.admin-modal-abierto { overflow: hidden; }
         border-top: 1px solid var(--border);
     }
 
+    /* Diálogo de cambios sin guardar: botones apilados a ancho completo
+       (evita que se recorten en pantallas angostas) */
+    .admin-confirm-panel .admin-modal-acciones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .admin-confirm-panel .admin-modal-acciones .btn { width: 100%; }
+
     /* Toasts al pie, centrados */
     #adminToast {
         top: auto;

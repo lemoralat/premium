@@ -231,7 +231,6 @@ export function confirmarSalida() {
                 <h2>Cambios sin guardar</h2>
                 <p class="admin-confirm-mensaje">Modificaste campos en esta sección y todavía no los guardaste. Si continuás sin guardar, se perderán.</p>
                 <div class="admin-modal-acciones">
-                    <button type="button" class="btn btn-outline" data-salida-cancelar>Cancelar</button>
                     <button type="button" class="btn btn-danger" data-salida-descartar>Descartar cambios</button>
                     <button type="button" class="btn btn-primary" data-salida-guardar>
                         <i class="fa-solid fa-floppy-disk"></i> Guardar y continuar
@@ -260,7 +259,6 @@ export function confirmarSalida() {
         });
         overlay.querySelector('[data-salida-guardar]').addEventListener('click', () => terminar('guardar'));
         overlay.querySelector('[data-salida-descartar]').addEventListener('click', () => terminar('descartar'));
-        overlay.querySelector('[data-salida-cancelar]').addEventListener('click', () => terminar('cancelar'));
         document.addEventListener('keydown', onKey);
     });
 }
