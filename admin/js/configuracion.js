@@ -3,6 +3,7 @@
 import { $, esc, toast, conCarga, estadoCargando } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { renderizarGestor as renderizarGestorPreguntas } from './preguntas-frecuentes.js';
+import { exportarProductosCSV, exportarPedidosCSV, descargarCSV } from './exportar-datos.js';
 
 // Defaults del popup de salida (replican el contenido que la tienda mostraba
 // antes de que fuese configurable). Se usan si la columna aún no existe (la
@@ -167,6 +168,25 @@ export async function renderizar(contenedor) {
             <p class="card-sub">Preguntas y respuestas que se muestran en la página de ayuda (faq.html). Mientras no haya preguntas activas, la tienda mantiene el contenido estático actual.</p>
             <div id="gestorPreguntasFrecuentes"></div>
         </div>
+
+        <div class="admin-card">
+            <h2>Exportar datos</h2>
+            <p class="card-sub">Descargá tus datos en CSV (abren directo en Excel y Google Sheets). Cada export baja por separado.</p>
+            <div class="admin-form-grid">
+                <div class="admin-field">
+                    <button type="button" class="btn btn-outline" id="btnExportarProductos">
+                        <i class="fa-solid fa-box"></i> Exportar productos (.csv)
+                    </button>
+                    <span class="hint">Catálogo: precios, stock, categoría, destacado y estado.</span>
+                </div>
+                <div class="admin-field">
+                    <button type="button" class="btn btn-outline" id="btnExportarPedidos">
+                        <i class="fa-solid fa-cart-shopping"></i> Exportar pedidos (.csv)
+                    </button>
+                    <span class="hint">Pedidos con datos del cliente, totales e ítems.</span>
+                </div>
+            </div>
+        </div>
     `;
 
     const camposGenerales = () => ({
@@ -217,6 +237,32 @@ export async function renderizar(contenedor) {
     vincular('#configFormRedes', camposRedes);
     vincular('#configFormTransferencia', camposTransferencia);
     vincular('#configFormPopup', camposPopup);
+
+    // Exportar datos (CSV): productos y pedidos, cada uno con su archivo.
+    const exportar = (boton, promesa, mensajeVacio, mensajeOk) => {
+        conCarga(boton, promesa)
+            .then((res) => {
+                if (res.filas === 0) {
+                    toast(mensajeVacio);
+                    return;
+                }
+                descargarCSV(res);
+                toast(mensajeOk(res.filas));
+            })
+            .catch((error) => toast(error.message, 'error'));
+    };
+    exportar(
+        $('#btnExportarProductos'),
+        exportarProductosCSV(),
+        'No hay productos para exportar.',
+        (n) => `Productos exportados: ${n} filas.`
+    );
+    exportar(
+        $('#btnExportarPedidos'),
+        exportarPedidosCSV(),
+        'No hay pedidos para exportar.',
+        (n) => `Pedidos exportados: ${n} filas.`
+    );
 
     // Gestor de preguntas frecuentes (widget que se re-renderiza a sí mismo).
     renderizarGestorPreguntas($('#gestorPreguntasFrecuentes'))
