@@ -111,11 +111,11 @@ export async function renderizar(contenedor) {
                 <div class="admin-form-grid">
                     <div class="admin-field">
                         <label for="cfgAlias">Alias CBU</label>
-                        <input type="text" id="cfgAlias" value="${esc(s.transfer_alias || '')}" placeholder="ej: hola.mundo.2023">
+                        <input type="text" id="cfgAlias" value="${esc(s.transfer_alias || '')}" placeholder="ej: mi.alias.o.cbu">
                     </div>
                     <div class="admin-field">
                         <label for="cfgEntidad">Entidad bancaria</label>
-                        <input type="text" id="cfgEntidad" value="${esc(s.transfer_entity || '')}" placeholder="ej: Mercado Pago">
+                        <input type="text" id="cfgEntidad" value="${esc(s.transfer_entity || '')}" placeholder="ej: Banco de ejemplo">
                     </div>
                     <div class="admin-field full">
                         <label for="cfgTitular">Titular</label>

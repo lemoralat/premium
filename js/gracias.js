@@ -46,8 +46,7 @@ function mostrarMontoTotal() {
 }
 
 // Completar la tabla "Datos para Realizar la Transferencia" con la configuración
-// remota. Antes el alias mostrado (alias.o.cbu) y el copiado (hola.mundo.2023)
-// no coincidían; ahora ambos salen de la misma fuente (settings).
+// remota: el alias mostrado y el copiado salen de la misma fuente (settings).
 function cargarDatosTransferencia() {
     const entidad = document.getElementById('transferEntity');
     if (entidad) entidad.textContent = CONFIG_APP.transferEntity || '';
