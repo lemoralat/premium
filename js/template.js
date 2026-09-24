@@ -297,18 +297,21 @@ async function initTemplate(activePage = '') {
     const footer = renderFooter();
     body.appendChild(footer);
 
-    // WhatsApp flotante (posición fija, independiente del footer)
-    const whatsapp = document.createElement('div');
-    whatsapp.className = 'whatsapp';
-    whatsapp.innerHTML = `
-        <a href="https://wa.me/${WHATSAPP_CONFIG.number}?text=${encodeURIComponent(WHATSAPP_CONFIG.defaultMessage)}" 
-           target="_blank" 
-           rel="noopener" 
-           aria-label="Contactar por WhatsApp">
-            <i class="fa-brands fa-whatsapp"></i>
-        </a>
-    `;
-    body.appendChild(whatsapp);
+    // WhatsApp flotante (posición fija, independiente del footer).
+    // Sin número configurado el botón no se renderiza (no hay link roto).
+    if (WHATSAPP_CONFIG.number) {
+        const whatsapp = document.createElement('div');
+        whatsapp.className = 'whatsapp';
+        whatsapp.innerHTML = `
+            <a href="https://wa.me/${WHATSAPP_CONFIG.number}?text=${encodeURIComponent(WHATSAPP_CONFIG.defaultMessage)}" 
+               target="_blank" 
+               rel="noopener" 
+               aria-label="Contactar por WhatsApp">
+                <i class="fa-brands fa-whatsapp"></i>
+            </a>
+        `;
+        body.appendChild(whatsapp);
+    }
 
     // 3. Sidemenu del carrito: panel deslizante desde la derecha
     body.appendChild(crearEstructuraSidemenu());
@@ -555,6 +558,14 @@ function cerrarBusquedaMovil() {
 function actualizarElementosWhatsApp() {
     const links = document.querySelectorAll('.wa-link');
     const numbers = document.querySelectorAll('.wa-number');
+
+    // Sin número configurado: se quitan del DOM los enlaces/íconos de WhatsApp
+    // (no se dejan href vacíos ni textos tipo "+" en la página).
+    if (!WHATSAPP_CONFIG.number) {
+        links.forEach(link => link.remove());
+        numbers.forEach(el => el.remove());
+        return;
+    }
     
     const url = `https://wa.me/${WHATSAPP_CONFIG.number}?text=${encodeURIComponent(WHATSAPP_CONFIG.defaultMessage)}`;
     

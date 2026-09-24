@@ -24,9 +24,11 @@ export const CONFIG_COMPRA_MINIMA = {
 // Cupones manuales válidos
 export let CONFIG_CUPONES = {};
 
-// Configuración de WhatsApp centralizada
+// Configuración de WhatsApp centralizada.
+// Número VACÍO = WhatsApp deshabilitado: la plantilla no trae número de Lemora;
+// los botones/enlaces de WhatsApp se ocultan en toda la tienda.
 export const WHATSAPP_CONFIG = {
-    number: '543515957014',
+    number: '',
     defaultMessage: 'Hola, quería consultar '
 };
 
@@ -34,11 +36,11 @@ export const WHATSAPP_CONFIG = {
 // Se completa con la fila "settings" de Supabase cuando está disponible.
 export const CONFIG_APP = {
     siteName: 'Mi Tienda Online',
-    whatsappNumber: '543515957014',
+    whatsappNumber: '',
     whatsappMessage: 'Hola, quería consultar ',
-    transferAlias: 'hola.mundo.2023',
-    transferEntity: 'Mercado Pago',
-    transferHolder: 'Nombre completo',
+    transferAlias: '',
+    transferEntity: '',
+    transferHolder: '',
     emailContact: '',
     address: '',
     socialInstagram: '',
@@ -85,9 +87,9 @@ export async function cargarConfiguracionGlobal() {
         const r = await cargarConfiguracion();
         if (r.ok && r.datos) {
             const c = r.datos;
-            CONFIG_APP.siteName = c.site_name || CONFIG_APP.siteName;
-            WHATSAPP_CONFIG.number = c.whatsapp_number || WHATSAPP_CONFIG.number;
-            WHATSAPP_CONFIG.defaultMessage = c.whatsapp_default_message || WHATSAPP_CONFIG.defaultMessage;
+            CONFIG_APP.siteName = c.site_name ?? CONFIG_APP.siteName;
+            WHATSAPP_CONFIG.number = c.whatsapp_number ?? WHATSAPP_CONFIG.number;
+            WHATSAPP_CONFIG.defaultMessage = c.whatsapp_default_message ?? WHATSAPP_CONFIG.defaultMessage;
             CONFIG_APP.whatsappNumber = WHATSAPP_CONFIG.number;
             CONFIG_APP.whatsappMessage = WHATSAPP_CONFIG.defaultMessage;
             CONFIG_DESCUENTO.UMBRAL = Number(c.discount_threshold) || CONFIG_DESCUENTO.UMBRAL;
@@ -96,9 +98,9 @@ export async function cargarConfiguracionGlobal() {
             // productos y monto, ambas reglas acumulables. 0 = regla inactiva.
             CONFIG_COMPRA_MINIMA.cantidad = Math.max(0, Math.floor(Number(c.compra_minima_cantidad) || 0));
             CONFIG_COMPRA_MINIMA.monto = Math.max(0, Number(c.compra_minima_monto) || 0);
-            CONFIG_APP.transferAlias = c.transfer_alias || CONFIG_APP.transferAlias;
-            CONFIG_APP.transferEntity = c.transfer_entity || CONFIG_APP.transferEntity;
-            CONFIG_APP.transferHolder = c.transfer_holder || CONFIG_APP.transferHolder;
+            CONFIG_APP.transferAlias = c.transfer_alias ?? CONFIG_APP.transferAlias;
+            CONFIG_APP.transferEntity = c.transfer_entity ?? CONFIG_APP.transferEntity;
+            CONFIG_APP.transferHolder = c.transfer_holder ?? CONFIG_APP.transferHolder;
             CONFIG_APP.emailContact = c.email_contact || '';
             CONFIG_APP.address = c.address || '';
             CONFIG_APP.socialInstagram = c.social_instagram || '';
@@ -156,8 +158,10 @@ export function obtenerNombreSitio() {
     return CONFIG_APP.siteName;
 }
 
-// Construir URL de WhatsApp con el número centralizado
+// Construir URL de WhatsApp con el número centralizado.
+// Sin número configurado devuelve '' para que el llamador decida (ocultar/abortar).
 export function obtenerUrlWhatsApp(mensaje = '') {
+    if (!WHATSAPP_CONFIG.number) return '';
     return `https://wa.me/${WHATSAPP_CONFIG.number}?text=${encodeURIComponent(mensaje)}`;
 }
 

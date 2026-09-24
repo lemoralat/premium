@@ -230,6 +230,8 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0020_compra_minima.sql` (menú Descuentos → Compra mínima: `compra_minima_modo` 'off'|'cantidad'|'monto' y `compra_minima_valor` en `settings`; refuerza la validación en el RPC `insertar_pedido`)
    - `migrations/0021_imagenes_storage.sql` (pipeline de imágenes: incluye `iconos` en Storage y convierte los iconos del seed a Font Awesome)
    - `migrations/0022_formato_cards.sql` (selector de formato de imágenes de cards: `1:1`, `3:2` o `4:5`)
+    - `migrations/0023_compra_minima_dual.sql` (compra mínima **dual**: columnas `compra_minima_cantidad` y `compra_minima_monto` en `settings`, ambas acumulables; `insertar_pedido` validaba modo+valor, ahora recalcula contra las dos)
+    - `migrations/0024_plantilla_sin_datos_lemora.sql` (plantilla reutilizable: DEFAULTS de `settings` sin datos de Lemora — `whatsapp_number`, `transfer_alias`, `transfer_entity`, `transfer_holder` → `''`; solo cambia DEFAULTS, no toca la fila existente)
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).

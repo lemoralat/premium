@@ -141,14 +141,19 @@ async function enviarPedidoWhatsApp(e) {
         });
 
         // ============ ENVIAR POR WHATSAPP ============
+        // Sin número configurado, obtenerUrlWhatsApp() devuelve '' (el pedido ya
+        // quedó registrado vía API): se cierra la ventana en blanco y se sigue
+        // a la página de gracias sin abrir un link roto.
         const urlWhatsApp = construirUrlWhatsApp(datosCliente, cart, subtotal, descuento, total, esCupon ? cupon : null);
 
-        if (ventanaWhatsApp) {
+        if (urlWhatsApp && ventanaWhatsApp) {
             ventanaWhatsApp.location.href = urlWhatsApp;
-        } else {
+        } else if (urlWhatsApp) {
             // Popup bloqueado: ofrecer el enlace manualmente y no redirigir aún
             mostrarFallbackWhatsApp(urlWhatsApp, token);
             return;
+        } else if (ventanaWhatsApp) {
+            ventanaWhatsApp.close();
         }
 
         // Limpiar carrito y redirigir a página de gracias

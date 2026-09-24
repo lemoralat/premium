@@ -90,7 +90,7 @@ export async function renderizar(contenedor) {
                     </div>
                     <div class="admin-field">
                         <label for="cfgWhatsapp">Número de WhatsApp (código país + número)</label>
-                        <input type="text" id="cfgWhatsapp" value="${esc(s.whatsapp_number || '')}" placeholder="ej: 543515957014">
+                        <input type="text" id="cfgWhatsapp" value="${esc(s.whatsapp_number || '')}" placeholder="ej: 5491122334455">
                     </div>
                     <div class="admin-field full">
                         <label for="cfgWhatsappMsg">Mensaje por defecto</label>

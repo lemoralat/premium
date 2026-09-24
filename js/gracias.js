@@ -50,7 +50,7 @@ function mostrarMontoTotal() {
 // no coincidían; ahora ambos salen de la misma fuente (settings).
 function cargarDatosTransferencia() {
     const entidad = document.getElementById('transferEntity');
-    if (entidad) entidad.textContent = CONFIG_APP.transferEntity || 'Mercado Pago';
+    if (entidad) entidad.textContent = CONFIG_APP.transferEntity || '';
 
     const titular = document.getElementById('transferHolder');
     if (titular) titular.textContent = CONFIG_APP.transferHolder || '';
@@ -61,7 +61,7 @@ function cargarDatosTransferencia() {
 
 // Exponer a window para el onclick del HTML
 window.copiarAlias = function () {
-    const alias = CONFIG_APP.transferAlias || 'hola.mundo.2023';
+    const alias = CONFIG_APP.transferAlias || '';
     const copyBtn = document.querySelector('.copy-btn');
 
     if (navigator.clipboard && navigator.clipboard.writeText) {

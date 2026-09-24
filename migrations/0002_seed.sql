@@ -328,9 +328,9 @@ insert into public.settings (
     transfer_alias, transfer_entity, transfer_holder,
     social_facebook, social_instagram, social_tiktok
 ) values (
-    1, 'Mi Tienda Online', '543515957014', 'Hola, quería consultar ',
+    1, 'Mi Tienda Online', '', 'Hola, quería consultar ',
     100000, 10,
-    'hola.mundo.2023', 'Mercado Pago', 'Nombre completo',
+    '', '', '',
     'https://www.facebook.com/p/', 'https://www.instagram.com/', 'https://www.tiktok.com/@'
 )
 on conflict (id) do nothing;

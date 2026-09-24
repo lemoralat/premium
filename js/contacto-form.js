@@ -96,6 +96,12 @@ function enviarContactoWhatsApp(e) {
     mensajeWhatsApp += `*Nombre:* ${nombre}\n\n`;
     mensajeWhatsApp += `*Mensaje:*\n${mensaje}`;
     
+    // Sin número configurado no hay a quién derivar la consulta.
+    if (!WHATSAPP_CONFIG.number) {
+        mostrarNotificacion('No hay un número de WhatsApp configurado en la tienda. Volvé a intentarlo más tarde.', 'error');
+        return;
+    }
+
     // Codificar mensaje para URL
     const mensajeCodificado = encodeURIComponent(mensajeWhatsApp);
     
