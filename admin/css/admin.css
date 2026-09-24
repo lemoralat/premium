@@ -291,6 +291,46 @@ table.admin-tabla tr:hover td { background: #f8fafc; }
 }
 
 /* ============================================================================
+   SELECCIÓN Y BORRADO DE PEDIDOS (individual y por lote)
+   ============================================================================ */
+th.th-check,
+td.td-check {
+    width: 2.2rem;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+table.admin-tabla th.th-check::before,
+table.admin-tabla td.td-check::before { content: none; }
+td.td-expandir .pedido-acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.admin-bulkbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.6rem 0.85rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid var(--primary-light);
+    border-radius: 10px;
+    background: #f0f9ff;
+}
+.admin-bulkbar-info {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    color: var(--text);
+}
+.admin-bulkbar-info .fa-square-check { color: var(--primary); }
+.admin-bulkbar-acciones { display: flex; align-items: center; gap: 0.55rem; }
+
+/* ============================================================================
    BOTONES
    ============================================================================ */
 .btn {

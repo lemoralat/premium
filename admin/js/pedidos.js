@@ -1,6 +1,6 @@
 // pedidos.js — Gestión de pedidos: listado, filtros, detalle y cambio de estado.
 
-import { $, esc, toast, estadoCargando, estadoVacio, formatearPrecio, formatearFechaHora } from './admin-ui.js';
+import { $, esc, toast, estadoCargando, estadoVacio, confirmarBorrado, formatearPrecio, formatearFechaHora } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 const ESTADOS = ['Pendiente', 'Procesando', 'Enviado', 'Entregado', 'Cancelado'];
@@ -9,6 +9,7 @@ let todos = [];
 let filtroEstado = 'Todos';
 let busqueda = '';
 let expandidoId = null;
+let seleccionados = new Set();
 
 export async function renderizar(contenedor) {
     estadoCargando(contenedor, 'Cargando pedidos…');
@@ -23,6 +24,7 @@ export async function renderizar(contenedor) {
     todos = data || [];
 
     expandidoId = null;
+    seleccionados.clear();
     pintar(contenedor);
 }
 
@@ -40,6 +42,10 @@ function pintar(contenedor) {
         ? todos.length
         : todos.filter((o) => o.estado === estado).length;
 
+    const conSeleccion = seleccionados.size > 0;
+    const todosVisibles = filtrados.length > 0 && filtrados.every((o) => seleccionados.has(o.id));
+    const algunosVisibles = !todosVisibles && filtrados.some((o) => seleccionados.has(o.id));
+
     contenedor.innerHTML = `
         <div class="admin-filtros admin-filtros-chips">
             <button type="button" class="admin-chip ${filtroEstado === 'Todos' ? 'active' : ''}" data-estado="Todos">Todos (${contar('Todos')})</button>
@@ -52,11 +58,21 @@ function pintar(contenedor) {
             <p>${filtrados.length} pedido(s)</p>
         </div>
 
+        ${conSeleccion ? `
+        <div class="admin-bulkbar" role="status">
+            <span class="admin-bulkbar-info"><i class="fa-solid fa-square-check"></i> <strong>${seleccionados.size}</strong> pedido(s) seleccionado(s)</span>
+            <div class="admin-bulkbar-acciones">
+                <button type="button" class="btn btn-sm btn-outline" id="btnLimpiarSeleccion">Quitar selección</button>
+                <button type="button" class="btn btn-sm btn-danger" id="btnBorrarSeleccion"><i class="fa-solid fa-trash-can"></i> Borrar seleccionados</button>
+            </div>
+        </div>` : ''}
+
         ${filtrados.length === 0 ? '<div class="admin-card"><div class="admin-empty"><i class="fa-solid fa-receipt"></i><h3>Sin pedidos</h3><p>No se encontraron pedidos con estos filtros.</p></div></div>' : `
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
                     <tr>
+                        <th class="th-check"><label class="admin-check" title="Seleccionar todos los visibles"><input type="checkbox" id="selTodos" aria-label="Seleccionar todos los visibles" ${todosVisibles ? 'checked' : ''}></label></th>
                         <th></th><th>Número</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Cupón</th><th>Estado</th>
                     </tr>
                 </thead>
@@ -66,6 +82,9 @@ function pintar(contenedor) {
             </table>
         </div>`}
     `;
+
+    const selTodos = $('#selTodos');
+    if (selTodos) selTodos.indeterminate = algunosVisibles;
 
     contenedor.querySelectorAll('.admin-chip').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -113,6 +132,89 @@ function pintar(contenedor) {
             }
         });
     });
+
+    // Selección de filas (checkbox individual)
+    contenedor.querySelectorAll('[data-seleccion]').forEach((cb) => {
+        cb.addEventListener('change', () => {
+            const id = Number(cb.dataset.seleccion);
+            if (cb.checked) seleccionados.add(id);
+            else seleccionados.delete(id);
+            pintar(contenedor);
+        });
+    });
+
+    // Seleccionar / deseleccionar todos los visibles
+    const selTodosCheck = $('#selTodos');
+    if (selTodosCheck) {
+        selTodosCheck.addEventListener('change', () => {
+            const ids = filtrados.map((o) => o.id);
+            if (selTodosCheck.checked) ids.forEach((id) => seleccionados.add(id));
+            else ids.forEach((id) => seleccionados.delete(id));
+            pintar(contenedor);
+        });
+    }
+
+    // Borrar un pedido (ícono papelera de la fila)
+    contenedor.querySelectorAll('[data-borrar-uno]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const id = Number(btn.dataset.borrarUno);
+            const orden = todos.find((o) => o.id === id);
+            const cliente = clienteDe(orden);
+            const ok = await confirmarBorrado(
+                `¿Eliminar el pedido <strong>${esc(orden?.numero || '')}</strong> de ${esc(cliente?.nombre || '—')}?`
+                + '<br><br>Se borrarán también sus líneas de productos. Esta acción no se puede deshacer.'
+            );
+            if (!ok) return;
+            try {
+                const sb = await clienteAdmin();
+                const { data: n, error } = await sb.rpc('borrar_pedidos', { p_ids: [id] });
+                if (error) throw error;
+                todos = todos.filter((o) => o.id !== id);
+                seleccionados.delete(id);
+                if (expandidoId === id) expandidoId = null;
+                toast(`Pedido ${esc(orden?.numero || '')} eliminado`);
+                pintar(contenedor);
+            } catch (error) {
+                toast(`No se pudo eliminar el pedido: ${error.message}`, 'error');
+            }
+        });
+    });
+
+    // Barra de lote: quitar selección
+    const btnLimpiarSel = $('#btnLimpiarSeleccion');
+    if (btnLimpiarSel) {
+        btnLimpiarSel.addEventListener('click', () => {
+            seleccionados.clear();
+            pintar(contenedor);
+        });
+    }
+
+    // Barra de lote: borrar seleccionados
+    const btnBorrarSel = $('#btnBorrarSeleccion');
+    if (btnBorrarSel) {
+        btnBorrarSel.addEventListener('click', async () => {
+            const ids = [...seleccionados];
+            const ok = await confirmarBorrado(
+                `¿Eliminar <strong>${ids.length}</strong> pedido(s)?`
+                + '<br><br>Se borrarán también sus líneas de productos. Esta acción no se puede deshacer.'
+            );
+            if (!ok) return;
+            try {
+                const sb = await clienteAdmin();
+                const { data: n, error } = await sb.rpc('borrar_pedidos', { p_ids: ids });
+                if (error) throw error;
+                const eliminados = new Set(ids);
+                const estabaExpandido = [...eliminados].some((id) => expandidoId === id);
+                todos = todos.filter((o) => !eliminados.has(o.id));
+                seleccionados.clear();
+                if (estabaExpandido) expandidoId = null;
+                toast(`${Number(n) || ids.length} pedido(s) eliminado(s)`);
+                pintar(contenedor);
+            } catch (error) {
+                toast(`No se pudo eliminar: ${error.message}`, 'error');
+            }
+        });
+    }
 }
 
 function seleccionarAjustar(select, valor) {
@@ -136,10 +238,20 @@ function filaPedido(o) {
 
     return `
         <tr ${expandido ? 'class="admin-fila-activa"' : ''}>
+            <td class="td-check">
+                <label class="admin-check" title="Seleccionar este pedido">
+                    <input type="checkbox" data-seleccion="${esc(o.id)}" aria-label="Seleccionar pedido ${esc(o.numero)}" ${seleccionados.has(o.id) ? 'checked' : ''}>
+                </label>
+            </td>
             <td class="td-expandir">
-                <button type="button" class="btn btn-sm btn-outline" data-expandir="${esc(o.id)}" aria-label="Ver detalle">
-                    <i class="fa-solid ${expandido ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-                </button>
+                <div class="pedido-acciones">
+                    <button type="button" class="btn btn-sm btn-outline" data-expandir="${esc(o.id)}" aria-label="Ver detalle">
+                        <i class="fa-solid ${expandido ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" data-borrar-uno="${esc(o.id)}" aria-label="Eliminar pedido ${esc(o.numero)}">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
             </td>
             <td data-label="Número"><strong>${esc(o.numero)}</strong></td>
             <td data-label="Fecha">${esc(formatearFechaHora(o.created_at))}</td>
@@ -159,7 +271,7 @@ function filaPedido(o) {
         </tr>
         ${expandido ? `
         <tr class="admin-fila-expandida">
-            <td colspan="8">
+            <td colspan="9">
                 <div class="pedido-detalle-grid">
                     <div>
                         <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Productos</h4>
