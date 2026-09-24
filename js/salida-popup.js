@@ -17,6 +17,15 @@
         return window.matchMedia('(pointer: fine)').matches;
     }
 
+    // Móvil por viewport (breakpoint del sitio, 768px): el exit-intent es un
+    // patrón de escritorio (el mouse sale por arriba del viewport), así que en
+    // pantallas ≤768px el popup nunca se activa. Complementa a isFinePointer():
+    // cubre iPad con trackpad/modo escritorio, notebooks táctiles y DevTools
+    // responsive (ancho móvil con mouse físico).
+    function esViewportMovil() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    }
+
     function lockScroll(lock) {
         document.documentElement.classList.toggle('exit-intent-locked', lock);
     }
@@ -79,6 +88,7 @@
     function tryShowExitIntent() {
         if (configPopup().activo === false) return;
         if (sessionStorage.getItem(STORAGE_KEY) === '1') return;
+        if (esViewportMovil()) return;
         if (!isFinePointer()) return;
         sessionStorage.setItem(STORAGE_KEY, '1');
         openModal();
