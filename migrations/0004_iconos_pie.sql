@@ -63,13 +63,13 @@ insert into public.iconos_pie (titulo, descripcion, external_url, position, acti
 select * from (values
 ('Muchas formas de pago',
  'Trabajo con mercadopago, lo cuál se aceptan todos los medios de pagos de la villetera virtual número 1 de Argentina, para que compres con total confianza.',
- '''', 0, true),
+ '', 0, true),
 ('Envíos a toda Argentina',
  'Envío a toda la Argentina de norte a sur, todos los pedidos salen desde Córdoba, Argentina y pueden variar dependiendo tu ubicación.',
- '''', 1, true),
+ '', 1, true),
 ('Stock siempre disponible',
  'Toda la web opera bajo pedido, compra con total confianza, yo me comunicaré contigo personalmente para asegurar que llegue lo que pidas.',
- '''', 2, true)
+ '', 2, true)
 ) as v(titulo, descripcion, external_url, position, activo)
 where not exists (select 1 from public.iconos_pie);
 
