@@ -268,8 +268,8 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **`external_url` convive con `storage_path`** durante la transición: los drives originales siguen funcionando; el admin decide cuándo migrar cada imagen al Storage (limpieza progresiva, sin apuro).
 - **Borrado de productos**: `order_items.product_id` es `SET NULL` → el historial de pedidos no se corrompe; las imágenes se limpian del Storage manualmente desde el panel.
 - **Caché en memoria (60s / 5min en configuración)**: cambios del admin se ven en la tienda en hasta ~1 minuto. Es intencional para no golpear Supabase en cada render.
-- **Fallback JSON**: si no hay configuración o Supabase está caído, la tienda usa los JSON locales (`js/*.json`). Controlado por cada `obtener*`.
-- **`GOOGLE_SCRIPT_URL` conserva el nombre** en `js/formulario.js` (legado): evita tocar puntos ciegos del frontend; el destino `/api/pedido` ya no proxea a Google.
+- **Secciones resilientes**: si no hay configuración o Supabase está caído, cada `obtener*` devuelve su forma vacía (catálogo `[]`, reseñas/slider/banners/iconos `null` → contenido estático u oculto). El fallback JSON de la era Sheets (archivos `js/*.json` + funciones `*DesdeJSON`) se eliminó del repo: Supabase es la única fuente de datos.
+- **`API_PEDIDO_URL`** en `js/formulario.js` apunta a `/api/pedido`, que escribe el pedido en Supabase vía RPC (se renombró al retirar el legado `GOOGLE_SCRIPT_URL`).
 - **Metas SEO**: se corrigieron los placeholders `tusitio.com` → `supabase.lemora.lat` en los 8 HTML.
 - **Sin ventanas nativas del navegador** (solo UI propia): las confirmaciones usan el modal del panel (`confirmarDialogo` en `admin-ui.js`) y las notificaciones de la tienda usan los toasts propios (`mostrarNotificacion`).
 - **`sale10` quedó inactivo** (vencido el 2026-08-30) respetando la realidad de la planilla.
@@ -307,7 +307,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 
 ### 12.2 Qué hay que apagar (cuando se confirme el funcionamiento)
 
-1. **Apps Script**: eliminar el script/proyecto web y quitar su permiso de ejecución (el endpoint deja de recibir tráfico apenas se despliegue la nueva `api/pedido.js`).
+1. **Apps Script**: **hecho en el repo** (se eliminaron `scripts/MenuPrincipal.gs` y `scripts/script-premium.gs`). Falta solo apagar el proyecto web en script.google.com y retirar `WEB_API_KEY`/`GOOGLE_SCRIPT_URL` de las propiedades del script y del entorno de Vercel.
 2. **Sheets**: pueden dejarse como respaldo histórico, pero **dejar de editarlas** (ya no alimentan la tienda). Si se desea, exportar copia como respaldo antes de borrar.
 3. **Drive**: las imágenes seed seguirán referenciadas hasta que se re-suban al Storage. **No borrar los archivos originales de Drive** hasta migrar cada imagen; al reemplazar desde el panel, la URL externa se reemplaza por `storage_path`.
 
@@ -321,7 +321,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 
 - [ ] Las 48 imágenes + slider + logos de banner subidos y verificados en Storage (bucket `products`, `slider`, `banners`, `reviews`).
 - [ ] Sin URLs de `googleusercontent.com` ni `drive.google.com` en la BD (se puede consultar con `select ... where external_url like '%google%'`).
-- [ ] Apps Script eliminado y variables `WEB_API_KEY`/`GOOGLE_SCRIPT_URL` retiradas del entorno de Vercel.
+- [x] Apps Script eliminado del repositorio (queda apagar el proyecto web en script.google.com y retirar `WEB_API_KEY`/`GOOGLE_SCRIPT_URL`).
 - [ ] Planillas de Sheets archivadas/exportadas como copia simple.
 </content>
 </invoke>

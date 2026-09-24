@@ -1,8 +1,8 @@
 // utils.js
 
-// Capa de datos: Supabase como fuente de verdad, con fallback a los JSON locales
-// (modo dual controlado) para que la tienda siga funcionando si Supabase no
-// está configurado o hay un corte de red.
+// Capa de datos: Supabase como fuente de verdad. Cada cargador de supabase.js
+// devuelve { ok, datos }. Con Supabase caído, las secciones quedan vacías,
+// ocultas o con su contenido estático por defecto; no hay datos alternativos.
 import {
     cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, urlImagen
 } from './supabase.js';
@@ -247,40 +247,10 @@ function transformarCupones(cuponesArray) {
 // ================= PRODUCTOS =================
 export async function obtenerProductos() {
     const remoto = await cargarProductos();
-    if (remoto.ok) {
-        return remoto.datos;
-    }
-    return productosDesdeJSON();
-}
-
-// Cargar productos desde JSON (fallback del mecanismo original con caché)
-async function productosDesdeJSON() {
-    const cachedData = sessionStorage.getItem('cache_productos');
-    const cachedVersion = sessionStorage.getItem('cache_version');
-
-    try {
-        const headResponse = await fetch('js/productos.json', { method: 'HEAD' });
-        const serverVersion = headResponse.headers.get('Last-Modified') || headResponse.headers.get('ETag');
-
-        if (cachedData && cachedVersion === serverVersion) {
-            return JSON.parse(cachedData);
-        }
-
-        const response = await fetch('js/productos.json');
-        if (!response.ok) throw new Error('Error al cargar productos');
-        const productos = await response.json();
-
-        sessionStorage.setItem('cache_productos', JSON.stringify(productos));
-        if (serverVersion) {
-            sessionStorage.setItem('cache_version', serverVersion);
-        }
-
-        return productos;
-    } catch (error) {
-        if (cachedData) return JSON.parse(cachedData);
-        mostrarNotificacion('No pudimos cargar el catálogo. Por favor, recarga la página.', 'error');
-        return [];
-    }
+    if (remoto.ok) return remoto.datos;
+    // Sin Supabase: catálogo vacío (el resto de la web sigue funcionando).
+    mostrarNotificacion('No pudimos cargar el catálogo. Por favor, recarga la página.', 'error');
+    return [];
 }
 
 // ================= CUPONES =================
@@ -291,111 +261,22 @@ export async function obtenerCupones() {
     const remoto = await cargarCupones();
     if (remoto.ok) {
         CONFIG_CUPONES = transformarCupones(remoto.datos);
-        return CONFIG_CUPONES;
     }
-    return cuponesDesdeJSON();
-}
-
-// Cargar cupones desde JSON dinámico (fallback)
-async function cuponesDesdeJSON() {
-    const cachedData = sessionStorage.getItem('cache_cupones');
-    const cachedVersion = sessionStorage.getItem('cache_cupones_version');
-
-    try {
-        const headResponse = await fetch('js/cupones.json', { method: 'HEAD' });
-        const serverVersion = headResponse.headers.get('Last-Modified') || headResponse.headers.get('ETag');
-
-        if (cachedData && cachedVersion === serverVersion) {
-            CONFIG_CUPONES = JSON.parse(cachedData);
-            return CONFIG_CUPONES;
-        }
-
-        const response = await fetch('js/cupones.json');
-        if (!response.ok) throw new Error('Error al cargar cupones');
-        const cuponesArray = await response.json();
-
-        const transformado = transformarCupones(cuponesArray);
-        CONFIG_CUPONES = transformado;
-        sessionStorage.setItem('cache_cupones', JSON.stringify(transformado));
-        if (serverVersion) sessionStorage.setItem('cache_cupones_version', serverVersion);
-
-        return transformado;
-    } catch (error) {
-        if (cachedData) CONFIG_CUPONES = JSON.parse(cachedData);
-        return CONFIG_CUPONES;
-    }
+    return CONFIG_CUPONES; // Sin Supabase: sin cupones (default {})
 }
 
 // ================= RESEÑAS =================
 export async function obtenerResenas() {
     const remoto = await cargarResenas();
-    if (remoto.ok) {
-        return remoto.datos;
-    }
-    return resenasDesdeJSON();
-}
-
-// Cargar reseñas desde JSON dinámico (fallback)
-async function resenasDesdeJSON() {
-    const cachedData = sessionStorage.getItem('cache_resenas');
-    const cachedVersion = sessionStorage.getItem('cache_resenas_version');
-
-    try {
-        const headResponse = await fetch('js/resenas.json', { method: 'HEAD' });
-        const serverVersion = headResponse.headers.get('Last-Modified') || headResponse.headers.get('ETag');
-
-        if (cachedData && cachedVersion === serverVersion) {
-            return JSON.parse(cachedData);
-        }
-
-        const response = await fetch('js/resenas.json');
-        if (!response.ok) throw new Error('Error al cargar reseñas');
-        const resenas = await response.json();
-
-        sessionStorage.setItem('cache_resenas', JSON.stringify(resenas));
-        if (serverVersion) sessionStorage.setItem('cache_resenas_version', serverVersion);
-
-        return resenas;
-    } catch (error) {
-        if (cachedData) return JSON.parse(cachedData);
-        return null; // Sin datos: el carrusel usa el fallback estático
-    }
+    if (remoto.ok) return remoto.datos;
+    return null; // Sin Supabase: el carrusel usa las reseñas estáticas
 }
 
 // ================= SLIDER =================
 export async function obtenerSlider() {
     const remoto = await cargarSlider();
-    if (remoto.ok) {
-        return remoto.datos;
-    }
-    return sliderDesdeJSON();
-}
-
-// Cargar slides del hero desde JSON dinámico (fallback)
-async function sliderDesdeJSON() {
-    const cachedData = sessionStorage.getItem('cache_slider');
-    const cachedVersion = sessionStorage.getItem('cache_slider_version');
-
-    try {
-        const headResponse = await fetch('js/slider.json', { method: 'HEAD' });
-        const serverVersion = headResponse.headers.get('Last-Modified') || headResponse.headers.get('ETag');
-
-        if (cachedData && cachedVersion === serverVersion) {
-            return JSON.parse(cachedData);
-        }
-
-        const response = await fetch('js/slider.json');
-        if (!response.ok) throw new Error('Error al cargar slider');
-        const slides = await response.json();
-
-        sessionStorage.setItem('cache_slider', JSON.stringify(slides));
-        if (serverVersion) sessionStorage.setItem('cache_slider_version', serverVersion);
-
-        return slides;
-    } catch (error) {
-        if (cachedData) return JSON.parse(cachedData);
-        return null; // Sin datos: el slider usa el fallback estático
-    }
+    if (remoto.ok) return remoto.datos;
+    return null; // Sin Supabase: el hero usa su fallback estático
 }
 
 // Escapa texto administrado antes de interpolarlo en HTML
@@ -435,72 +316,15 @@ export function slugificar(texto) {
 // Cargar banners dinámicos. [] => la web no renderiza secciones de banners.
 export async function obtenerBanners() {
     const remoto = await cargarBanners();
-    if (remoto.ok) {
-        return remoto.datos;
-    }
-    return bannersDesdeJSON();
-}
-
-async function bannersDesdeJSON() {
-    const cachedData = sessionStorage.getItem('cache_banners');
-    const cachedVersion = sessionStorage.getItem('cache_banners_version');
-
-    try {
-        const headResponse = await fetch('js/banners.json', { method: 'HEAD' });
-        const serverVersion = headResponse.headers.get('Last-Modified') || headResponse.headers.get('ETag');
-
-        if (cachedData && cachedVersion === serverVersion) {
-            return JSON.parse(cachedData);
-        }
-
-        const response = await fetch('js/banners.json');
-        if (!response.ok) throw new Error('Error al cargar banners');
-        const banners = await response.json();
-
-        sessionStorage.setItem('cache_banners', JSON.stringify(banners));
-        if (serverVersion) sessionStorage.setItem('cache_banners_version', serverVersion);
-
-        return banners;
-    } catch (error) {
-        if (cachedData) return JSON.parse(cachedData);
-        return null;
-    }
+    if (remoto.ok) return remoto.datos;
+    return null; // Sin Supabase: sin banners
 }
 
 // ================= ICONOS DEL PIE =================
 export async function obtenerIconosPie() {
     const remoto = await cargarIconosPie();
-    if (remoto.ok) {
-        return remoto.datos;
-    }
-    return iconosPieDesdeJSON();
-}
-
-// Cargar iconos del pie desde JSON dinámico (fallback)
-async function iconosPieDesdeJSON() {
-    const cachedData = sessionStorage.getItem('cache_iconos_pie');
-    const cachedVersion = sessionStorage.getItem('cache_iconos_pie_version');
-
-    try {
-        const headResponse = await fetch('js/iconos-pie.json', { method: 'HEAD' });
-        const serverVersion = headResponse.headers.get('Last-Modified') || headResponse.headers.get('ETag');
-
-        if (cachedData && cachedVersion === serverVersion) {
-            return JSON.parse(cachedData);
-        }
-
-        const response = await fetch('js/iconos-pie.json');
-        if (!response.ok) throw new Error('Error al cargar iconos');
-        const iconos = await response.json();
-
-        sessionStorage.setItem('cache_iconos_pie', JSON.stringify(iconos));
-        if (serverVersion) sessionStorage.setItem('cache_iconos_pie_version', serverVersion);
-
-        return iconos;
-    } catch (error) {
-        if (cachedData) return JSON.parse(cachedData);
-        return null; // Sin datos: la sección usa el fallback estático
-    }
+    if (remoto.ok) return remoto.datos;
+    return null; // Sin Supabase: la sección usa los iconos estáticos
 }
 
 // ================= PREGUNTAS FRECUENTES =================

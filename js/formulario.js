@@ -4,10 +4,9 @@ import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMini
 
 // ============ CONFIGURACIÓN ============
 const CONFIG_PEDIDOS = {
-    // El nombre de la clave conserva el legado (era un proxy a Google Apps
-    // Script), pero api/pedido.js ahora registra el pedido en Supabase con la
-    // service role key del lado servidor: el frontend sigue sin manejar claves.
-    GOOGLE_SCRIPT_URL: '/api/pedido'
+    // api/pedido.js registra el pedido en Supabase con la service role key del
+    // lado servidor: el frontend sigue sin manejar claves.
+    API_PEDIDO_URL: '/api/pedido'
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -130,7 +129,7 @@ async function enviarPedidoWhatsApp(e) {
         sessionStorage.setItem('order_token', token);
 
         // ============ ENVIAR A GOOGLE SHEETS ============
-        await enviarPedidoGoogleSheets({
+        await enviarPedidoAPI({
             cliente: datosCliente,
             productos: cart,
             subtotal: subtotal,
@@ -164,9 +163,9 @@ async function enviarPedidoWhatsApp(e) {
 }
 
 // ============ ENVIAR PEDIDO ============
-async function enviarPedidoGoogleSheets(pedido) {
+async function enviarPedidoAPI(pedido) {
     try {
-        const response = await fetch(CONFIG_PEDIDOS.GOOGLE_SCRIPT_URL, {
+        const response = await fetch(CONFIG_PEDIDOS.API_PEDIDO_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
 // Hero Slider - Autoplay, Loop, Swipe, Stop on Hover
-// Slides dinámicos desde la hoja "Slider" (js/slider.json).
+// Slides dinámicos desde Supabase (tabla slider).
 // Sin slides => la sección se mantiene oculta (hidden en el HTML).
 
 import { obtenerSlider, recortarTexto, imagenOptimizada, atributosEnlace, escaparHtml, urlSegura, placeholderImagenPublica } from './utils.js';
@@ -33,7 +33,7 @@ class HeroSlider {
         if (!this.slider || this.eventosVinculados) return;
 
         // La sección llega oculta del HTML (hidden): solo se muestra con slides reales.
-        // El administrador decide desde la hoja "Slider": hoja vacía => slider.json con []
+        // El administrador configura los slides desde el panel (tabla slider); sin slides => []
         // => la sección desaparece por completo (sin estático, sin JSON viejo).
         const datos = await obtenerSlider();
         this.datosCompletos = Array.isArray(datos) ? datos : [];

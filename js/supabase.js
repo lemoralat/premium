@@ -6,8 +6,8 @@
 // (js/utils.js, productos.js, producto-detalle.js, hero-slider.js, etc.).
 //
 // - Usa SOLO la anon key (pública). Nunca hay service_role en el navegador.
-// - Si Supabase no está configurado o falla, devuelve { ok: false } para que
-//   utils.js caiga al mecanismo JSON actual (modo dual controlado).
+// - Si Supabase no está configurado o falla, devuelve { ok: false }; utils.js
+//   decide qué mostrar (secciones vacías/ocultas, sin datos alternativos).
 // - Caché en memoria con TTL para no repetir consultas idénticas.
 // ============================================================================
 
@@ -204,13 +204,13 @@ export async function cargarProductos() {
     }
 }
 
-// Fila de "products" (con joins) → objeto con el contrato de js/productos.json
+// Fila de "products" (con joins) → objeto con el contrato del frontend
 function mapaProducto(p) {
     const imagenes = Array.isArray(p.imagenes) ? p.imagenes : [];
     // Orden estable por posición (el panel las numera 0..n-1).
     const ordenadas = [...imagenes].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     const principal = ordenadas.find(i => i.es_principal) || ordenadas[0] || null;
-    // Contrato del frontend: galeria[0] es la imagen principal (ver js/productos.json).
+    // Contrato del frontend: galeria[0] es la imagen principal.
     const galeria = principal
         ? [principal, ...ordenadas.filter(i => i.id !== principal.id)]
         : ordenadas;

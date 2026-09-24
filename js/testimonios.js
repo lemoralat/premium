@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const track = document.querySelector('.testimonios-track');
     if (!track || !viewport) return;
 
-    // Cargar reseñas (Supabase primero, fallback a js/resenas.json).
+    // Cargar reseñas desde Supabase (tabla resenas).
     // - Array no vacío: reseñas activas de la BD
     // - null (red/cache caída): fallback estático
     // - [] (sin reseñas activas): ocultar la sección
