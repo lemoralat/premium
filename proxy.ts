@@ -1,5 +1,5 @@
 // ============================================================================
-// proxy.mjs — Guard de servidor (Vercel Routing Middleware) para /admin*.
+// proxy.ts — Guard de servidor (Vercel Routing Middleware) para /admin*.
 //
 // Ejecuta ANTES de servir cualquier archivo bajo /admin:
 //
@@ -17,8 +17,10 @@
 // IMPORTANTE: si en el futuro se agrega una página pública nueva bajo /admin,
 // hay que whitelistearla acá (y sus imports), o quedará bloqueada por el guard.
 //
-// Se configura en vercel.json (proxy.entrypoint + proxy.matcher). Ruta como
-// .mjs → ESM garantizado aunque package.json no tenga "type": "module".
+// Se configura en vercel.json (proxy.entrypoint + proxy.matcher). La extensión
+// .ts está en el schema oficial de vercel.json (js|ts|py) y Vercel la transpila
+// como ESM sin importar el "type" de package.json — por eso NO usamos .mjs
+// (rechazado por el schema) ni "type": "module" (rompería api/*.js que son CJS).
 // Usa Web APIs estándar (Request/Response) + next() de @vercel/functions:
 // el contrato de Routing Middleware para proyectos SIN framework (no Next.js).
 // ============================================================================
@@ -47,12 +49,12 @@ const ASSETS_PUBLICOS = new Set([
     '/admin/js/admin-supabase.js'
 ]);
 
-function esRutaPublica(pathname) {
+function esRutaPublica(pathname: string): boolean {
     return RUTAS_PUBLICAS.has(pathname) || ASSETS_PUBLICOS.has(pathname);
 }
 
 // Extrae el valor de la cookie espejo desde el header Cookie.
-function leerToken(request) {
+function leerToken(request: Request): string | null {
     const cookie = request.headers.get('cookie') || '';
     for (const par of cookie.split(';')) {
         const [nombre, ...resto] = par.trim().split('=');
@@ -61,10 +63,10 @@ function leerToken(request) {
     return null;
 }
 
-const redirigirALogin = (request) =>
+const redirigirALogin = (request: Request): Response =>
     Response.redirect(new URL('/admin/login.html', request.url), 307);
 
-export default async function middleware(request) {
+export default async function middleware(request: Request): Promise<Response> {
     const { pathname } = new URL(request.url);
 
     // Páginas y assets públicos pasan directo (siguen la cadena).
