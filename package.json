@@ -9,9 +9,10 @@
     "dev": "vercel dev"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.116.0"
+    "@supabase/supabase-js": "2.116.0",
+    "@vercel/functions": "^3.9.9"
   }
 }

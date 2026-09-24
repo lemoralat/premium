@@ -1,4 +1,8 @@
 {
+  "proxy": {
+    "entrypoint": "proxy.mjs",
+    "matcher": ["/admin/:path*"]
+  },
   "redirects": [
     {
       "source": "/admin",
