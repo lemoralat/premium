@@ -135,19 +135,19 @@ export async function renderizar(contenedor) {
                 <div class="admin-form-grid">
                     <div class="admin-field">
                         <label for="cfgPopupTitulo">Título</label>
-                        <input type="text" id="cfgPopupTitulo" value="${esc(s.popup_titulo ?? DEFAULT_POPUP.titulo)}">
+                        <input type="text" id="cfgPopupTitulo" value="${esc(s.popup_titulo || '')}" placeholder="${esc(DEFAULT_POPUP.titulo)}">
                     </div>
                     <div class="admin-field">
                         <label for="cfgPopupCta">Texto del botón</label>
-                        <input type="text" id="cfgPopupCta" value="${esc(s.popup_cta ?? DEFAULT_POPUP.cta)}">
+                        <input type="text" id="cfgPopupCta" value="${esc(s.popup_cta || '')}" placeholder="${esc(DEFAULT_POPUP.cta)}">
                     </div>
                     <div class="admin-field full">
                         <label for="cfgPopupDescripcion">Descripción</label>
-                        <textarea id="cfgPopupDescripcion" rows="3">${esc(s.popup_descripcion ?? DEFAULT_POPUP.descripcion)}</textarea>
+                        <textarea id="cfgPopupDescripcion" rows="3" placeholder="${esc(DEFAULT_POPUP.descripcion)}">${esc(s.popup_descripcion || '')}</textarea>
                     </div>
                     <div class="admin-field full">
                         <label for="cfgPopupCtaUrl">Destino del botón</label>
-                        <input type="text" id="cfgPopupCtaUrl" value="${esc(s.popup_cta_url ?? DEFAULT_POPUP.ctaUrl)}" placeholder="ej: index.html#tienda o https://…">
+                        <input type="text" id="cfgPopupCtaUrl" value="${esc(s.popup_cta_url || '')}" placeholder="${esc(DEFAULT_POPUP.ctaUrl)}">
                         <span class="hint">Página interna (ej. index.html#tienda) o URL externa completa.</span>
                     </div>
                     <div class="admin-field full">
