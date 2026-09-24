@@ -2503,6 +2503,33 @@ footer p {
     outline: none;
 }
 
+/* En desktop las variantes se reparten en 2 columnas (espejo de características).
+   Dentro de cada celda el label va sobre el select (a ancho de celda) para que los
+   selectos sigan siendo usables en tablet; en móvil la base (una bajo la otra,
+   label + select en línea) no se toca. */
+@media (min-width: 769px) {
+    .variant-selector {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem 2.5rem;
+    }
+
+    .variant-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.35rem;
+        min-width: 0;
+    }
+
+    .variant-group label {
+        min-width: 0;
+    }
+
+    .variant-select {
+        max-width: none;
+    }
+}
+
 .product-actions-detail {
     display: flex;
     gap: 1rem;
