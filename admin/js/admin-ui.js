@@ -84,7 +84,8 @@ export function confirmarDialogo(opciones) {
         mensaje = '',
         textoConfirmar = 'Confirmar',
         textoCancelar = 'Cancelar',
-        peligro = false
+        peligro = false,
+        mensajeHtml = false
     } = opciones || {};
 
     return new Promise((resolve) => {
@@ -111,7 +112,7 @@ export function confirmarDialogo(opciones) {
                     <i class="fa-solid fa-xmark"></i>
                 </button>
                 <h2>${esc(titulo)}</h2>
-                ${mensaje ? `<p class="admin-confirm-mensaje">${esc(mensaje)}</p>` : ''}
+                ${mensaje ? `<p class="admin-confirm-mensaje">${mensajeHtml ? mensaje : esc(mensaje)}</p>` : ''}
                 <div class="admin-modal-acciones">
                     <button type="button" class="btn btn-outline" data-confirm-no>${esc(textoCancelar)}</button>
                     <button type="button" class="btn ${peligro ? 'btn-danger' : 'btn-primary'}" data-confirm-si>${esc(textoConfirmar)}</button>
@@ -130,12 +131,13 @@ export function confirmarDialogo(opciones) {
     });
 }
 
-export async function confirmarBorrado(mensaje) {
+export async function confirmarBorrado(mensaje, { html = false } = {}) {
     return confirmarDialogo({
         titulo: 'Confirmar eliminación',
         mensaje: mensaje || '¿Eliminar este elemento? Esta acción no se puede deshacer.',
         textoConfirmar: 'Eliminar',
-        peligro: true
+        peligro: true,
+        mensajeHtml: html
     });
 }
 

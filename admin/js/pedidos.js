@@ -163,6 +163,7 @@ function pintar(contenedor) {
             const ok = await confirmarBorrado(
                 `¿Eliminar el pedido <strong>${esc(orden?.numero || '')}</strong> de ${esc(cliente?.nombre || '—')}?`
                 + '<br><br>Se borrarán también sus líneas de productos. Esta acción no se puede deshacer.'
+                , { html: true }
             );
             if (!ok) return;
             try {
@@ -197,6 +198,7 @@ function pintar(contenedor) {
             const ok = await confirmarBorrado(
                 `¿Eliminar <strong>${ids.length}</strong> pedido(s)?`
                 + '<br><br>Se borrarán también sus líneas de productos. Esta acción no se puede deshacer.'
+                , { html: true }
             );
             if (!ok) return;
             try {
