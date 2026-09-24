@@ -239,27 +239,31 @@ export async function renderizar(contenedor) {
     vincular('#configFormPopup', camposPopup);
 
     // Exportar datos (CSV): productos y pedidos, cada uno con su archivo.
-    const exportar = (boton, promesa, mensajeVacio, mensajeOk) => {
-        conCarga(boton, promesa)
-            .then((res) => {
-                if (res.filas === 0) {
-                    toast(mensajeVacio);
-                    return;
-                }
-                descargarCSV(res);
-                toast(mensajeOk(res.filas));
-            })
-            .catch((error) => toast(error.message, 'error'));
+    // Las exportaciones se lanzan SOLO con el click del botón: se pasa la
+    // referencia de la función (sin llamarla) y se ejecuta dentro del handler.
+    const exportar = (boton, promesaFn, mensajeVacio, mensajeOk) => {
+        boton.addEventListener('click', () => {
+            conCarga(boton, promesaFn())
+                .then((res) => {
+                    if (res.filas === 0) {
+                        toast(mensajeVacio);
+                        return;
+                    }
+                    descargarCSV(res);
+                    toast(mensajeOk(res.filas));
+                })
+                .catch((error) => toast(error.message, 'error'));
+        });
     };
     exportar(
         $('#btnExportarProductos'),
-        exportarProductosCSV(),
+        exportarProductosCSV,
         'No hay productos para exportar.',
         (n) => `Productos exportados: ${n} filas.`
     );
     exportar(
         $('#btnExportarPedidos'),
-        exportarPedidosCSV(),
+        exportarPedidosCSV,
         'No hay pedidos para exportar.',
         (n) => `Pedidos exportados: ${n} filas.`
     );
