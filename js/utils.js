@@ -13,12 +13,12 @@ export const CONFIG_DESCUENTO = {
     PORCENTAJE: 10  // Porcentaje de descuento (ej. 10%)
 };
 
-// Compra mínima (sección "Descuentos" del panel): modo off | cantidad | monto.
-// Conservador: sin la migración 0020 (columna ausente) la compra mínima queda
-// desactivada y la tienda se comporta igual que siempre.
+// Compra mínima (menú Descuentos → Compra mínima): regla por cantidad de
+// productos y/o por monto, AMBAS acumulables. Cada valor 0 = esa regla queda
+// desactivada. Sin la migración 0023 (columnas ausentes) queda todo en 0.
 export const CONFIG_COMPRA_MINIMA = {
-    modo: 'off',
-    valor: 0
+    cantidad: 0,
+    monto: 0
 };
 
 // Cupones manuales válidos
@@ -92,12 +92,10 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.whatsappMessage = WHATSAPP_CONFIG.defaultMessage;
             CONFIG_DESCUENTO.UMBRAL = Number(c.discount_threshold) || CONFIG_DESCUENTO.UMBRAL;
             CONFIG_DESCUENTO.PORCENTAJE = Number(c.discount_percent) || CONFIG_DESCUENTO.PORCENTAJE;
-            // Compra mínima (menú Descuentos → Compra mínima). `includes`: sin
-            // la migración 0020 la columna no existe → queda 'off'.
-            if (['off', 'cantidad', 'monto'].includes(c.compra_minima_modo)) {
-                CONFIG_COMPRA_MINIMA.modo = c.compra_minima_modo;
-            }
-            CONFIG_COMPRA_MINIMA.valor = Math.max(0, Number(c.compra_minima_valor) || 0);
+            // Compra mínima (menú Descuentos → Compra mínima): cantidad de
+            // productos y monto, ambas reglas acumulables. 0 = regla inactiva.
+            CONFIG_COMPRA_MINIMA.cantidad = Math.max(0, Math.floor(Number(c.compra_minima_cantidad) || 0));
+            CONFIG_COMPRA_MINIMA.monto = Math.max(0, Number(c.compra_minima_monto) || 0);
             CONFIG_APP.transferAlias = c.transfer_alias || CONFIG_APP.transferAlias;
             CONFIG_APP.transferEntity = c.transfer_entity || CONFIG_APP.transferEntity;
             CONFIG_APP.transferHolder = c.transfer_holder || CONFIG_APP.transferHolder;
@@ -207,26 +205,33 @@ export function calcularTotales(cart, codigoCupon = null) {
 // cumple; si no, compara unidades totales del carrito (cantidad) o el subtotal
 // (monto) contra el valor configurado.
 export function estadoCompraMinima(cart) {
-    const { modo, valor } = CONFIG_COMPRA_MINIMA;
+    const { cantidad, monto } = CONFIG_COMPRA_MINIMA;
     const lista = Array.isArray(cart) ? cart : [];
-    if (modo === 'off' || !valor) {
+
+    const unidades = lista.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+    const subtotal = lista.reduce((sum, i) => sum + (Number(i.precio) * (Number(i.quantity) || 0)), 0);
+
+    // Ambas reglas se evalúan (acumulables); 0 = regla inactiva.
+    const faltaCantidad = cantidad > 0 && unidades < cantidad ? cantidad - unidades : 0;
+    const faltaMonto = monto > 0 && subtotal < monto ? monto - subtotal : 0;
+
+    if (!faltaCantidad && !faltaMonto) {
         return { cumple: true, mensaje: '' };
     }
-    if (modo === 'cantidad') {
-        const unidades = lista.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
-        if (unidades >= valor) return { cumple: true, mensaje: '' };
-        const faltan = valor - unidades;
-        return {
-            cumple: false,
-            mensaje: `La compra mínima es de ${formatearPrecio(valor)} productos. Te faltan ${faltan} para completarla.`
-        };
+
+    const exige = [];
+    const faltan = [];
+    if (faltaCantidad) {
+        exige.push(`${formatearPrecio(cantidad)} ${cantidad === 1 ? 'producto' : 'productos'}`);
+        faltan.push(`${faltaCantidad} ${faltaCantidad === 1 ? 'producto' : 'productos'}`);
     }
-    // modo === 'monto': el mínimo se mide sobre el subtotal (antes de descuentos)
-    const subtotal = lista.reduce((sum, i) => sum + (Number(i.precio) * (Number(i.quantity) || 0)), 0);
-    if (subtotal >= valor) return { cumple: true, mensaje: '' };
+    if (faltaMonto) {
+        exige.push(`$${formatearPrecio(monto)}`);
+        faltan.push(`$${formatearPrecio(faltaMonto)}`);
+    }
     return {
         cumple: false,
-        mensaje: `La compra mínima es de $${formatearPrecio(valor)}. Te faltan $${formatearPrecio(valor - subtotal)} para completarla.`
+        mensaje: `La compra mínima es de ${exige.join(' y ')}. Te faltan ${faltan.join(' y ')} para completarla.`
     };
 }
 

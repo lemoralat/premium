@@ -19,12 +19,10 @@ export async function renderizar(contenedor) {
     cupones = rCupones.data || [];
     cuponesCargados = true;
     const s = rSettings.data;
-    const modoMin = ['off', 'cantidad', 'monto'].includes(s.compra_minima_modo) ? s.compra_minima_modo : 'off';
-    const hintMin = modoMin === 'monto'
-        ? 'Monto mínimo en pesos para poder finalizar la compra (ej: 50000).'
-        : modoMin === 'cantidad'
-            ? 'Cantidad mínima de productos en el carrito (ej: 3).'
-            : 'Desactivada: el cliente puede comprar cualquier monto o cantidad.';
+    // Compra mínima DUAL: cantidad de productos y monto, ambas acumulables
+    // (0 = regla inactiva).
+    const minCantidad = Math.max(0, Math.floor(Number(s.compra_minima_cantidad) || 0));
+    const minMonto = Math.max(0, Number(s.compra_minima_monto) || 0);
 
     contenedor.innerHTML = `
         <div class="admin-card">
@@ -49,33 +47,21 @@ export async function renderizar(contenedor) {
         </div>
         <div class="admin-card">
             <h2>Compra mínima</h2>
-            <p class="card-sub">La tienda exige un mínimo de compra (por cantidad de productos o por monto) antes de finalizar; el servidor lo vuelve a validar al registrar el pedido.</p>
+            <p class="card-sub">La tienda exige un mínimo antes de finalizar. Podés combinar cantidad de productos y monto: cada regla se activa con un valor mayor a 0 y se aplican JUNTAS. El servidor las vuelve a validar al registrar el pedido.</p>
             <form class="admin-form" id="formCompraMinima">
                 <div class="admin-form-grid">
-                    <div class="admin-field full">
-                        <label>Tipo de compra mínima</label>
-                        <div class="compra-minima-modo">
-                            <label class="cmp-opcion ${modoMin === 'off' ? 'activa' : ''}">
-                                <input type="radio" name="compraMinimaModo" value="off" ${modoMin === 'off' ? 'checked' : ''}>
-                                <span>Desactivada</span>
-                            </label>
-                            <label class="cmp-opcion ${modoMin === 'cantidad' ? 'activa' : ''}">
-                                <input type="radio" name="compraMinimaModo" value="cantidad" ${modoMin === 'cantidad' ? 'checked' : ''}>
-                                <span>Cantidad de productos</span>
-                            </label>
-                            <label class="cmp-opcion ${modoMin === 'monto' ? 'activa' : ''}">
-                                <input type="radio" name="compraMinimaModo" value="monto" ${modoMin === 'monto' ? 'checked' : ''}>
-                                <span>Monto ($)</span>
-                            </label>
-                        </div>
-                        <span class="hint">El botón "Finalizar Compra" queda deshabilitado hasta cumplir el mínimo.</span>
+                    <div class="admin-field">
+                        <label for="cmpCantidad">Cantidad mínima de productos</label>
+                        <input type="number" id="cmpCantidad" min="0" step="1" value="${esc(minCantidad)}">
+                        <span class="hint">0 = sin mínimo de unidades.</span>
                     </div>
                     <div class="admin-field">
-                        <label for="cmpValor">Valor mínimo</label>
-                        <input type="number" id="cmpValor" min="0" step="${modoMin === 'monto' ? '1000' : '1'}" value="${esc(s.compra_minima_valor || 0)}" ${modoMin === 'off' ? 'disabled' : ''}>
-                        <span class="hint" id="cmpValorHint">${esc(hintMin)}</span>
+                        <label for="cmpMonto">Monto mínimo ($)</label>
+                        <input type="number" id="cmpMonto" min="0" step="1000" value="${esc(minMonto)}">
+                        <span class="hint">0 = sin mínimo de monto.</span>
                     </div>
                 </div>
+                <p class="hint" id="cmpResumen">${resumenMin(minCantidad, minMonto)}</p>
                 <div class="admin-modal-acciones">
                     <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
@@ -107,36 +93,26 @@ export async function renderizar(contenedor) {
             .catch((error) => toast(error.message, 'error'));
     });
 
-    // Compra mínima: al cambiar el modo se ajusta el valor, el hint y el step.
-    const radiosMin = document.querySelectorAll('input[name="compraMinimaModo"]');
-    const valorMin = $('#cmpValor');
-    const hintMinEl = $('#cmpValorHint');
-    const actualizarModoMin = () => {
-        const modo = document.querySelector('input[name="compraMinimaModo"]:checked')?.value || 'off';
-        document.querySelectorAll('.compra-minima-modo .cmp-opcion').forEach((o) => {
-            o.classList.toggle('activa', Boolean(o.querySelector('input').checked));
-        });
-        if (modo === 'off') {
-            valorMin.value = '0';
-            valorMin.disabled = true;
-            hintMinEl.textContent = 'Desactivada: el cliente puede comprar cualquier monto o cantidad.';
-        } else {
-            valorMin.disabled = false;
-            valorMin.step = modo === 'monto' ? '1000' : '1';
-            hintMinEl.textContent = modo === 'monto'
-                ? 'Monto mínimo en pesos para poder finalizar la compra (ej: 50000).'
-                : 'Cantidad mínima de productos en el carrito (ej: 3).';
-        }
+    // Compra mínima DUAL: cantidad y monto, ambas reglas acumulables. El
+    // resumen de estado se actualiza al tipear; 0 = regla desactivada.
+    const inputCantidad = $('#cmpCantidad');
+    const inputMonto = $('#cmpMonto');
+    const resumenEl = $('#cmpResumen');
+    const actualizarResumenMin = () => {
+        const c = Math.max(0, Math.floor(Number(inputCantidad.value) || 0));
+        const m = Math.max(0, Number(inputMonto.value) || 0);
+        resumenEl.textContent = resumenMin(c, m);
     };
-    radiosMin.forEach((r) => r.addEventListener('change', actualizarModoMin));
+    inputCantidad.addEventListener('input', actualizarResumenMin);
+    inputMonto.addEventListener('input', actualizarResumenMin);
 
     $('#formCompraMinima').addEventListener('submit', async (event) => {
         event.preventDefault();
-        const modo = document.querySelector('input[name="compraMinimaModo"]:checked')?.value || 'off';
-        const valor = modo === 'off' ? 0 : (parseFloat(valorMin.value) || 0);
+        const cantidad = Math.max(0, Math.floor(Number(inputCantidad.value) || 0));
+        const monto = Math.max(0, Number(inputMonto.value) || 0);
         conCarga(event.submitter, guardarCompraMinima({
-            compra_minima_modo: modo,
-            compra_minima_valor: valor
+            compra_minima_cantidad: cantidad,
+            compra_minima_monto: monto
         }))
             .then(() => toast('Compra mínima guardada.'))
             .catch((error) => toast(error.message, 'error'));
@@ -251,6 +227,17 @@ async function guardarDescuentos(payload) {
     const sb = await clienteAdmin();
     const { error } = await sb.from('settings').update(payload).eq('id', 1);
     if (error) throw new Error(error.message);
+}
+
+// Texto de estado de la compra mínima (ambas reglas acumulables).
+function resumenMin(cantidad, monto) {
+    if (!cantidad && !monto) {
+        return 'Desactivada: el cliente puede comprar cualquier cantidad y monto.';
+    }
+    const partes = [];
+    if (cantidad) partes.push(`${cantidad} ${cantidad === 1 ? 'producto' : 'productos'}`);
+    if (monto) partes.push(`$${monto.toLocaleString('es-AR')}`);
+    return 'La tienda exige: ' + partes.join(' y ') + '.';
 }
 
 async function guardarCompraMinima(payload) {
