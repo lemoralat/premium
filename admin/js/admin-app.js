@@ -5,8 +5,9 @@
 // ============================================================================
 
 import { protegerAdmin, cerrarSesionAdmin } from './auth.js';
-import { esc, $, urlPublica } from './admin-ui.js';
+import { esc, $, urlPublica, cerrarModal } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
+import { hayCambios, confirmarSalida, guardarCambiosPendientes, limpiarVigilancia } from './cambios-sin-guardar.js';
 
 import * as dashboard from './dashboard.js';
 import * as diseno from './diseno.js';
@@ -37,6 +38,7 @@ const secciones = {
 };
 
 let navegando = false;
+let seccionActual = 'dashboard';
 
 async function navegar() {
     if (navegando) return;
@@ -44,6 +46,33 @@ async function navegar() {
 
     const hash = (window.location.hash || '#/dashboard').replace(/^#\//, '').split('?')[0];
     const nombre = secciones[hash] ? hash : 'dashboard';
+
+    // Cambios sin guardar: si hay cambios en la sección actual y se intenta ir
+    // a otra, se pregunta antes de avanzar (Guardar / Descartar / Cancelar).
+    if (nombre !== seccionActual && hayCambios()) {
+        try {
+            const decision = await confirmarSalida();
+            if (decision === 'cancelar') {
+                // Vuelve la URL a la sección actual sin disparar otro render.
+                if (window.location.hash !== `#/${seccionActual}`) {
+                    history.replaceState(null, '', `#/${seccionActual}`);
+                }
+                navegando = false;
+                return;
+            }
+            if (decision === 'guardar') {
+                await guardarCambiosPendientes();
+            } else {
+                limpiarVigilancia();
+            }
+            cerrarModal(); // si quedó un modal abierto, se cierra al cambiar de sección
+        } catch (error) {
+            console.error('Error al resolver cambios sin guardar:', error);
+            limpiarVigilancia();
+            cerrarModal();
+        }
+    }
+
     const definicion = secciones[nombre];
 
     const titulo = $('#adminTopbarTitle');
@@ -67,6 +96,8 @@ async function navegar() {
                 </div>`;
         }
     }
+
+    seccionActual = nombre;
 
     navegando = false;
 }

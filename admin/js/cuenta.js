@@ -30,7 +30,7 @@ export async function renderizar(contenedor) {
                 </div>
                 <div class="admin-field">
                     <label>Nombre (opcional)</label>
-                    <input type="text" id="ctaNombre" value="${esc(perfil?.full_name || '')}" placeholder="Tu nombre">
+                    <input type="text" id="ctaNombre" data-cambios value="${esc(perfil?.full_name || '')}" placeholder="Tu nombre">
                 </div>
                 <div class="admin-field">
                     <label>Rol</label>
