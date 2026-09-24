@@ -31,7 +31,7 @@ try {
     const sb = await clienteAdmin();
     const { data } = await sb.auth.getSession();
     if (data.session) {
-        window.location.replace('index.html');
+        window.location.replace('/admin/');
     }
 } catch (error) {
     console.error(error);
@@ -58,7 +58,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         document.getElementById('loginForm').reset();
-        window.location.href = 'index.html';
+        window.location.href = '/admin/';
     } catch (error) {
         mostrarError(mensajeLogin(error));
         submitBtn.disabled = false;

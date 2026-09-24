@@ -22,7 +22,7 @@ export async function sesionActual() {
 export async function protegerAdmin() {
     const sesion = await sesionActual();
     if (!sesion) {
-        window.location.href = 'login.html';
+        window.location.href = '/admin/login.html';
         return null;
     }
     try {
@@ -30,12 +30,12 @@ export async function protegerAdmin() {
         const { data, error } = await sb.rpc('es_admin');
         if (error || !data) {
             await sb.auth.signOut().catch(() => {});
-            window.location.href = 'login.html?denegado=1';
+            window.location.href = '/admin/login.html?denegado=1';
             return null;
         }
     } catch (e) {
         console.error('No se pudo verificar el rol de administrador:', e);
-        window.location.href = 'login.html?denegado=1';
+        window.location.href = '/admin/login.html?denegado=1';
         return null;
     }
     return sesion;
@@ -49,6 +49,6 @@ export async function cerrarSesionAdmin() {
     } catch (error) {
         console.error('Error al cerrar sesión:', error);
     } finally {
-        window.location.href = 'login.html';
+        window.location.href = '/admin/login.html';
     }
 }

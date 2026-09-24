@@ -9,7 +9,7 @@ export async function renderizar(contenedor) {
     const sb = await clienteAdmin();
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-        window.location.href = 'login.html';
+        window.location.href = '/admin/login.html';
         return;
     }
 
