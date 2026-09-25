@@ -5,10 +5,14 @@
 // se ejecuta de forma síncrona ANTES del primer paint, así el tema se aplica
 // sin flash de color al recargar.
 //
-// Estados (localStorage 'tema_front'):
-//   'auto'   (por defecto) → sigue a matchMedia('(prefers-color-scheme: dark)')
-//                            y reacciona EN VIVO cuando el dispositivo cambia.
-//   'claro' | 'oscuro'     → forzado manualmente desde el switch del header.
+// Comportamiento:
+//   - Por defecto el front SIGUE el modo de color del dispositivo
+//     (matchMedia '(prefers-color-scheme: dark)') y reacciona EN VIVO cuando
+//     el dispositivo cambia. No hay opción "Auto" en la UI.
+//   - El switch del header (sol/luna) fuerza claro/oscuro de forma manual y
+//     persiste la preferencia en localStorage ('tema_front').
+//   - Sin preferencia guardada (o si estaba 'auto' / inválido) → se vuelve a
+//     seguir al dispositivo automáticamente.
 //
 // Expone window.TemaFront y avisa con el evento 'lemora:tema' para que
 // template.js re-aplique el color de marca aclarado en modo oscuro.
@@ -18,16 +22,16 @@
 
     var CLAVE = 'tema_front';
     var MEDIA = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-    var VALIDOS = { auto: 1, claro: 1, oscuro: 1 };
 
-    var tema = leer();
+    // Preferencia manual: 'claro' | 'oscuro' | null (null = seguir al dispositivo).
+    var preferencia = leer();
 
     function leer() {
         try {
             var v = localStorage.getItem(CLAVE);
-            return VALIDOS[v] ? v : 'auto';
+            return v === 'claro' || v === 'oscuro' ? v : null;
         } catch (e) { /* localStorage no disponible */ }
-        return 'auto';
+        return null;
     }
 
     function guardar(v) {
@@ -36,7 +40,7 @@
 
     // Tema EFECTIVO aplicado a <html data-tema="dark|light">.
     function efectivo() {
-        if (tema !== 'auto') return tema === 'oscuro' ? 'dark' : 'light';
+        if (preferencia) return preferencia === 'oscuro' ? 'dark' : 'light';
         return MEDIA && MEDIA.matches ? 'dark' : 'light';
     }
 
@@ -54,12 +58,6 @@
             el.setAttribute('aria-label', label);
             el.setAttribute('title', label);
         });
-
-        // Chip "Auto": solo cuando hay preferencia forzada (permite volver a
-        // seguir al dispositivo).
-        document.querySelectorAll('[data-tema-auto]').forEach(function (el) {
-            el.hidden = (tema === 'auto');
-        });
     }
 
     function aplicar() {
@@ -71,29 +69,20 @@
         } catch (e) { /* noop */ }
     }
 
-    // Switch binario del header: sin preferencia (auto) fuerza lo contrario del
-    // estado efectivo; ya forzado, alterna claro ↔ oscuro.
+    // Switch binario del header: fuerza lo contrario del estado efectivo actual
+    // (claro ↔ oscuro) y persiste la preferencia. Para volver a seguir al
+    // dispositivo basta con que no haya preferencia guardada.
     function ciclar() {
-        if (tema === 'auto') {
-            tema = efectivo() === 'dark' ? 'claro' : 'oscuro';
-        } else {
-            tema = tema === 'oscuro' ? 'claro' : 'oscuro';
-        }
-        guardar(tema);
+        preferencia = efectivo() === 'dark' ? 'claro' : 'oscuro';
+        guardar(preferencia);
         aplicar();
     }
 
-    // Restaurar el seguimiento del dispositivo (chip "Auto").
-    function volverAuto() {
-        tema = 'auto';
-        guardar(tema);
-        aplicar();
-    }
-
-    // Cambio de tema del sistema en vivo (solo relevante en modo auto).
+    // Cambio de tema del sistema en vivo (solo relevante sin preferencia manual;
+    // si el usuario forzó claro/oscuro, su elección manda hasta recargar).
     if (MEDIA && MEDIA.addEventListener) {
         MEDIA.addEventListener('change', function () {
-            if (tema === 'auto') aplicar();
+            if (!preferencia) aplicar();
         });
     }
 
@@ -102,9 +91,8 @@
     aplicar();
 
     window.TemaFront = {
-        estado: function () { return tema; },
+        estado: function () { return preferencia; },
         efectivo: efectivo,
-        ciclar: ciclar,
-        volverAuto: volverAuto
+        ciclar: ciclar
     };
 })();

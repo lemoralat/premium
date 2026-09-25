@@ -53,28 +53,25 @@ function renderHeader(activePage = '', categorias = []) {
             : '';
     }).join('');
 
-    // Tema claro/oscuro (js/tema.js): el ícono refleja el estado EFECTIVO actual
-    // (sigue al dispositivo en modo auto). El chip "Auto" aparece solo cuando el
-    // usuario forzó claro/oscuro, para permitir volver al seguimiento del sistema.
+    // Tema claro/oscuro (js/tema.js): el switch sol/luna forza claro/oscuro y
+    // lo persiste; sin preferencia guardada el front sigue al dispositivo
+    // (sin opción "Auto" en la UI).
     const temaEfectivo = (window.TemaFront && window.TemaFront.efectivo()) || 'light';
     const temaOscuro = temaEfectivo === 'dark';
     const temaIcono = temaOscuro ? 'fa-moon' : 'fa-sun';
     const temaLabel = temaOscuro ? 'Tema oscuro activo' : 'Tema claro activo';
-    const temaForzado = window.TemaFront && window.TemaFront.estado() !== 'auto';
 
     const temaSwitchDesktop = `
         <button type="button" class="nav-link tema-switch" data-tema-switch onclick="window.TemaFront && window.TemaFront.ciclar()" aria-label="${temaLabel}" title="${temaLabel}">
             <i class="fa-solid ${temaIcono}"></i>
             <span class="nav-label">Tema</span>
         </button>
-        <button type="button" class="tema-auto-chip" data-tema-auto onclick="window.TemaFront && window.TemaFront.volverAuto()" title="Seguir el tema del dispositivo" ${temaForzado ? '' : 'hidden'}>Auto</button>
     `;
 
     const temaSwitchMobile = `
         <button type="button" class="header-icon tema-switch" data-tema-switch onclick="window.TemaFront && window.TemaFront.ciclar()" aria-label="${temaLabel}" title="${temaLabel}">
             <i class="fa-solid ${temaIcono}"></i>
         </button>
-        <button type="button" class="tema-auto-chip" data-tema-auto onclick="window.TemaFront && window.TemaFront.volverAuto()" title="Seguir el tema del dispositivo" ${temaForzado ? '' : 'hidden'}>Auto</button>
     `;
 
     header.innerHTML = `
