@@ -1,4 +1,7 @@
-// Sistema de búsqueda de productos en tiempo real - Compatible con categorías
+// Búsqueda de productos: una sola implementación para todos los breakpoints.
+// El input es el de la barra del header en desktop y el del panel desplegable en
+// móvil (donde la barra está oculta); ambos escriben en el mismo panel de
+// resultados (#searchPanel), que se abre debajo del navbar.
 import { obtenerProductos, generarHTMLTarjetaProducto, normalizarTexto } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
@@ -9,20 +12,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Cargar productos usando el sistema centralizado
     productos = await obtenerProductos();
 
-    // Búsqueda heredada del header (desktop): al llegar a index.html#tienda
-    // desde otra página, la query quedó en sessionStorage (lemora_q).
-    aplicarBusquedaPendiente();
-
     // Vincular inputs del buscador. El header se inyecta de forma asíncrona en
     // template.js, así que también esperamos el evento 'lemora:header-ready'.
     conectarBuscador();
     document.addEventListener('lemora:header-ready', function() {
         conectarBuscador();
-        aplicarBusquedaPendiente();
     }, { once: true });
 
-    // Refresco automático (opción A): si hay una búsqueda activa, re-ejecutarla
-    // con datos frescos (stock/imagen/precio) sin recargar.
+    // Clic fuera del panel: lo cierra sin tocar la consulta, para no perder lo
+    // que el usuario escribió si vuelve a hacer clic en la barra.
+    document.addEventListener('click', function(e) {
+        const panel = document.getElementById('searchPanel');
+        if (!panel || !panel.classList.contains('open')) return;
+        if (panel.contains(e.target)) return;
+        if (e.target.closest('.header-search')) return;
+        panel.classList.remove('open');
+    });
+
+    // Refresco automático: si hay una búsqueda activa, re-ejecutarla con datos
+    // frescos (stock/imagen/precio) sin recargar.
     suscribirRefrescoCatalogo((datos) => {
         productos = datos;
         const activo = [...document.querySelectorAll('.search-input')].find(i => i.value.trim());
@@ -30,43 +38,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 });
 
-// Aplica la búsqueda guardada por el header de desktop al llegar a
-// index.html#tienda desde otra página. Es idempotente: borra el storage.
-function aplicarBusquedaPendiente() {
-    let q = null;
-    try { q = sessionStorage.getItem('lemora_q'); } catch (e) { /* noop */ }
-    if (!q) return;
-    try { sessionStorage.removeItem('lemora_q'); } catch (e) { /* noop */ }
-    const input = document.querySelector('#headerSearch .search-input');
-    if (input) input.value = q;
-    buscarProductos(q);
-}
-
 // Vincular todos los inputs de búsqueda (idempotente por input).
 function conectarBuscador() {
-    let hayInputs = false;
+    const panel = document.getElementById('searchPanel');
 
     document.querySelectorAll('.search-input').forEach(function(searchInput) {
         if (searchInput.dataset.searchBound === '1') return;
         searchInput.dataset.searchBound = '1';
-        hayInputs = true;
-
-        // Mostrar/ocultar botón de limpiar según haya o no texto
-        const clearButton = searchInput
-            .closest('.search-container')
-            ?.querySelector('.clear-search');
 
         // Búsqueda en tiempo real mientras se escribe
         searchInput.addEventListener('input', function(e) {
             const query = e.target.value.trim();
 
-            if (clearButton) {
-                if (query.length > 0) {
-                    clearButton.classList.add('visible');
-                } else {
-                    clearButton.classList.remove('visible');
-                }
-            }
+            // El panel se abre solo mientras haya texto: en desktop lo dispara
+            // la barra, en móvil el input del panel (que ya lo abrió el ícono).
+            if (panel) panel.classList.toggle('open', query.length > 0);
 
             // Realizar búsqueda con debounce para rendimiento
             clearTimeout(debounceTimer);
@@ -76,130 +62,68 @@ function conectarBuscador() {
         // Limpiar al presionar ESC
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                limpiarBusqueda();
+                if (window.cerrarBusqueda) window.cerrarBusqueda();
             }
         });
     });
-
-    // Botones de limpiar (desktop y móvil)
-    document.querySelectorAll('.clear-search').forEach(btn => {
-        if (btn.dataset.searchBound === '1') return;
-        btn.dataset.searchBound = '1';
-        btn.addEventListener('click', limpiarBusqueda);
-    });
-
-    return hayInputs;
 }
 
 // Función principal de búsqueda
 function buscarProductos(query) {
-    const grid = document.getElementById('productsGrid');
-    const noResults = document.getElementById('noResults');
-    const searchResults = document.getElementById('searchResults');
-    const movilResultados = document.getElementById('mobileSearchResults');
-    const movilCount = document.getElementById('mobileSearchCount');
-    const movilVacío = document.getElementById('mobileSearchEmpty');
+    const resultados = document.getElementById('searchPanelResults');
+    const count = document.getElementById('searchPanelCount');
+    const vacio = document.getElementById('searchPanelEmpty');
 
-    // Si no hay búsqueda, volver al estado normal
-    if (!query || query.length === 0) {
-        if (grid && noResults) {
-            document.body.classList.remove('searching');
-            noResults.classList.remove('visible');
-        }
-        if (searchResults) searchResults.textContent = '';
-        if (movilCount) movilCount.textContent = '';
-        if (movilResultados) movilResultados.innerHTML = '';
-        if (movilVacío) movilVacío.classList.remove('visible');
+    // Sin consulta no hay nada que mostrar.
+    if (!query) {
+        if (resultados) resultados.innerHTML = '';
+        if (count) count.textContent = '';
+        if (vacio) vacio.classList.remove('visible');
         return;
     }
 
     // Normalizar query (minúsculas, sin acentos)
     const queryNormalizado = normalizarTexto(query);
 
-    // Filtrar productos
+    // Filtrar productos por nombre, descripción o categoría
     const productosFiltrados = productos.filter(producto => {
-        const nombreNormalizado = normalizarTexto(producto.nombre);
-        const descripcionNormalizada = normalizarTexto(producto.descripcion);
-        const categoriaNormalizada = normalizarTexto(producto.categoria);
-
-        return nombreNormalizado.includes(queryNormalizado) ||
-               descripcionNormalizada.includes(queryNormalizado) ||
-               categoriaNormalizada.includes(queryNormalizado);
+        return normalizarTexto(producto.nombre).includes(queryNormalizado) ||
+               normalizarTexto(producto.descripcion).includes(queryNormalizado) ||
+               normalizarTexto(producto.categoria).includes(queryNormalizado);
     });
 
-    // Grid de la página de inicio (desktop / sección tienda)
-    if (grid) {
-        if (productosFiltrados.length > 0) {
-            grid.innerHTML = productosFiltrados.map(p => generarHTMLTarjetaProducto(p)).join('');
-            if (noResults) noResults.classList.remove('visible');
-            if (searchResults) {
-                const plural = productosFiltrados.length === 1 ? 'producto encontrado' : 'productos encontrados';
-                searchResults.textContent = `${productosFiltrados.length} ${plural}`;
-            }
-        } else {
-            grid.innerHTML = '';
-            if (noResults) noResults.classList.add('visible');
-            if (searchResults) searchResults.textContent = 'No se encontraron resultados';
-        }
-        document.body.classList.add('searching');
+    if (resultados) {
+        resultados.innerHTML = productosFiltrados
+            .map(p => generarHTMLTarjetaProducto(p, { soloNombrePrecio: true })).join('');
     }
-
-    // Panel de búsqueda móvil (funciona en todas las páginas)
-    if (movilResultados) {
-        if (productosFiltrados.length > 0) {
-            movilResultados.innerHTML = productosFiltrados
-                .map(p => generarHTMLTarjetaProducto(p, { soloNombrePrecio: true })).join('');
-            if (movilCount) {
-                const plural = productosFiltrados.length === 1 ? 'producto' : 'productos';
-                movilCount.textContent = `${productosFiltrados.length} ${plural} encontrados`;
-            }
-        } else {
-            movilResultados.innerHTML = '';
-            if (movilCount) movilCount.textContent = '';
-        }
-        if (movilVacío) movilVacío.classList.toggle('visible', productosFiltrados.length === 0);
+    if (count) {
+        const plural = productosFiltrados.length === 1 ? 'producto' : 'productos';
+        count.textContent = productosFiltrados.length > 0
+            ? `${productosFiltrados.length} ${plural} ${productosFiltrados.length === 1 ? 'encontrado' : 'encontrados'}`
+            : '';
     }
+    if (vacio) vacio.classList.toggle('visible', productosFiltrados.length === 0);
 }
 
-// Limpiar búsqueda
+// Limpiar búsqueda: vacía los inputs y el panel. Lo llama el `×` (a través de
+// cerrarBusqueda en template.js).
 function limpiarBusqueda() {
-    // Limpiar todos los inputs (desktop y panel móvil)
     document.querySelectorAll('.search-input').forEach(input => {
         input.value = '';
     });
-    document.querySelectorAll('.clear-search').forEach(btn => {
-        btn.classList.remove('visible');
-    });
 
-    const searchResults = document.getElementById('searchResults');
-    if (searchResults) searchResults.textContent = '';
+    const panel = document.getElementById('searchPanel');
+    if (panel) panel.classList.remove('open');
 
-    const noResults = document.getElementById('noResults');
-    if (noResults) noResults.classList.remove('visible');
+    const resultados = document.getElementById('searchPanelResults');
+    if (resultados) resultados.innerHTML = '';
 
-    const movilResultados = document.getElementById('mobileSearchResults');
-    if (movilResultados) movilResultados.innerHTML = '';
+    const count = document.getElementById('searchPanelCount');
+    if (count) count.textContent = '';
 
-    const movilCount = document.getElementById('mobileSearchCount');
-    if (movilCount) movilCount.textContent = '';
-
-    const movilVacío = document.getElementById('mobileSearchEmpty');
-    if (movilVacío) movilVacío.classList.remove('visible');
-
-    // Volver a mostrar las secciones de categorías
-    document.body.classList.remove('searching');
-
-    // Hacer foco en el primer input visible (desktop; el del panel móvil se enfoca al abrirlo)
-    const visibleInput = [...document.querySelectorAll('.search-input')]
-        .find(input => input.offsetParent !== null && !input.closest('#mobileSearch'));
-    if (visibleInput) visibleInput.focus();
+    const vacio = document.getElementById('searchPanelEmpty');
+    if (vacio) vacio.classList.remove('visible');
 }
 
-// Exponer funciones globalmente
+// Exponer para el botón "Ver todos los productos" u otros módulos
 window.limpiarBusqueda = limpiarBusqueda;
-// Fuerza una búsqueda sobre la grilla del inicio (usada por el submit de la
-// barra del header en index.html, donde el filtrado en vivo ya ocurrió).
-window.buscarDesdeQuery = function(query) {
-    const q = (query || '').trim();
-    if (q) buscarProductos(q);
-};

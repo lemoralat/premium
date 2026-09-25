@@ -523,10 +523,6 @@ span {
     display: none;
 }
 
-.mobile-search {
-    display: none;
-}
-
 /* Móvil: acciones del header */
 @media (max-width: 768px) {
     .header-actions-mobile {
@@ -569,96 +565,145 @@ span {
         line-height: 1;
     }
 
-    .mobile-search {
-        display: block;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: var(--z-nav);
-        background: var(--surface);
-        max-height: 0;
-        overflow: hidden;
-        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
-        transition: max-height 0.35s ease;
-    }
-
-    .mobile-search.open {
-        max-height: 70vh;
-        border-top: 1px solid var(--border-color);
-    }
-
-    .mobile-search .search-container {
-        margin: 0.5rem 0.75rem;
-        border: 1px solid var(--border-color);
-        border-radius: var(--curva);
-        box-shadow: none;
-        overflow: hidden;
-    }
-
-    .mobile-search .search-container:focus-within {
-        border-color: var(--primary-color);
-    }
-
-    .mobile-search .search-input {
-        padding: 0.85rem 3rem 0.85rem 1.5rem;
-        font-size: 1rem;
-    }
-
-    .search-close {
-        position: absolute;
-        right: 1.25rem;
-        background: none;
-        border: none;
-        color: var(--secondary-color);
-        font-size: 1.25rem;
-        cursor: pointer;
-        z-index: 1;
-        transition: color 0.25s ease;
-    }
-
-    .mobile-results-count {
-        padding: 0.25rem 1rem 0.5rem;
-        font-size: 0.85rem;
-        color: var(--secondary-color);
-        border-bottom: 1px solid var(--border-color);
-        margin: 0 0.75rem 0.5rem;
-    }
-
-    .mobile-results {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: max-content;
-        align-items: start;
-        gap: 0.75rem;
-        padding: 0 0.75rem 0.75rem;
-        max-height: calc(70vh - 96px);
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .mobile-results-empty {
-        display: none;
-        padding: 1.5rem 1rem 2rem;
-        text-align: center;
-        color: var(--secondary-color);
-        font-size: 0.95rem;
-    }
-
-    .mobile-results-empty.visible {
-        display: block;
-    }
-
-    /* En móvil, al buscar, el slider no debe tapar los resultados */
-    body.searching .hero-slider {
-        display: none;
-    }
-
     /* Favoritos y Carrito del drawer: ahora son iconos del header */
     .nav-menu .favorites-link,
     .nav-menu .cart-link {
         display: none;
     }
+}
+
+/* ============================================================================
+   Buscador: barra del header + panel de resultados.
+   Es una sola implementación para todos los breakpoints. La barra vive en el
+   header (desktop) y el panel se despliega debajo del navbar con los resultados,
+   tal como hacía el móvil. En móvil la barra se oculta y el input pasa a estar
+   dentro del panel (.search-panel-input), que se muestra solo en ese breakpoint.
+   ========================================================================== */
+
+/* El input del panel solo se usa en móvil. La regla base va ANTES del override
+   del media query a propósito: en CSS, entre reglas de igual especificidad gana
+   la última, así que invertidas el input quedaba oculto en todas partes. */
+.search-panel-input {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    /* En móvil la barra del header está oculta, así que el input vive en el panel. */
+    .search-panel-input {
+        display: block;
+    }
+}
+
+.search-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: var(--z-nav);
+    background: var(--surface);
+    max-height: 0;
+    overflow: hidden;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+    transition: max-height 0.35s ease;
+}
+
+/* El .navbar es position:sticky, así que sirve de containing block: el panel
+   queda anclado al borde inferior del header y a todo su ancho. */
+.search-panel.open {
+    max-height: min(70vh, 640px);
+    border-top: 1px solid var(--border-color);
+}
+
+.search-panel .search-container {
+    margin: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--curva);
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.search-panel .search-container:focus-within {
+    border-color: var(--primary-color);
+}
+
+.search-panel .search-input {
+    padding: 0.85rem 3rem 0.85rem 1.5rem;
+    font-size: 1rem;
+}
+
+/* Botón de cerrar: compartido por el input del panel (móvil) y el de la barra
+   (desktop). Cada containing block lo ancla a su derecha. */
+.search-close {
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 1;
+    transition: color 0.25s ease;
+}
+
+.search-panel-count {
+    padding: 0.25rem 1rem 0.5rem;
+    font-size: 0.85rem;
+    color: var(--secondary-color);
+    border-bottom: 1px solid var(--border-color);
+    margin: 0 0.75rem 0.5rem;
+}
+
+.search-panel-count:empty {
+    display: none;
+}
+
+/* 2 columnas en móvil (lo que ya se veía), más columnas a medida que crece el
+   panel en desktop: 3 en tablet, 4 en pantallas medianas/grandes, 5 en muy anchas. */
+.search-panel-results {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: max-content;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0 0.75rem 0.75rem;
+    max-height: calc(min(70vh, 640px) - 96px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 769px) {
+    .search-panel-results {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        padding: 0 1.25rem 1.25rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .search-panel-results {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 1440px) {
+    .search-panel-results {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.search-panel-empty {
+    display: none;
+    padding: 1.5rem 1rem 2rem;
+    text-align: center;
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+}
+
+.search-panel-empty.visible {
+    display: block;
 }
 
 /* Contenedor del logo y la barra de búsqueda del header: el GAP entre ambos se
@@ -715,7 +760,8 @@ span {
         border: none;
         background: transparent;
         outline: none;
-        padding: 0.7rem 0.25rem 0.7rem 1.25rem;
+        /* padding derecho generoso para que el texto no pase por debajo del × */
+        padding: 0.7rem 2.75rem 0.7rem 1.25rem;
         font-size: 0.9375rem;
         line-height: 1.4;
         color: var(--text-color);
@@ -730,25 +776,19 @@ span {
         display: none;
     }
 
-    .header-search-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        margin: 2px;
-        border: none;
-        border-radius: 50px;
-        background: var(--primary-color);
-        color: var(--text-on-primary);
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: opacity 0.2s ease;
-        flex-shrink: 0;
+    /* El × vive dentro de la barra: necesita que .header-search sea el
+       containing block (position:relative), como ya ocurre con el input del
+       panel a través de .search-container. */
+    .header-search {
+        position: relative;
     }
 
-    .header-search-btn:hover {
-        opacity: 0.85;
+    .header-search .search-close {
+        right: 0.9rem;
+    }
+
+    .header-search .search-close:hover {
+        color: var(--primary-color);
     }
 }
 
@@ -937,39 +977,6 @@ span {
 
 .search-input::-webkit-search-cancel-button {
     display: none;
-}
-
-.no-results {
-    display: none;
-    text-align: center;
-    padding: 3rem 1rem;
-    background: var(--surface);
-    border-radius: var(--curva-surface);
-    box-shadow: var(--shadow);
-}
-
-.no-results.visible {
-    display: block;
-}
-
-.no-results p {
-    font-size: var(--fs-body);
-    line-height: 1.5;
-    color: var(--secondary-color);
-    margin-bottom: 1.5rem;
-}
-
-/* Products Section */
-.products-section {
-    max-width: var(--container-lg);
-    margin: 3rem auto;
-    padding: 0 1rem;
-}
-
-.products-section h2 {
-    text-align: center;
-    line-height: 1.15;
-    margin-bottom: 2rem;
 }
 
 .products-grid {
@@ -2833,24 +2840,6 @@ footer p {
 }
 
 /* Banner de categoría */
-
-/* Ocultar secciones cuando hay búsqueda activa */
-body.searching .category-section,
-body.searching .banner-intercalado {
-    display: none;
-}
-
-body.searching .products-section {
-    display: block;
-}
-
-.products-section {
-    display: none;
-}
-
-body.searching .products-section {
-    display: block;
-}
 
 /* FAQ Page Styles */
 .faq-page {

@@ -1,22 +1,11 @@
-// productos.js
-import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase } from './utils.js';
-import { suscribirRefrescoCatalogo } from './supabase.js';
+// productos.js — Catálogo para la página de detalle de producto.
+//
+// El listado del inicio lo renderiza productos-categorias.js en #tienda, y los
+// resultados de búsqueda viven en el panel del header (busqueda.js). Acá solo
+// queda la carga de datos que necesitan los controles de la ficha.
+import { obtenerProductos, agregarAlCarritoBase } from './utils.js';
 
 let productos = [];
-
-// Función para cargar productos desde el JSON
-async function cargarProductos() {
-    productos = await obtenerProductos();
-    renderizarProductos();
-}
-
-// Renderizar productos
-function renderizarProductos() {
-    const grid = document.getElementById('productsGrid');
-    if (!grid) return;
-
-    grid.innerHTML = productos.map(p => generarHTMLTarjetaProducto(p)).join('');
-}
 
 // Agregar al carrito
 function agregarAlCarrito(id) {
@@ -28,11 +17,5 @@ window.agregarAlCarrito = agregarAlCarrito;
 
 // Inicializar al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
-    cargarProductos();
-    // Refresco automático (opción A): tarjetas al día sin recargar.
-    suscribirRefrescoCatalogo((datos) => {
-        productos = datos;
-        // Si hay una búsqueda activa no pisamos la grilla (lo hace busqueda.js).
-        if (!document.body.classList.contains('searching')) renderizarProductos();
-    });
+    obtenerProductos().then(datos => { productos = datos; });
 });

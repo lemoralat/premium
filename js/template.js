@@ -87,17 +87,17 @@ function renderHeader(activePage = '', categorias = []) {
                 <div class="header-brand">
                     ${logoSitio}
 
-                    <!-- Barra de búsqueda del header: solo desktop. En el inicio
-                         filtra la grilla en vivo (busqueda.js conecta todos los
-                         .search-input); en las demás páginas el submit redirige a
-                         index.html#tienda. -->
-                    <form class="header-search" id="headerSearch" role="search" onsubmit="return buscarDesdeHeader(event)">
+                    <!-- Barra de búsqueda del header: solo desktop. No hay botón de
+                         submit — los resultados salen en vivo en el panel desplegable
+                         (#searchPanel), el mismo que usa el móvil. Es un div y no un
+                         form justamente para que Enter no dispare un submit inexistente. -->
+                    <div class="header-search" id="headerSearch" role="search">
                         <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
                             aria-label="¿Qué estás buscando?" autocomplete="off">
-                        <button type="submit" class="header-search-btn" aria-label="Buscar productos">
-                            <i class="fa-solid fa-magnifying-glass"></i>
+                        <button type="button" class="search-close" onclick="cerrarBusqueda()" aria-label="Cerrar búsqueda">
+                            <i class="fa-solid fa-xmark"></i>
                         </button>
-                    </form>
+                    </div>
                 </div>
 
                 <div class="header-actions-mobile">
@@ -148,17 +148,23 @@ function renderHeader(activePage = '', categorias = []) {
                 </div>
             </div>
 
-            <div class="mobile-search" id="mobileSearch">
-                <div class="search-container">
-                    <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
-                        aria-label="¿Qué estás buscando?">
-                    <button class="search-close" onclick="cerrarBusquedaMovil()" aria-label="Cerrar búsqueda">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
+            <!-- Panel de resultados: se despliega bajo el navbar en TODOS los
+                 breakpoints. En desktop lo abre la barra de arriba (al escribir);
+                 en móvil, donde la barra está oculta, lo abre el ícono de la lupa y
+                 el panel trae su propio input. -->
+            <div class="search-panel" id="searchPanel" aria-label="Resultados de búsqueda">
+                <div class="search-panel-input">
+                    <div class="search-container">
+                        <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
+                            aria-label="¿Qué estás buscando?">
+                        <button type="button" class="search-close" onclick="cerrarBusqueda()" aria-label="Cerrar búsqueda">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="mobile-results-count" id="mobileSearchCount"></div>
-                <div class="mobile-results" id="mobileSearchResults"></div>
-                <div class="mobile-results-empty" id="mobileSearchEmpty">No se encontraron resultados</div>
+                <div class="search-panel-count" id="searchPanelCount" aria-live="polite"></div>
+                <div class="search-panel-results" id="searchPanelResults"></div>
+                <div class="search-panel-empty" id="searchPanelEmpty">No se encontraron resultados</div>
             </div>
         </nav>
     `;
@@ -387,9 +393,9 @@ async function initTemplate(activePage = '') {
             if (e.key === 'Escape' && sidemenu.classList.contains('active')) {
                 cerrarCarritoSidemenu();
             }
-            const searchPanel = document.getElementById('mobileSearch');
+            const searchPanel = document.getElementById('searchPanel');
             if (e.key === 'Escape' && searchPanel && searchPanel.classList.contains('open')) {
-                cerrarBusquedaMovil();
+                cerrarBusqueda();
             }
         });
     }
@@ -568,8 +574,8 @@ function sideEliminarItem(clave) {
 function abrirCarritoSidemenu() {
     const overlay = document.getElementById('cartSidemenu');
     if (!overlay) return;
-    // Si el buscador está abierto, lo cerramos primero
-    if (window.cerrarBusquedaMovil) window.cerrarBusquedaMovil();
+    // Si el panel de búsqueda está abierto, lo cerramos primero
+    if (window.cerrarBusqueda) window.cerrarBusqueda();
     renderSidemenuCarrito();
     overlay.classList.add('active');
     document.documentElement.classList.add('cart-sidemenu-locked');
@@ -584,51 +590,29 @@ function cerrarCarritoSidemenu() {
     document.documentElement.classList.remove('cart-sidemenu-locked');
 }
 
-// ===================== Búsqueda móvil (panel bajo el navbar) =====================
-// El buscador del header es solo móvil (la barra del header se usa en desktop).
+// ===================== Búsqueda (panel de resultados bajo el navbar) =====================
+// El panel es el mismo en todos los breakpoints. En desktop lo abre la barra del
+// header al escribir; en móvil la barra está oculta y se entra con el ícono.
 function toggleBusquedaMovil() {
-    const panel = document.getElementById('mobileSearch');
+    const panel = document.getElementById('searchPanel');
     if (!panel) return;
     if (panel.classList.contains('open')) {
-        cerrarBusquedaMovil();
+        cerrarBusqueda();
         return;
     }
     // Abrir: si el carrito lateral estaba abierto, lo cerramos primero
     if (window.cerrarCarritoSidemenu) window.cerrarCarritoSidemenu();
     panel.classList.add('open');
-    const input = [...panel.querySelectorAll('.search-input')]
-        .find(i => i.offsetParent !== null) || panel.querySelector('.search-input');
+    const input = panel.querySelector('.search-input');
     if (input) input.focus();
 }
 
-function cerrarBusquedaMovil() {
-    const panel = document.getElementById('mobileSearch');
-    if (!panel) return;
-    panel.classList.remove('open');
+// Cierra el panel y limpia la consulta. Es lo que hace el `×`, tanto en el input
+// del panel (móvil) como en el de la barra (desktop).
+function cerrarBusqueda() {
+    const panel = document.getElementById('searchPanel');
+    if (panel) panel.classList.remove('open');
     if (window.limpiarBusqueda) window.limpiarBusqueda();
-}
-
-// Submit de la barra del header (desktop): en el inicio la grilla ya se filtra
-// en vivo por busqueda.js; en las demás páginas se guarda la búsqueda y se
-// navega a index.html#tienda para mostrarla en la grilla.
-function buscarDesdeHeader(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    const input = document.querySelector('#headerSearch .search-input');
-    if (!input) return false;
-    const q = input.value.trim();
-    if (!q) return false;
-
-    // En el inicio la búsqueda en vivo ya filtra la grilla; si venimos de otra
-    // página con lemora_q, busqueda.js la aplica al cargar.
-    const enInicio = document.body && document.body.dataset.page === 'inicio';
-    if (enInicio) {
-        if (window.buscarDesdeQuery) window.buscarDesdeQuery(q);
-        return false;
-    }
-
-    try { sessionStorage.setItem('lemora_q', q); } catch (err) { /* noop */ }
-    window.location.href = 'index.html#tienda';
-    return false;
 }
 
 // Actualizar elementos de WhatsApp en el contenido de la página
@@ -685,6 +669,5 @@ document.addEventListener('DOMContentLoaded', async function () {
     window.sideCambiarCantidad = sideCambiarCantidad;
     window.sideEliminarItem = sideEliminarItem;
     window.toggleBusquedaMovil = toggleBusquedaMovil;
-    window.cerrarBusquedaMovil = cerrarBusquedaMovil;
-    window.buscarDesdeHeader = buscarDesdeHeader;
+    window.cerrarBusqueda = cerrarBusqueda;
 });
