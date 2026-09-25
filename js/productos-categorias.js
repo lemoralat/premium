@@ -48,7 +48,12 @@ function renderizarCategoriasAutomaticas(banners) {
         ? productos.filter(p => p.destacado !== true)
         : productos;
 
-    // Extraer categorías únicas de los productos no destacados
+    // Extraer categorías únicas de los productos no destacados.
+    // "categoria" ya viene normalizada desde mapaProducto (js/supabase.js): los
+    // productos sin categoría llevan la etiqueta CATEGORIA_SIN_ASIGNAR y reciben
+    // una sección propia, así que acá nunca hay una categoría vacía que el
+    // .filter(Boolean) pueda tragarse y dejar el home sin tarjetas. El filtro se
+    // conserva como red de seguridad ante datos que lleguen por otro camino.
     const categorias = [...new Set(restantes.map(p => p.categoria))].filter(Boolean);
 
     // Todos menos el último (tope 4): el último banner de la hoja es el del carrito.

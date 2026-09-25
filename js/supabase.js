@@ -204,6 +204,16 @@ export async function cargarProductos() {
     }
 }
 
+// Categoría asignada a los productos que no tienen ninguna (category_id null).
+//
+// Antes se devolvía la cadena vacía, y como el home arma las secciones con
+// [...new Set(productos.map(p => p.categoria))].filter(Boolean) (productos-categorias.js)
+// — igual que el submenú del header (template.js) — la vacía se filtraba y el
+// producto no se renderizaba en NINGUNA parte: el home quedaba sin tarjetas.
+// Normalizar acá hace que el producto caiga en su propia sección ("Sin
+// categoría") y que el submenú muestre la entrada, sin casos especiales aguas abajo.
+export const CATEGORIA_SIN_ASIGNAR = 'Sin categoría';
+
 // Fila de "products" (con joins) → objeto con el contrato del frontend
 function mapaProducto(p) {
     const imagenes = Array.isArray(p.imagenes) ? p.imagenes : [];
@@ -233,7 +243,8 @@ function mapaProducto(p) {
         descripcionDetallada: p.descripcion_detallada || '',
         precio: Number(p.precio),
         precioAnterior: p.precio_anterior != null ? Number(p.precio_anterior) : null,
-        categoria: p.categoria ? p.categoria.name : '',
+        // Sin categoría (o con nombre vacío) → etiqueta explícita, nunca ''.
+        categoria: p.categoria?.name?.trim() || CATEGORIA_SIN_ASIGNAR,
         variantes,
         stock: Number(p.stock),
         caracteristicas: Array.isArray(p.caracteristicas) ? p.caracteristicas : [],
