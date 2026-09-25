@@ -82,7 +82,7 @@ Reglas de oro:
 | `marquee_items` | Mensajes de la barra marquee (sección Diseño) | `texto` (obligatorio), `position`, `activo`; sin filas activas la barra no se muestra |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
 | `order_items` | Líneas de pedido | `product_id` (ON DELETE SET NULL: el pedido histórico sobrevive al borrado del producto), `nombre` (congelado al momento de la compra), `variante_texto`, `quantity`, `precio_unitario` |
-| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), compra mínima (`compra_minima_modo` off/cantidad/monto + `compra_minima_valor` — sección Descuentos), `transfer_alias` (`hola.mundo.2023`), `transfer_entity`, `transfer_holder`, `email_contact`, `address` (ubicación del negocio: dirección como texto o URL de mapas; se resuelve en `api/ubicacion.js` y se muestra en OpenStreetMap en `contacto.html`), redes sociales, popup de salida (`popup_titulo/descripcion/cta/cta_url/activo`), marquee (`marquee_activo`, `marquee_color_fondo` — sección Diseño), tamaño del logotipo (`logo_tamano` — Small/Medium/Large), formato de cards (`card_image_format` — 1:1/3:2/4:5) |
+| `settings` | Configuración global, **fila única id=1** | `site_name`, `whatsapp_number`, `whatsapp_default_message`, `discount_threshold` (100000) y `discount_percent` (10), compra mínima **dual** (`compra_minima_cantidad` y `compra_minima_monto`, ambas con 0 = inactiva y aplicables a la vez — sección Descuentos; `0023` reemplazó el par `compra_minima_modo`/`compra_minima_valor` de `0020`), `transfer_alias`, `transfer_entity`, `transfer_holder` (vacíos por defecto desde `0024`: la plantilla no nace con datos de una tienda en concreto), `email_contact`, `address` (ubicación del negocio: dirección como texto o URL de mapas; se resuelve en `api/ubicacion.js` y se muestra en OpenStreetMap en `contacto.html`), redes sociales, popup de salida (`popup_titulo/descripcion/cta/cta_url/activo`), marquee (`marquee_activo`, `marquee_color_fondo` — sección Diseño), tamaño del logotipo (`logo_tamano` — Small/Medium/Large), formato de cards (`card_image_format` — 1:1/3:2/4:5), tema del panel (`admin_tema` — `claro`/`oscuro`, `0027`) |
 | `profiles` | Perfil del admin (una fila por usuario) | `full_name`, `role`, `created_at`. Se crea automáticamente al registrarse por el trigger `handle_new_user` |
 
 ### 3.2 Triggers y funciones
@@ -110,34 +110,43 @@ Se migraron todos los datos reales actuales, respetando los ids originales del J
 - **3 cupones**: `sale10` (10%, **inactivo** por estar vencido), `black20` (20%, activo hasta 2026-12-31), `navidad` (25%, activo hasta 2026-12-31).
 - **6 slides** de hero, **5 banners**, **12 reseñas**, todos con orden y estado reales.
 - **3 iconos del pie** (`0004` + `0021`): pagos, envíos y stock. Los assets locales se retiraron; la migración `0021` los convierte a iconos Font Awesome configurables.
-- **Configuración** con los valores que estaban hardcodeados en el código: WhatsApp `543515957014`, umbral 100000 → 10%, alias `hola.mundo.2023`, etc.
+- **Configuración** con los valores que estaban hardcodeados en el código: umbral 100000 → 10%, y los datos propios de la tienda (WhatsApp, alias, entidad y titular de transferencia) llegan **vacíos** desde `0024_plantilla_sin_datos_lemora.sql` — el repo es una plantilla reutilizable, así que el número y los datos bancarios se completan en Configuración desde el panel, no en el seed.
 
 ---
 
-## 4. Políticas RLS (`0001_schema.sql` + `0003_storage.sql` + `0004_iconos_pie.sql`)
+## 4. Políticas RLS (`0001_schema.sql` + `0003_storage.sql` + `0004_iconos_pie.sql` + `0007_seguridad.sql` + `0026_cierre_rls_admin.sql`)
 
-Todas las tablas tienen **row level security habilitada**. Resumen:
+Todas las tablas tienen **row level security habilitada**. El patrón final lo fija **`0007_seguridad.sql`** (tabla `admins` + `public.es_admin()`), reforzado por **`0026_cierre_rls_admin.sql`** para las tablas nacidas después. Resumen del estado final:
 
 | Tabla | Lectura pública (anon) | Escritura |
 |---|---|---|
-| `categories` | Solo `active = true` | Authenticated (full) |
-| `products` | Solo `activo = true` | Authenticated (full) |
-| `product_options` / `product_option_values` | Sí | Authenticated (full) |
-| `product_images` | Sí | Authenticated (full) |
-| `coupons` | Solo `activo = true AND expira >= hoy` | Authenticated (full) |
-| `sliders` | Solo `activo = true` | Authenticated (full) |
-| `banners` | Solo `activo = true` | Authenticated (full) |
-| `reviews` | Solo `activo = true` | Authenticated (full) |
-| `orders` / `order_items` | **No** (solo administrador) | Authenticated (full) |
-| `settings` | Sí (datos públicos) | Authenticated (full) |
-| `profiles` | Solo la propia fila | Solo la propia fila |
+| `categories` | Solo `active = true` | Solo admin (`es_admin()`) |
+| `products` | Solo `activo = true` | Solo admin (`es_admin()`) |
+| `product_options` / `product_option_values` | Sí | Solo admin (`es_admin()`) |
+| `product_images` | Sí | Solo admin (`es_admin()`) |
+| `coupons` | Solo `activo = true AND expira >= hoy` | Solo admin (`es_admin()`) |
+| `sliders` | Solo `activo = true` | Solo admin (`es_admin()`) |
+| `banners` | Solo `activo = true` | Solo admin (`es_admin()`) |
+| `reviews` | Solo `activo = true` | Solo admin (`es_admin()`) |
+| `iconos_pie` | Solo `activo = true` | Solo admin (`es_admin()`) — cerrado en `0026` |
+| `preguntas_frecuentes` | Solo `activo = true` | Solo admin (`es_admin()`) — cerrado en `0026` |
+| `marquee_items` | Solo `activo = true` | Solo admin (`es_admin()`) — cerrado en `0026` |
+| `admins` | **No** (tabla sin policies: nadie lee ni se autopromueve) | Solo service_role / dueño SQL |
+| `orders` / `order_items` | **No** (solo administrador) | Alta solo por la RPC `insertar_pedido` (service_role); el admin únicamente **lee** y cambia `estado` |
+| `settings` | Sí (datos públicos) | Solo admin (`es_admin()`) |
+| `profiles` | Solo la propia fila | Solo `full_name` de la propia fila |
 
-> En un modelo **single-tenant** "cualquier usuario autenticado" ES el administrador (única cuenta creada). Si en el futuro hubiera varios roles, alcanza con ajustar las políticas.
+> **Estar autenticado NO alcanza para escribir.** El acceso al panel exige además estar dado de alta en `public.admins`:
+> ```sql
+> insert into public.admins (user_id)
+> select id from auth.users where email = 'TU-EMAIL@EJEMPLO.COM';
+> ```
+> La tabla `admins` tiene RLS activada y ninguna policy para `anon`/`authenticated`, así que no se puede consultar ni auto-asignarse el rol. Si además se desactiva "Allow new users to sign up" en Authentication → Sign In / Providers, el alta de cuentas queda cerrada.
 
-### Storage (`0003_storage.sql`)
+### Storage (`0003_storage.sql` + `0021_imagenes_storage.sql`)
 
 - **6 buckets públicos de lectura**: `products`, `branding`, `slider`, `banners`, `reviews`, `iconos`.
-- Lectura pública para anon/authenticated; **subida/actualización/borrado solo authenticated**.
+- Lectura pública para anon/authenticated; **subida/actualización/borrado solo admin** (`public.es_admin()`).
 - Convención: la BD guarda el `storage_path` completo `"<bucket>/<ruta>"` y la URL pública se deriva en el frontend con `storage.getPublicUrl()`.
 - Carpetas por entidad: `products/<producto_id>/`, `slider/`, `banners/`, `reviews/`, `branding/`, `iconos/`.
 
@@ -211,7 +220,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 2. **Ejecutar las migraciones** en el SQL Editor de Supabase, **en orden**:
    - `migrations/0001_schema.sql` (esquema + RLS + funciones)
    - `migrations/0002_seed.sql` (datos reales)
-   - `migrations/0003_storage.sql` (buckets y políticas; ahora define `public.es_admin()` y es autosuficiente, no depende de 0007)
+   - `migrations/0003_storage.sql` (buckets y políticas; crea la tabla `admins` y `public.es_admin()`, y es autosuficiente: no depende de 0007)
    - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
    - `migrations/0005_enlace_target.sql` (columna `target` en `sliders` y `banners`: `interno` → `_self` default, `externo` → `_blank`)
    - `migrations/0006_productos_destacado.sql` (columna `destacado` en `products`, default false)
@@ -230,9 +239,15 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0020_compra_minima.sql` (menú Descuentos → Compra mínima: `compra_minima_modo` 'off'|'cantidad'|'monto' y `compra_minima_valor` en `settings`; refuerza la validación en el RPC `insertar_pedido`)
    - `migrations/0021_imagenes_storage.sql` (pipeline de imágenes: incluye `iconos` en Storage y convierte los iconos del seed a Font Awesome)
    - `migrations/0022_formato_cards.sql` (selector de formato de imágenes de cards: `1:1`, `3:2` o `4:5`)
-    - `migrations/0023_compra_minima_dual.sql` (compra mínima **dual**: columnas `compra_minima_cantidad` y `compra_minima_monto` en `settings`, ambas acumulables; `insertar_pedido` validaba modo+valor, ahora recalcula contra las dos)
-    - `migrations/0024_plantilla_sin_datos_lemora.sql` (plantilla reutilizable: DEFAULTS de `settings` sin datos de Lemora — `whatsapp_number`, `transfer_alias`, `transfer_entity`, `transfer_holder` → `''`; solo cambia DEFAULTS, no toca la fila existente)
-    - `migrations/0025_borrar_pedidos.sql` (borrado de pedidos: RPC `borrar_pedidos(p_ids bigint[])` con `security definer` que valida `public.es_admin()` y borra en cascada las líneas; el panel lo usa para eliminar un pedido o un lote desde Pedidos)
+   - `migrations/0023_compra_minima_dual.sql` (compra mínima **dual**: columnas `compra_minima_cantidad` y `compra_minima_monto` en `settings`, ambas acumulables; `insertar_pedido` validaba modo+valor, ahora recalcula contra las dos)
+   - `migrations/0024_plantilla_sin_datos_lemora.sql` (plantilla reutilizable: DEFAULTS de `settings` sin datos de Lemora — `whatsapp_number`, `transfer_alias`, `transfer_entity`, `transfer_holder` → `''`; solo cambia DEFAULTS, no toca la fila existente)
+   - `migrations/0025_borrar_pedidos.sql` (borrado de pedidos: RPC `borrar_pedidos(p_ids bigint[])` con `security definer` que valida `public.es_admin()` y borra en cascada las líneas; el panel lo usa para eliminar un pedido o un lote desde Pedidos)
+   - `migrations/0026_cierre_rls_admin.sql` (**seguridad**: cierra el gap de RLS en las tablas creadas después de 0007 — `iconos_pie` (0004), `preguntas_frecuentes` (0014) y `marquee_items` (0017) seguían con `to authenticated using (true)`, o sea que cualquier usuario autenticado podía escribirlas; las pasa a exigir `public.es_admin()`)
+   - `migrations/0027_admin_tema.sql` (tema del panel admin: columna `admin_tema` en `settings` — `claro` | `oscuro`, con check; la preferencia es global, no por navegador)
+   - `migrations/0028_pedido_items_fiables.sql` (**integridad del pedido**: `insertar_pedido` devuelve además `items[]` con el snapshot real de `order_items` (nombre, variante, cantidad, precio unitario). El mensaje de WhatsApp pasó a armarse con esa respuesta en lugar del carrito del `localStorage`, que el cliente controla. También devuelve `items` en los caminos idempotentes. **Sin esta migración la tienda funciona igual**, pero el mensaje de WhatsApp vuelve a mostrar los ítems del cliente)
+
+   > Nota: `0003` y `0007` se pisan a propósito (ambos crean `admins` con `create table if not exists` y redefinen `es_admin()` con `create or replace`, y el cuerpo de la función es idéntico en los dos archivos). Por eso se pueden correr en cualquier orden y re-aplicar sin efectos. `0021` y `0026` son las que dejan el estado final de las policies de Storage.
+
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).
