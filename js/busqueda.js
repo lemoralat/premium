@@ -2,7 +2,7 @@
 // El input es el de la barra del header en desktop y el del panel desplegable en
 // móvil (donde la barra está oculta); ambos escriben en el mismo panel de
 // resultados (#searchPanel), que se abre debajo del navbar.
-import { obtenerProductos, generarHTMLTarjetaProducto, normalizarTexto } from './utils.js';
+import { obtenerProductos, generarHTMLFavoritoItem, normalizarTexto } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
@@ -93,8 +93,9 @@ function buscarProductos(query) {
     });
 
     if (resultados) {
+        // Misma fila que la página de favoritos, sin los botones Ver/Eliminar.
         resultados.innerHTML = productosFiltrados
-            .map(p => generarHTMLTarjetaProducto(p, { soloNombrePrecio: true })).join('');
+            .map(p => generarHTMLFavoritoItem(p, { conBadge: true })).join('');
     }
     if (count) {
         const plural = productosFiltrados.length === 1 ? 'producto' : 'productos';

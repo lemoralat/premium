@@ -660,13 +660,16 @@ span {
     display: none;
 }
 
-/* 2 columnas en móvil (lo que ya se veía), más columnas a medida que crece el
-   panel en desktop: 3 en tablet, 4 en pantallas medianas/grandes, 5 en muy anchas. */
+/* El panel reusa el markup de favoritos, así que el ancho de celda lo manda la
+   fila horizontal: 1 columna en móvil (la fila entera, igual que en favoritos),
+   2 en tablet y 3 en desktop. Con 4 el nombre se partía en varias líneas. */
 .search-panel-results {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     grid-auto-rows: max-content;
-    align-items: start;
+    /* stretch, no start: así todas las celdas de una fila miden lo mismo y el
+       hover del item rellena la caja entera en vez de quedar colgando. */
+    align-items: stretch;
     gap: 0.75rem;
     padding: 0 0.75rem 0.75rem;
     max-height: calc(min(70vh, 640px) - 96px);
@@ -676,22 +679,68 @@ span {
 
 @media (min-width: 769px) {
     .search-panel-results {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
         padding: 0 1.25rem 1.25rem;
     }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1200px) {
     .search-panel-results {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
-@media (min-width: 1440px) {
-    .search-panel-results {
-        grid-template-columns: repeat(5, 1fr);
-    }
+/* Ajustes que la fila de favoritos necesita para vivir dentro de una grilla. */
+.search-panel-results .favorito-item {
+    position: relative;
+    padding: 0.9rem 0.8rem;
+    gap: 0.85rem;
+    /* El border-bottom de la lista de favoritos está pensado para filas
+       apiladas; en grilla dibujaría una línea bajo cada celda menos la última. */
+    border-bottom: none;
+    border-radius: var(--curva);
+}
+
+.search-panel-results .favorito-imagen {
+    width: 80px;
+    height: 80px;
+}
+
+/* Toda la celda es clicable: el <a> real sigue siendo el nombre (así el nombre
+   accesible es el del producto) y su ::after se estira sobre el item. */
+.search-panel-results .favorito-nombre::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+/* Y el foco del teclado se ve en la celda completa, no solo en el texto. */
+.search-panel-results .favorito-item:focus-within {
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+}
+
+/* Sin stock: la miniatura se desatura (mismo criterio que .product-card) y el
+   badge pasa a ser una cinta al pie de la foto. Flotando arriba taparía los
+   80px de la miniatura entera. */
+.search-panel-results .favorito-item.out-of-stock .favorito-imagen {
+    filter: grayscale(0.8);
+    opacity: 0.7;
+}
+
+.search-panel-results .out-of-stock-badge {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2px 0;
+    font-size: 0.5rem;
+    text-align: center;
+    border-radius: 0;
+    /* Para que la cinta no se coma el clic del link estirado. */
+    pointer-events: none;
 }
 
 .search-panel-empty {
@@ -3596,6 +3645,15 @@ body.zoom-active {
 
 .favorito-item:hover {
     background: var(--bg-color);
+}
+
+/* Contenedor de la miniatura. Existe por dos razones: anclar el badge de Sin
+   Stock sobre la foto (es position:absolute y lo necesita) y evitar el hueco de
+   línea base que deja un <img> suelto dentro de un contenedor de bloque. */
+.favorito-media {
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
 }
 
 .favorito-imagen {

@@ -1,6 +1,6 @@
 // favoritos.js
 
-import { obtenerProductos, generarHTMLTarjetaProducto, mostrarNotificacion, renderPrecioAnterior, imagenOptimizada, escaparHtml, placeholderImagenPublica } from './utils.js';
+import { obtenerProductos, generarHTMLFavoritoItem, mostrarNotificacion, formatearPrecio } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let allProducts = []; // Para almacenar todos los productos una vez cargados
@@ -62,27 +62,10 @@ function renderizarFavoritos() {
     }
 
     // Generar el HTML para cada producto favorito
-    // (V-2: nombre, imagen y categoría son contenido administrado → escapar)
-    favoritosContainer.innerHTML = favoriteProducts.map(p => `
-        <div class="favorito-item">
-            ${p.imagen
-                ? `<img src="${escaparHtml(imagenOptimizada(p.imagen))}" alt="${escaparHtml(p.nombre)}" class="favorito-imagen">`
-                : placeholderImagenPublica('favorito-imagen')}
-            <div class="favorito-info">
-                <a href="producto.html?id=${p.id}" class="favorito-nombre">${escaparHtml(p.nombre)}</a>
-                <p class="favorito-categoria">${escaparHtml(p.categoria)}</p>
-                <p class="favorito-precio">${renderPrecioAnterior(p)}$${formatearPrecio(p.precio)}</p>
-            </div>
-            <div class="favorito-acciones">
-                <a href="producto.html?id=${p.id}" class="favorito-ver-btn btn-border">
-                    <i class="fa-solid fa-eye"></i> Ver
-                </a>
-                <button class="favorito-eliminar-btn btn-border" onclick="eliminarDeFavoritos(${p.id})">
-                    <i class="fa-solid fa-trash-can"></i> Eliminar
-                </button>
-            </div>
-        </div>
-    `).join('');
+    // (V-2: nombre, imagen y categoría son contenido administrado → se escapan
+    // dentro de generarHTMLFavoritoItem)
+    favoritosContainer.innerHTML = favoriteProducts
+        .map(p => generarHTMLFavoritoItem(p, { conAcciones: true })).join('');
 }
 
 // Función para eliminar un producto de favoritos (expuesta globalmente para onclick)
@@ -98,5 +81,5 @@ window.eliminarDeFavoritos = function(id) {
 };
 
 // Exponer formatearPrecio para que esté disponible en el template si es necesario
-import { formatearPrecio } from './utils.js';
+// (ya viene importado arriba; el window es lo único que lo publica).
 window.formatearPrecio = formatearPrecio;

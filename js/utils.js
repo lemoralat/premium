@@ -409,14 +409,49 @@ export function placeholderImagenPublica(clase = 'product-image') {
     return `<div class="${escaparHtml(clase)} public-image-placeholder" role="img" aria-label="Sin imagen"></div>`;
 }
 
-// Generar el HTML de una tarjeta de producto (estándar para toda la web)
-// Toda la tarjeta enlaza al detalle; sin botones internos.
-// Con la opción { soloNombrePrecio: true } se omiten la descripción y demás
-// texto extra: el resultado es un card completo pero solo con nombre y precio
-// (usado en los resultados del buscador).
-export function generarHTMLTarjetaProducto(producto, opciones = {}) {
+// Fila de producto con el diseño de la página de favoritos: miniatura cuadrada a
+// la izquierda y, a la derecha, nombre, categoría y precio.
+//
+// Es la única fuente de ese markup. La usan los dos lugares que comparten el
+// diseño y por eso se ven igual por construcción, no por casualidad:
+//   - favoritos.js  → { conAcciones: true }  (los botones Ver / Eliminar)
+//   - busqueda.js   → { conBadge: true }     (el badge de Sin Stock)
+export function generarHTMLFavoritoItem(producto, opciones = {}) {
+    const { conAcciones = false, conBadge = false } = opciones;
     const esAgotado = producto.stock === 0;
-    const { soloNombrePrecio = false } = opciones;
+    const nombre = escaparHtml(recortarTexto(producto.nombre));
+    const imagen = escaparHtml(imagenOptimizada(producto.imagen));
+
+    return `
+        <div class="favorito-item${conBadge && esAgotado ? ' out-of-stock' : ''}">
+            <div class="favorito-media">
+                ${producto.imagen
+                    ? `<img src="${imagen}" alt="${nombre}" class="favorito-imagen" loading="lazy">`
+                    : placeholderImagenPublica('favorito-imagen')}
+                ${conBadge && esAgotado ? '<span class="out-of-stock-badge">Sin Stock</span>' : ''}
+            </div>
+            <div class="favorito-info">
+                <a href="producto.html?id=${producto.id}" class="favorito-nombre">${nombre}</a>
+                <p class="favorito-categoria">${escaparHtml(producto.categoria)}</p>
+                <p class="favorito-precio">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
+            </div>
+            ${conAcciones ? `
+            <div class="favorito-acciones">
+                <a href="producto.html?id=${producto.id}" class="favorito-ver-btn btn-border">
+                    <i class="fa-solid fa-eye"></i> Ver
+                </a>
+                <button class="favorito-eliminar-btn btn-border" onclick="eliminarDeFavoritos(${producto.id})">
+                    <i class="fa-solid fa-trash-can"></i> Eliminar
+                </button>
+            </div>` : ''}
+        </div>
+    `;
+}
+
+// Generar el HTML de una tarjeta de producto (estándar para el catálogo y los
+// relacionados). Toda la tarjeta enlaza al detalle; sin botones internos.
+export function generarHTMLTarjetaProducto(producto) {
+    const esAgotado = producto.stock === 0;
 
     // V-2: todo texto/URL administrado se escapa antes de interpolarse en HTML.
     const nombre = escaparHtml(recortarTexto(producto.nombre));
@@ -434,7 +469,7 @@ export function generarHTMLTarjetaProducto(producto, opciones = {}) {
             </div>
             <div class="product-info">
                 <h3 class="product-title">${nombre}</h3>
-                ${soloNombrePrecio ? '' : `<p class="product-description">${descripcion}</p>`}
+                <p class="product-description">${descripcion}</p>
                 <p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
             </div>
         </a>
