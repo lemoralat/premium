@@ -21,11 +21,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Clic fuera del panel: lo cierra sin tocar la consulta, para no perder lo
     // que el usuario escribió si vuelve a hacer clic en la barra.
+    //
+    // Las exclusiones importan: un clic en algo que NO sea el panel ni uno de
+    // estos elementos lo cierra. Si faltara el ícono de móvil, el mismo toque
+    // que abría el panel lo cerraba — su onclick inline se ejecuta en la fase
+    // AT_TARGET, antes de que este listener de document corra en la de burbujeo
+    // — y el buscador quedaba inalcanzable. En desktop el panel lo abre el
+    // evento 'input' al escribir (no un clic), por eso nunca chocaba.
     document.addEventListener('click', function(e) {
         const panel = document.getElementById('searchPanel');
         if (!panel || !panel.classList.contains('open')) return;
         if (panel.contains(e.target)) return;
         if (e.target.closest('.header-search')) return;
+        if (e.target.closest('[data-search-toggle]')) return;
         panel.classList.remove('open');
     });
 

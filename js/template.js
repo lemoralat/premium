@@ -80,7 +80,13 @@ function renderHeader(activePage = '', categorias = []) {
                 </div>
 
                 <div class="header-actions-mobile">
-                    <button type="button" class="header-icon" onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
+                    <!-- data-search-toggle: el clic-fuera de busqueda.js lo excluye
+                         explícitamente. Es el ÚNICO punto de entrada al panel en
+                         móvil, y sin la exclusión el mismo toque que abría el panel
+                         lo cerraba: su onclick inline corre en la fase AT_TARGET,
+                         antes de que el listener de document corra en la de
+                         burbujeo, así que el panel se cerraba en el mismo toque. -->
+                    <button type="button" class="header-icon" data-search-toggle onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                     <a href="favoritos.html" class="header-icon" aria-label="Mis favoritos">
