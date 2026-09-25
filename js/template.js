@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar, obtenerMarquee, placeholderImagenPublica } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar, obtenerMarquee, placeholderImagenPublica } from './utils.js';
 
 const CARD_ASPECT_RATIOS = Object.freeze({
     '1:1': '1 / 1',
@@ -44,9 +44,14 @@ function renderHeader(activePage = '', categorias = []) {
         { campo: 'socialLinkedin', clase: 'fa-brands fa-linkedin-in', label: 'LinkedIn' },
         { campo: 'socialOtra', clase: 'fa-solid fa-globe', label: 'Otra' }
     ];
-    const redesHTML = REDES_HEADER.map((r) => CONFIG_APP[r.campo]
-        ? `<a href="${escaparHtml(CONFIG_APP[r.campo])}" target="_blank" aria-label="${r.label}" rel="noopener"><i class="${r.clase}"></i></a>`
-        : '').join('');
+    // V-3: urlSegura bloquea esquemas peligrosos en las URLs de redes sociales
+    // administradas; si no es navegable, el ícono no se renderiza.
+    const redesHTML = REDES_HEADER.map((r) => {
+        const url = urlSegura(CONFIG_APP[r.campo]);
+        return url
+            ? `<a href="${escaparHtml(url)}" target="_blank" aria-label="${r.label}" rel="noopener"><i class="${r.clase}"></i></a>`
+            : '';
+    }).join('');
 
     header.innerHTML = `
         <div class="redes">
@@ -138,7 +143,7 @@ function renderHeader(activePage = '', categorias = []) {
 function renderFooter() {
     const footer = document.createElement('footer');
     footer.innerHTML = `
-        <p>&copy; ${new Date().getFullYear()} ${escaparHtml(obtenerNombreSitio())}. Todos los derechos reservados. Hecho con <i class="fa-solid fa-heart footer-heart"></i> por <a href="https://lemora.lat" target="_blank"><img src="img/lemora.svg" alt="Diseño y Desarrollo por Lemora" class="devBy"></a></p>
+        <p>&copy; ${new Date().getFullYear()} ${escaparHtml(obtenerNombreSitio())}. Todos los derechos reservados. Hecho con <i class="fa-solid fa-heart footer-heart"></i> por <a href="https://lemora.lat" target="_blank" rel="noopener"><img src="img/lemora.svg" alt="Diseño y Desarrollo por Lemora" class="devBy"></a></p>
         `;
 
     return footer;

@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, placeholderImagenPublica } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, placeholderImagenPublica } from './utils.js';
 
 let productosGlobales = [];
 
@@ -280,19 +280,21 @@ function renderizarBannerCarrito(banners) {
     // Banner "solo imagen": imagen a ancho completo como fondo con cover
     if (esBannerSoloImagen(banner)) {
         const img = escaparHtml(imagenOptimizada(banner.imagen));
-        const link = escaparHtml(banner.link || '');
-        const etiqueta = banner.link ? `aria-label="${escaparHtml(banner.titulo || 'Banner')}" ` : '';
+        // V-3: urlSegura bloquea esquemas peligrosos (javascript:, data:, …)
+        const link = banner.link ? escaparHtml(urlSegura(banner.link)) : '';
+        const etiqueta = link ? `aria-label="${escaparHtml(banner.titulo || 'Banner')}" ` : '';
         const visual = img
-            ? `<div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`
-            : `<div class="banner-solo-imagen banner-border sin-imagen">${banner.link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`;
+            ? `<div class="banner-solo-imagen banner-border" style="background-image:url('${img}')">${link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`
+            : `<div class="banner-solo-imagen banner-border sin-imagen">${link ? `<a href="${link}" ${atributosEnlace(banner)} ${etiqueta}></a>` : ''}</div>`;
         contenedor.innerHTML = visual;
         contenedor.hidden = false;
         return;
     }
 
     const titulo = escaparHtml(banner.titulo);
-    const link = escaparHtml(banner.link || '');
-    const tieneBoton = Boolean(banner.boton && banner.link);
+    // V-3: urlSegura bloquea esquemas peligrosos en el href administrado.
+    const link = banner.link ? escaparHtml(urlSegura(banner.link)) : '';
+    const tieneBoton = Boolean(banner.boton && link);
     const imagenVisual = banner.imagen
         ? `<img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">`
         : placeholderImagenPublica('banner-image-placeholder');
@@ -300,9 +302,9 @@ function renderizarBannerCarrito(banners) {
     contenedor.innerHTML = `
         <div class="banner banner-border">
             <div class="banner_imagen">
-                ${banner.link ? `<a href="${link}" ${atributosEnlace(banner)}>` : ''}
+                ${link ? `<a href="${link}" ${atributosEnlace(banner)}>` : ''}
                     ${imagenVisual}
-                ${banner.link ? '</a>' : ''}
+                ${link ? '</a>' : ''}
             </div>
             <div class="banner_info">
                 ${banner.logo ? `

@@ -33,7 +33,14 @@ function origenPermitido(origin) {
     ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
     return permitidos.some((patron) => {
         if (patron.includes('*')) {
-            return origin.startsWith(patron.replace(/\*/g, ''));
+            // Patrón tipo "https://*.vercel.app": lo convertimos a una regex
+            // escapando el resto de metacaracteres. (El viejo
+            // replace(/\*/g,'') producía "https://.vercel.app" y nunca
+            // matcheaba ningún origen real de las previews.)
+            const re = new RegExp(
+                '^' + patron.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'
+            );
+            return re.test(origin);
         }
         return origin === patron;
     });
@@ -64,6 +71,14 @@ module.exports = async function handler(request, response) {
 
     const body = request.body;
     if (!body || typeof body !== 'object' || !body.cliente || !Array.isArray(body.productos) || body.productos.length === 0) {
+        return response.status(400).json({ status: 'error', message: 'Estructura de pedido inválida.' });
+    }
+
+    // Anti-bot (honeypot): el campo oculto `website` NO debe venir con texto.
+    // Los bots suelen completar todos los inputs del formulario; una persona
+    // nunca lo ve. Si viene completado, descartamos el pedido con el mismo
+    // error genérico (no revelamos la existencia del honeypot).
+    if (typeof body.website === 'string' && body.website.trim() !== '') {
         return response.status(400).json({ status: 'error', message: 'Estructura de pedido inválida.' });
     }
 

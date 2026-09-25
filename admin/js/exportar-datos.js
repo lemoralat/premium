@@ -16,12 +16,24 @@ const SEP = ';';
 // BOM (U+FEFF) al inicio para que Excel reconozca UTF-8 (tildes, ñ, …).
 const BOM = '\uFEFF';
 
+// Blindaje contra CSV injection (Excel formula injection): solo importa la
+// PRIMERA letra de la celda. Si arranca con "=", "+", "-" o "@", Excel/Sheets la
+// interpreta como fórmula (ej: =HYPERLINK(...), @SUM(...), -cmd|'/C calc'!A0).
+// Se la prefija con "'" para que se muestre como texto plano y no se ejecute.
+// Excepción segura: "-" seguido de dígito/punto es un número negativo real
+// (ej: -123), que Excel NO trata como fórmula → se deja intacto.
+const INICIO_INYECCION_CSV = /^[=+@]|^-(?![\d.])/;
+function blindarCelda(texto) {
+    return INICIO_INYECCION_CSV.test(texto) ? `'${texto}` : texto;
+}
+
 function escaparCelda(valor) {
     const texto = valor === null || valor === undefined ? '' : String(valor);
-    if (/[";\n\r]/.test(texto)) {
-        return '"' + texto.replace(/"/g, '""') + '"';
+    const blindado = blindarCelda(texto);
+    if (/[";\n\r]/.test(blindado)) {
+        return '"' + blindado.replace(/"/g, '""') + '"';
     }
-    return texto;
+    return blindado;
 }
 
 function filaCSV(valores) {

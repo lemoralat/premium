@@ -247,6 +247,64 @@ img { max-width: 100%; }
 .admin-stat .etiqueta { font-size: 0.8rem; color: var(--text-muted); }
 
 /* ============================================================================
+   DASHBOARD: delta de KPIs, alertas accionables y gráficos (Chart.js)
+   ============================================================================ */
+
+/* Delta ("vs. los 30 días anteriores") pegado al valor del KPI. */
+.kpi-delta {
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.kpi-delta.up { color: var(--success); }
+.kpi-delta.down { color: var(--danger); }
+
+/* Banner de alertas accionables (stack vertical bajo los KPIs nace arriba). */
+.alertas-dashboard {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+.alerta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+.alerta-item i { font-size: 1.05rem; flex-shrink: 0; }
+.alerta-item p { margin: 0; font-size: 0.9rem; color: var(--text); }
+.alerta-item a {
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+}
+.alerta-item a:hover { text-decoration: underline; }
+.alerta-item.peligro { border-left: 4px solid var(--danger); }
+.alerta-item.peligro i { color: var(--danger); }
+.alerta-item.advertencia { border-left: 4px solid var(--warning); }
+.alerta-item.advertencia i { color: var(--warning); }
+
+/* Contenedores de Chart.js: altura fija para que los canvas no colapsen. */
+.admin-chart {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+.dashboard-dos-col .admin-chart { height: 300px; }
+
+/* El donut y las barras piden un poco menos en pantallas angostas. */
+@media (max-width: 640px) {
+    .admin-chart,
+    .dashboard-dos-col .admin-chart { height: 240px; }
+}
+
+/* ============================================================================
    TABLAS
    ============================================================================ */
 .admin-tabla-wrap {
@@ -818,6 +876,7 @@ td.td-expandir .pedido-acciones {
 }
 
 .estado-pendiente { background: var(--warning-bg); color: var(--warning); }
+.estado-cupon { background: #f3f4f6; color: #374151; }
 .estado-procesando { background: var(--primary-light); color: var(--primary); }
 .estado-enviado { background: #e0e7ff; color: #4338ca; }
 .estado-entregado { background: var(--success-bg); color: var(--success); }

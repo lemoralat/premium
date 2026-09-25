@@ -127,6 +127,14 @@
                     <textarea id="notas" name="notas" rows="3"></textarea>
                 </div>
 
+                <!-- Honeypot anti-bots: posicionado fuera de pantalla, invisible
+                     para humanos y fuera del orden de tabulación. Si un bot lo
+                     completa, el pedido se descarta (cliente y servidor). -->
+                <div class="form-group" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+                    <label for="website">Sitio web</label>
+                    <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+                </div>
+
 <button type="submit" class="submit-btn btn-border">
     <span>Enviar Pedido ahora</span>
 </button>

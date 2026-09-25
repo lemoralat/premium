@@ -68,6 +68,16 @@ async function enviarPedidoWhatsApp(e) {
     // Obtener datos del formulario
     const formData = new FormData(e.target);
     const text = (n) => String(formData.get(n) || '').trim();
+
+    // Honeypot anti-bots: el campo oculto "website" debe venir vacío. Si un bot
+    // lo completó, se abandona el envío en silencio (sin abrir WhatsApp ni
+    // registrar pedido) y se ahorra procesamiento hasta el servidor.
+    const botAtrapado = text('website') !== '';
+    if (botAtrapado) {
+        if (btnSubmit) btnSubmit.classList.remove('loading');
+        return;
+    }
+
     const datosCliente = {
         nombre: text('nombre'),
         email: text('email'),
@@ -128,7 +138,7 @@ async function enviarPedidoWhatsApp(e) {
         });
         sessionStorage.setItem('order_token', token);
 
-        // ============ ENVIAR A GOOGLE SHEETS ============
+        // ============ REGISTRAR PEDIDO (api/pedido) ============
         await enviarPedidoAPI({
             cliente: datosCliente,
             productos: cart,
@@ -137,7 +147,8 @@ async function enviarPedidoWhatsApp(e) {
             porcentaje: porcentaje,
             cupon: esCupon ? cupon : 'NINGUNO',
             total: total,
-            token: token
+            token: token,
+            website: botAtrapado ? text('website') : '' // honeypot: siempre vacío
         });
 
         // ============ ENVIAR POR WHATSAPP ============

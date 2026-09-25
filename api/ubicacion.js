@@ -33,7 +33,14 @@ function origenPermitido(origin) {
     ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
     return permitidos.some((patron) => {
         if (patron.includes('*')) {
-            return origin.startsWith(patron.replace(/\*/g, ''));
+            // Patrón tipo "https://*.vercel.app": lo convertimos a una regex
+            // escapando el resto de metacaracteres. (El viejo
+            // replace(/\*/g,'') producía "https://.vercel.app" y nunca
+            // matcheaba ningún origen real de las previews.)
+            const re = new RegExp(
+                '^' + patron.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'
+            );
+            return re.test(origin);
         }
         return origin === patron;
     });
@@ -97,13 +104,45 @@ function extraerDeUrl(url) {
 
 // Sigue la cadena de redirecciones de un link corto (máx. 5 saltos) leyendo el
 // header Location en cada paso; devuelve la URL final.
+//
+// HARDENING SSRF (auditoría V-3): cada salto se valida ANTES de la petición:
+//   - solo HTTPS,
+//   - solo hosts de Google Maps (goo.gl, google.com, googleusercontent.com, …),
+//   - nunca IPs desnudas ni rangos privados/loopback/metadata (los hosts
+//     desconocidos redirigirían al propio servidor o a la red interna).
+// Si el siguiente salto no pasa la validación, se corta la cadena sin
+// contactarlo y se devuelve el último destino válido.
+const HOSTS_MAPS_PERMITIDOS = /(^|\.)(google\.com|google\.com\.ar|goo\.gl|g\.co|googleusercontent\.com|ggpht\.com|googleapis\.com)$/i;
+const TIMEOUT_FETCH_MS = 4000;
+
+function esSaltoSeguro(url) {
+    let u;
+    try {
+        u = new URL(url);
+    } catch {
+        return false;
+    }
+    if (u.protocol !== 'https:') return false;
+    const host = u.hostname.toLowerCase();
+    // IPs desnudas (incluido 127.0.0.1, 169.254.169.254, rangos privados, ::1…):
+    // un atacante no debe poder apuntar la cadena a una IP interna.
+    if (!isNaN(host.replace(/\./g, '')) || host === 'localhost' || host.endsWith('.localhost')) {
+        return false;
+    }
+    // Solo hosts de Google Maps; cualquier otro host corta la cadena sin
+    // contactarse (protege contra redirects servidos por hosts comprometidos).
+    return HOSTS_MAPS_PERMITIDOS.test(host);
+}
+
 async function resolverLinkCorto(url) {
     let destino = url;
     for (let i = 0; i < 5; i++) {
+        if (!esSaltoSeguro(destino)) return destino;
         try {
             const res = await fetch(destino, {
                 method: 'GET',
                 redirect: 'manual',
+                signal: AbortSignal.timeout(TIMEOUT_FETCH_MS),
                 headers: { 'User-Agent': 'lemora-shop/1.0 (mapa de contacto)' }
             });
             if (res.status >= 300 && res.status < 400) {
