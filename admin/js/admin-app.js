@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { protegerAdmin, cerrarSesionAdmin } from './auth.js';
-import { esc, $, urlPublica, cerrarModal } from './admin-ui.js';
+import { esc, $, urlPublica, cerrarModal, toast } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { hayCambios, confirmarSalida, guardarCambiosPendientes, limpiarVigilancia } from './cambios-sin-guardar.js';
 
@@ -183,6 +183,52 @@ async function aplicarTemaPanelDesdeBD() {
     }
 }
 
+// ---------- Switch de tema del topbar (claro/oscuro global en BD) ----------
+
+// Mantiene el icono (sol/luna) del switch alineado con el tema activo.
+function pintarIconoTema() {
+    const btn = $('#btnTemaPanel');
+    if (!btn || !window.TemaPanel) return;
+    const oscuro = window.TemaPanel.actual() === 'oscuro';
+    btn.innerHTML = oscuro
+        ? '<i class="fa-solid fa-moon"></i>'
+        : '<i class="fa-solid fa-sun"></i>';
+    btn.title = oscuro
+        ? 'Tema del panel: oscuro. Clic para claro.'
+        : 'Tema del panel: claro. Clic para oscuro.';
+}
+
+// Conecta el switch: aplica el cambio al instante (CSS + gráficos) y persiste
+// el tema en settings.admin_tema (BD, global para todos los admins). Si la BD
+// rechaza el cambio (p. ej. sin migración), revierte al tema anterior.
+function configurarSwitchTema() {
+    const btn = $('#btnTemaPanel');
+    if (!btn || !window.TemaPanel) return;
+
+    pintarIconoTema();
+    window.addEventListener('lemora:tema-panel', pintarIconoTema);
+
+    btn.addEventListener('click', async () => {
+        const anterior = window.TemaPanel.actual();
+        const nuevo = anterior === 'oscuro' ? 'claro' : 'oscuro';
+        window.TemaPanel.aplicar(nuevo); // feedback inmediato (sin esperar BD)
+        pintarIconoTema();
+        try {
+            const sb = await clienteAdmin();
+            const { error } = await sb.from('settings')
+                .update({ admin_tema: nuevo }).eq('id', 1);
+            if (error) throw new Error(error.message);
+            toast(nuevo === 'oscuro'
+                ? 'Panel en modo oscuro.'
+                : 'Panel en modo claro.');
+        } catch (error) {
+            window.TemaPanel.revertir(anterior); // la BD no aceptó: volver
+            pintarIconoTema();
+            toast(error.message || 'No se pudo guardar el tema.', 'error');
+        }
+    });
+}
+
 // ---------- Arranque ----------
 document.addEventListener('DOMContentLoaded', async () => {
     const sesion = await protegerAdmin();
@@ -198,6 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     aplicarBrandingPanel(); // no bloquea el routing
     aplicarTemaPanelDesdeBD(); // dark mode global (settings.admin_tema), no bloquea
+    configurarSwitchTema(); // switch sol/luna del topbar, persiste en la BD
 
     window.addEventListener('hashchange', navegar);
     navegar();

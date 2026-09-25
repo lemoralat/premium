@@ -164,34 +164,6 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Apariencia del panel</h2>
-            <p class="card-sub">Tema del dashboard de administración. Se guarda en la configuración global de la tienda (vale para todos los admins) y se aplica a todo el panel. Lo elegís acá; no depende del modo claro/oscuro de tu dispositivo.</p>
-            <form class="admin-form" id="configFormTema">
-                <div class="admin-form-grid">
-                    <div class="admin-field full">
-                        <label>Tema del panel</label>
-                        <div class="admin-opciones-tema">
-                            <label class="admin-radio-card ${(s.admin_tema || 'claro') === 'claro' ? 'activa' : ''}">
-                                <input type="radio" name="adminTema" value="claro" ${(s.admin_tema || 'claro') === 'claro' ? 'checked' : ''}>
-                                <i class="fa-solid fa-sun"></i>
-                                <span><strong>Claro</strong><small>Default: siempre comienza en claro.</small></span>
-                            </label>
-                            <label class="admin-radio-card ${(s.admin_tema || 'claro') === 'oscuro' ? 'activa' : ''}">
-                                <input type="radio" name="adminTema" value="oscuro" ${(s.admin_tema || 'claro') === 'oscuro' ? 'checked' : ''}>
-                                <i class="fa-solid fa-moon"></i>
-                                <span><strong>Oscuro</strong><small>Todo el panel en modo oscuro.</small></span>
-                            </label>
-                        </div>
-                        <span class="hint">El panel siempre arranca en claro hasta que se elige otra cosa. Al guardar, el modo oscuro se aplica al instante en toda la sesión.</span>
-                    </div>
-                </div>
-                <div class="admin-modal-acciones">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="admin-card">
             <h2>Preguntas frecuentes</h2>
             <p class="card-sub">Preguntas y respuestas que se muestran en la página de ayuda (faq.html). Mientras no haya preguntas activas, la tienda mantiene el contenido estático actual.</p>
             <div id="gestorPreguntasFrecuentes"></div>
@@ -250,11 +222,8 @@ export async function renderizar(contenedor) {
         popup_activo: $('#cfgPopupActivo').checked
     });
 
-    // Apariencia del panel (dark mode global en settings.admin_tema).
-    // Fallback defensivo: sin la columna (migración 0027 pendiente) → 'claro'.
-    const camposTema = () => ({
-        admin_tema: (document.querySelector('input[name="adminTema"]:checked')?.value || 'claro')
-    });
+    // Apariencia del panel (dark mode): se maneja desde el switch del topbar
+    // (admin-app.js → settings.admin_tema), ya no desde Configuración.
 
     const vincular = (formId, obtenerCampos) => {
         $(formId).addEventListener('submit', async (event) => {
@@ -271,22 +240,6 @@ export async function renderizar(contenedor) {
     vincular('#configFormRedes', camposRedes);
     vincular('#configFormTransferencia', camposTransferencia);
     vincular('#configFormPopup', camposPopup);
-    vincular('#configFormTema', camposTema);
-
-    // Apariencia del panel en vivo: al marcar Claro/Oscuro se aplica al instante
-    // (antes de guardar) para previsualizar; la persistencia llega con "Guardar".
-    const radiosTema = document.querySelectorAll('input[name="adminTema"]');
-    radiosTema.forEach((radio) => {
-        radio.addEventListener('change', () => {
-            const tema = radio.checked ? radio.value : 'claro';
-            if (window.TemaPanel) window.TemaPanel.aplicar(tema);
-            // Actualiza el estado visual de las tarjetas de opciones.
-            document.querySelectorAll('.admin-radio-card').forEach((card) => {
-                const valor = card.querySelector('input[name="adminTema"]')?.value;
-                card.classList.toggle('activa', valor === tema);
-            });
-        });
-    });
 
     // Exportar datos (CSV): productos y pedidos, cada uno con su archivo.
     // Las exportaciones se lanzan SOLO con el click del botón: se pasa la

@@ -185,6 +185,33 @@ img { max-width: 100%; }
     white-space: nowrap;
 }
 
+/* Switch de tema del panel (topbar, junto al badge Admin): botón con icono
+   sol/luna que alterna claro/oscuro y persiste en settings.admin_tema (BD).
+   Usa variables → se adapta solo a cada tema. */
+.admin-tema-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.admin-tema-switch:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.admin-tema-switch:active { transform: translateY(0); }
+
 .admin-content {
     padding: 1.5rem;
     max-width: 1280px;
@@ -464,68 +491,6 @@ td.td-expandir .pedido-acciones {
 .admin-field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
 
 .admin-field.full { grid-column: 1 / -1; }
-
-/* Card "Apariencia del panel" (Configuración): opciones Claro/Oscuro */
-.admin-opciones-tema {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.admin-radio-card {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    flex: 1 1 200px;
-    padding: 0.85rem 1rem;
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-}
-
-.admin-radio-card:hover {
-    border-color: var(--primary-light);
-}
-
-.admin-radio-card.activa {
-    border-color: var(--primary);
-    background: var(--surface-borde-info);
-    box-shadow: 0 0 0 2px var(--primary-light);
-}
-
-.admin-radio-card input[type="radio"] {
-    accent-color: var(--primary);
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    margin: 0;
-}
-
-.admin-radio-card i {
-    font-size: 1.25rem;
-    color: var(--primary);
-    flex-shrink: 0;
-}
-
-.admin-radio-card span {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    min-width: 0;
-}
-
-.admin-radio-card strong {
-    font-size: 0.9rem;
-    color: var(--text);
-}
-
-.admin-radio-card small {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    line-height: 1.35;
-}
 
 .admin-field label {
     font-size: 0.8rem;
@@ -1564,10 +1529,11 @@ body.admin-modal-abierto { overflow: hidden; }
 }
 /* ============================================================================
    TEMA OSCURO DEL PANEL
-   tema-admin.js aplica data-tema="dark" a <html> cuando Configuración →
-   "Apariencia del panel" está en oscuro (settings.admin_tema, global). El panel
-   NO detecta el dispositivo: siempre arranca en claro hasta elegir oscuro.
-   login.html y recuperar.html quedan siempre en claro (no cargan tema-admin.js).
+   tema-admin.js aplica data-tema="dark" a <html> cuando el switch del topbar
+   (junto al badge Admin) deja el tema en oscuro (settings.admin_tema, global).
+   El panel NO detecta el dispositivo: siempre arranca en claro hasta elegir
+   oscuro. login.html y recuperar.html quedan siempre en claro (no cargan
+   tema-admin.js).
    ============================================================================ */
 html[data-tema="dark"] {
     color-scheme: dark;
