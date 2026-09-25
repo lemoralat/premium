@@ -24,6 +24,24 @@
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.10);
     --sidebar-w: 254px;
+
+    /* Superficies secundarias y estados (dark mode adaptable) */
+    --surface-alt: #fafafa;
+    --surface-hover: #f8fafc;
+    --surface-borde-info: #f0f9ff;
+    --fila-activa-bg: #fff7ed;
+    --placeholder-bg: #e5e7eb;
+    --placeholder-text: #6b7280;
+    --danger-border: #fecaca;
+    --success-border: #bbf7d0;
+    --estado-cupon-bg: #f3f4f6;
+    --estado-cupon-text: #374151;
+    --estado-enviado-bg: #e0e7ff;
+    --estado-enviado-text: #4338ca;
+    --estado-cancelado-bg: #f1f5f9;
+    /* Toast: fondo/texto propios (no dependen de --text, que cambia en dark) */
+    --toast-bg: #1e293b;
+    --toast-text: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -324,7 +342,7 @@ table.admin-tabla {
 table.admin-tabla th {
     text-align: left;
     padding: 0.7rem 0.85rem;
-    background: #fafafa;
+    background: var(--surface-alt);
     border-bottom: 1px solid var(--border);
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -340,7 +358,7 @@ table.admin-tabla td {
 }
 
 table.admin-tabla tr:last-child td { border-bottom: none; }
-table.admin-tabla tr:hover td { background: #f8fafc; }
+table.admin-tabla tr:hover td { background: var(--surface-hover); }
 
 .td-acciones {
     white-space: nowrap;
@@ -376,7 +394,7 @@ td.td-expandir .pedido-acciones {
     margin-bottom: 0.9rem;
     border: 1px solid var(--primary-light);
     border-radius: 10px;
-    background: #f0f9ff;
+    background: var(--surface-borde-info);
 }
 .admin-bulkbar-info {
     display: flex;
@@ -421,8 +439,8 @@ td.td-expandir .pedido-acciones {
 .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #fff; }
 
 .btn-danger {
-    background: #fff;
-    border-color: #fecaca;
+    background: var(--surface);
+    border-color: var(--danger-border);
     color: var(--danger);
 }
 .btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
@@ -447,6 +465,68 @@ td.td-expandir .pedido-acciones {
 
 .admin-field.full { grid-column: 1 / -1; }
 
+/* Card "Apariencia del panel" (Configuración): opciones Claro/Oscuro */
+.admin-opciones-tema {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.admin-radio-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1 1 200px;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.admin-radio-card:hover {
+    border-color: var(--primary-light);
+}
+
+.admin-radio-card.activa {
+    border-color: var(--primary);
+    background: var(--surface-borde-info);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.admin-radio-card input[type="radio"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.admin-radio-card i {
+    font-size: 1.25rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.admin-radio-card span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.admin-radio-card strong {
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.admin-radio-card small {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
 .admin-field label {
     font-size: 0.8rem;
     font-weight: 600;
@@ -469,7 +549,7 @@ td.td-expandir .pedido-acciones {
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.9rem;
-    background: #fff;
+    background: var(--surface);
     color: var(--text);
 }
 
@@ -508,7 +588,7 @@ td.td-expandir .pedido-acciones {
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.9rem;
-    background: #fff;
+    background: var(--surface);
     color: var(--text);
 }
 
@@ -518,7 +598,7 @@ td.td-expandir .pedido-acciones {
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.9rem;
-    background: #fff;
+    background: var(--surface);
     color: var(--text);
     cursor: pointer;
 }
@@ -534,7 +614,7 @@ td.td-expandir .pedido-acciones {
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.9rem;
-    background: #fff;
+    background: var(--surface);
     color: var(--text);
 }
 
@@ -548,13 +628,13 @@ td.td-expandir .pedido-acciones {
 .admin-error-text {
     background: var(--danger-bg);
     color: var(--danger);
-    border: 1px solid #fecaca;
+    border: 1px solid var(--danger-border);
 }
 
 .admin-success-text {
     background: var(--success-bg);
     color: var(--success);
-    border: 1px solid #bbf7d0;
+    border: 1px solid var(--success-border);
 }
 
 /* ============================================================================
@@ -694,8 +774,8 @@ td.td-expandir .pedido-acciones {
     height: 100%;
     min-width: 1px;
     min-height: 1px;
-    background: #e5e7eb;
-    color: #6b7280;
+    background: var(--placeholder-bg);
+    color: var(--placeholder-text);
 }
 
 .admin-image-placeholder i {
@@ -729,7 +809,7 @@ td.td-expandir .pedido-acciones {
     height: 72px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fafafa;
+    background: var(--surface-alt);
 }
 
 .admin-image-placeholder--icon {
@@ -755,7 +835,7 @@ td.td-expandir .pedido-acciones {
     height: 72px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fafafa;
+    background: var(--surface-alt);
 }
 
 .admin-preview--avatar {
@@ -770,7 +850,7 @@ td.td-expandir .pedido-acciones {
     height: 64px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--surface);
 }
 
 .admin-preview-image {
@@ -835,11 +915,11 @@ td.td-expandir .pedido-acciones {
 .admin-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
 .admin-fila-expandida td {
-    background: #fafafa;
+    background: var(--surface-alt);
     padding: 1rem;
 }
 
-.admin-fila-activa > td { background: #fff7ed; }
+.admin-fila-activa > td { background: var(--fila-activa-bg); }
 
 .admin-pedido-items { display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.85rem; }
 .admin-pedido-cliente { font-size: 0.85rem; color: var(--text-muted); white-space: pre-line; }
@@ -859,7 +939,7 @@ td.td-expandir .pedido-acciones {
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.8rem;
-    background: #fff;
+    background: var(--surface);
     color: var(--text);
     cursor: pointer;
 }
@@ -876,11 +956,11 @@ td.td-expandir .pedido-acciones {
 }
 
 .estado-pendiente { background: var(--warning-bg); color: var(--warning); }
-.estado-cupon { background: #f3f4f6; color: #374151; }
+.estado-cupon { background: var(--estado-cupon-bg); color: var(--estado-cupon-text); }
 .estado-procesando { background: var(--primary-light); color: var(--primary); }
-.estado-enviado { background: #e0e7ff; color: #4338ca; }
+.estado-enviado { background: var(--estado-enviado-bg); color: var(--estado-enviado-text); }
 .estado-entregado { background: var(--success-bg); color: var(--success); }
-.estado-cancelado { background: #f1f5f9; color: var(--text-muted); }
+.estado-cancelado { background: var(--estado-cancelado-bg); color: var(--text-muted); }
 
 .admin-stock-bajo { color: var(--danger); font-weight: 600; }
 .admin-stock-medio { color: var(--warning); font-weight: 600; }
@@ -907,7 +987,7 @@ td.td-expandir .pedido-acciones {
 
 .admin-error {
     background: var(--danger-bg);
-    border: 1px solid #fecaca;
+    border: 1px solid var(--danger-border);
     color: var(--danger);
     padding: 1rem 1.2rem;
     border-radius: var(--radius);
@@ -1011,8 +1091,8 @@ body.admin-modal-abierto { overflow: hidden; }
 }
 
 .admin-toast-item {
-    background: var(--text);
-    color: #fff;
+    background: var(--toast-bg);
+    color: var(--toast-text);
     padding: 0.65rem 1rem;
     border-radius: 8px;
     font-size: 0.85rem;
@@ -1231,7 +1311,7 @@ body.admin-modal-abierto { overflow: hidden; }
     /* Acciones de fila: barra inferior siempre visible */
     table.admin-tabla td.td-acciones {
         justify-content: flex-end;
-        background: #fafafa;
+        background: var(--surface-alt);
         border-top: 1px solid var(--border);
         padding: 0.5rem 0.85rem;
     }
@@ -1247,7 +1327,7 @@ body.admin-modal-abierto { overflow: hidden; }
     table.admin-tabla tr.admin-fila-expandida td {
         display: block;
         padding: 1rem;
-        background: #fafafa;
+        background: var(--surface-alt);
         text-align: left;
     }
     table.admin-tabla tr.admin-fila-expandida td::before { content: none; }
@@ -1473,7 +1553,7 @@ body.admin-modal-abierto { overflow: hidden; }
     flex-shrink: 0;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--surface);
     color: var(--primary);
     font-size: 1.05rem;
 }
@@ -1481,4 +1561,58 @@ body.admin-modal-abierto { overflow: hidden; }
 .admin-icono-mini.sin-icono {
     color: var(--text-muted);
     font-size: 0.75rem;
+}
+/* ============================================================================
+   TEMA OSCURO DEL PANEL
+   tema-admin.js aplica data-tema="dark" a <html> cuando Configuración →
+   "Apariencia del panel" está en oscuro (settings.admin_tema, global). El panel
+   NO detecta el dispositivo: siempre arranca en claro hasta elegir oscuro.
+   login.html y recuperar.html quedan siempre en claro (no cargan tema-admin.js).
+   ============================================================================ */
+html[data-tema="dark"] {
+    color-scheme: dark;
+
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-alt: #243349;
+    --surface-hover: #2b3a55;
+    --surface-borde-info: #14263a;
+
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --border: #334155;
+
+    /* Primario del panel se mantiene IGUAL en dark (decisión: no se aclara como
+       en la tienda pública); los botones primarios conservan texto blanco. */
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #1d3a5f;
+
+    --secondary: #94a3b8;
+    --success: #22c55e;
+    --success-bg: #16301f;
+    --success-border: #1e4d31;
+    --warning: #f59e0b;
+    --warning-bg: #3a2c0e;
+    --danger: #f87171;
+    --danger-bg: #3b1c1e;
+    --danger-border: #552a2e;
+
+    --fila-activa-bg: #3a2c0e;
+
+    --placeholder-bg: #243349;
+    --placeholder-text: #94a3b8;
+
+    --estado-cupon-bg: #26303c;
+    --estado-cupon-text: #e2e8f0;
+    --estado-enviado-bg: #1e2a52;
+    --estado-enviado-text: #93a8f5;
+    --estado-cancelado-bg: #24303c;
+
+    /* Toast: mismo fondo/texto en ambos temas (varía según tipo) */
+    --toast-bg: #334155;
+    --toast-text: #f8fafc;
+
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
 }

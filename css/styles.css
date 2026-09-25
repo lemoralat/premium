@@ -16,12 +16,27 @@ html {
     /* Colores */
     --primary-color: #000000;
     --primary-hover: #000000;
+    --primary-solid: #000000;
+    --primary-solid-hover: #000000;
     --secondary-color: #64748b;
     --success-color: #00a650;
     --danger-color: #ef4444;
     --bg-color: #f5f5f5;
     --text-color: #1e293b;
     --border-color: #e2e8f0;
+
+    /* Superficies y texto (dark mode adaptable) */
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --input-bg: #ffffff;
+    --text-on-primary: #ffffff;
+    --info-bg: #f0f9ff;
+    --danger-soft-bg: #fff5f5;
+    --danger-soft-hover: #fef2f2;
+    --primary-soft-bg: #eff6ff;
+    --primary-soft-border: #bfdbfe;
+    --primary-soft-hover: #dbeafe;
+    --primary-tint: color-mix(in srgb, var(--primary-color) 10%, #ffffff);
     --product-card-aspect-ratio: 1 / 1;
 
     /* Sombras */
@@ -172,7 +187,7 @@ html {
     grid-template-columns: 2fr 4fr;
     gap: 32px;
     align-items: center;
-    background: var(--primary-color);
+    background: var(--primary-solid);
     overflow: hidden;
     margin: 2.5rem auto;
 }
@@ -199,7 +214,7 @@ html {
     display: flex;
     align-items: center;
     gap: 32px;
-    color: #ffffff;
+    color: var(--text-on-primary);
     padding: 32px;
 }
 
@@ -208,7 +223,7 @@ html {
     flex-shrink: 0;
     width: 140px;
     height: 100px;
-    background-color: #ffffff;
+    background-color: var(--surface);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -225,7 +240,7 @@ html {
     line-height: 1.2;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #ffffff;
+    color: var(--text-on-primary);
     font-weight: 400;
     font-size: var(--fs-span);
 }
@@ -233,7 +248,7 @@ html {
 .banner_info_copy h2 {
     margin: 1rem 0;
     line-height: 1.15;
-    color: #ffffff;
+    color: var(--text-on-primary);
     text-transform: uppercase;
     text-align: left;
     font-weight: 700;
@@ -250,7 +265,7 @@ html {
     line-height: 1.4;
     text-transform: uppercase;
     font-weight: 400;
-    color: #ffffff;
+    color: var(--text-on-primary);
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -366,8 +381,8 @@ html {
 
 
 .btn-primary {
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--primary-solid);
+    color: var(--text-on-primary);
 }
 
 /* Botón secundario: estilo outline (solo borde, sin fondo) */
@@ -433,13 +448,13 @@ span {
 
 
 .redes {
-    background-color: var(--primary-color);
+    background-color: var(--primary-solid);
     text-align: right;
     padding: 0.4rem 0;
 }
 
 .redes a {
-    color: white;
+    color: var(--text-on-primary);
     margin-left: 1rem;
     font-size: 1.2rem;
     transition: color 0.3s;
@@ -476,7 +491,7 @@ span {
 }
 
 .navbar {
-    background: white;
+    background: var(--surface);
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
@@ -561,7 +576,7 @@ span {
         left: 0;
         right: 0;
         z-index: var(--z-nav);
-        background: white;
+        background: var(--surface);
         max-height: 0;
         overflow: hidden;
         box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
@@ -688,7 +703,7 @@ span {
         right: 0;
         height: 100vh;
         width: min(480px, 100%);
-        background: white;
+        background: var(--surface);
         box-shadow: -15px 0 40px rgba(15, 23, 42, 0.12);
         z-index: calc(var(--z-overlay) + 2);
         transform: translateX(100%);
@@ -884,7 +899,7 @@ span {
     position: absolute;
     top: 100%;
     left: 0;
-    background: white;
+    background: var(--surface);
     min-width: 200px;
     box-shadow: var(--shadow-lg);
     list-style: none;
@@ -948,8 +963,8 @@ span {
 }
 
 .cart-count {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     border-radius: 50%;
     width: 30px;
     height: 30px;
@@ -988,7 +1003,7 @@ span {
     position: relative;
     display: flex;
     align-items: center;
-    background: white;
+    background: var(--surface);
     border-radius: 50px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     overflow: hidden;
@@ -1017,7 +1032,7 @@ span {
     display: none;
     text-align: center;
     padding: 3rem 1rem;
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     box-shadow: var(--shadow);
 }
@@ -1058,7 +1073,7 @@ span {
 
 .product-card {
     position: relative;
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     overflow: hidden;
     box-shadow: var(--shadow);
@@ -1085,7 +1100,7 @@ span {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: white;
+    background: var(--surface);
     color: #000;
     display: flex;
     align-items: center;
@@ -1097,8 +1112,8 @@ span {
 }
 
 .product-card:hover .quick-add-btn {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
 }
 
 .product-card.out-of-stock .quick-add-btn {
@@ -1199,7 +1214,7 @@ span {
 }
 
 .contact-container {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow-lg);
@@ -1220,7 +1235,7 @@ span {
 
 /* Mapa de contacto */
 .contact-map-container {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow-lg);
@@ -1372,7 +1387,7 @@ span {
 }
 
 .cart-items {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     padding: 1.5rem;
     box-shadow: var(--shadow);
@@ -1407,7 +1422,7 @@ span {
 
 .item-variant {
     font-size: 0.85rem;
-    color: var(--text-secondary, #555);
+    color: var(--secondary-color);
     margin-bottom: 0.35rem;
 }
 
@@ -1432,7 +1447,7 @@ span {
     width: 30px;
     height: 30px;
     border: 1px solid var(--border-color);
-    background: white;
+    background: var(--surface);
     cursor: pointer;
     transition: background 0.3s;
 }
@@ -1465,7 +1480,7 @@ span {
 }
 
 .cart-summary {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     padding: 1.5rem;
     box-shadow: var(--shadow);
@@ -1515,8 +1530,8 @@ span {
 
 .coupon-section button {
     padding: 0.75rem 1.25rem;
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     border: none;
     font-size: var(--fs-button);
     font-weight: 400;
@@ -1526,7 +1541,7 @@ span {
 }
 
 .coupon-section button:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
 }
 
 .coupon-section button:disabled {
@@ -1582,8 +1597,8 @@ span {
 .checkout-btn {
     width: 100%;
     padding: 1rem;
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     border: none;
     font-size: var(--fs-button);
     line-height: 1.2;
@@ -1594,7 +1609,7 @@ span {
 }
 
 .checkout-btn:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
 }
 
 .checkout-btn:disabled {
@@ -1604,7 +1619,7 @@ span {
 
 /* Checkout Form */
 .checkout-form {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow);
@@ -1766,19 +1781,19 @@ span {
 .shop-btn {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     text-decoration: none;
     transition: background 0.3s;
 }
 
 .shop-btn:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
 }
 
 /* Footer */
 footer {
-    background: white;
+    background: var(--surface);
     text-align: center;
     padding: 2rem;
     box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
@@ -1905,7 +1920,7 @@ footer p {
         height: 100vh;
         width: 80%;
         max-width: 300px;
-        background: white;
+        background: var(--surface);
         flex-direction: column;
         padding: 5rem 2rem 2rem;
         box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
@@ -2061,7 +2076,7 @@ footer p {
 }
 
 .success-container {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     padding: 3rem 2rem;
     box-shadow: var(--shadow-lg);
@@ -2089,7 +2104,7 @@ footer p {
 }
 
 .info-box {
-    background: #f0f9ff;
+    background: var(--info-bg);
     border-left: 4px solid var(--primary-color);
     padding: 1.5rem;
     margin: 2rem 0;
@@ -2165,8 +2180,8 @@ footer p {
 }
 
 .copy-btn {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     border: none;
     padding: 0.4rem 1rem;
     cursor: pointer;
@@ -2177,7 +2192,7 @@ footer p {
 }
 
 .copy-btn:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
 }
 
 .copy-btn.copied {
@@ -2185,8 +2200,8 @@ footer p {
 }
 
 .amount-box {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-    color: white;
+    background: linear-gradient(135deg, var(--primary-solid), var(--primary-solid-hover));
+    color: var(--text-on-primary);
     padding: 1.5rem;
     border-radius: var(--curva-surface);
     margin-top: 1.5rem;
@@ -2222,12 +2237,12 @@ footer p {
 }
 
 .btn-primary {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
 }
 
 .btn-primary:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
@@ -2239,8 +2254,8 @@ footer p {
 }
 
 .btn-secondary:hover {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
@@ -2315,7 +2330,7 @@ footer p {
 }
 
 .product-detail-container {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     padding: 2rem;
     box-shadow: var(--shadow-lg);
@@ -2450,7 +2465,7 @@ footer p {
     width: 40px;
     height: 40px;
     border: 2px solid var(--primary-color);
-    background: white;
+    background: var(--surface);
     color: var(--primary-color);
     cursor: pointer;
     font-size: 1.2rem;
@@ -2459,8 +2474,8 @@ footer p {
 }
 
 .quantity-btn:hover {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
 }
 
 .quantity-value {
@@ -2493,7 +2508,7 @@ footer p {
     padding: 0.55rem 0.75rem;
     border: 2px solid var(--border-color, #e2e2e2);
     border-radius: var(--curva);
-    background: #fff;
+    background: var(--surface);
     font-size: 0.95rem;
     cursor: pointer;
 }
@@ -2559,8 +2574,8 @@ footer p {
 
 /* Primario: con fondo */
 .btn-add-cart {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     border: none;
 }
 
@@ -2578,12 +2593,12 @@ footer p {
 }
 
 .btn-add-cart:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
 }
 
 .btn-go-cart:hover {
-    background: var(--primary-color);
-    color: #fff;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
 }
 
 .btn-add-cart:disabled {
@@ -2613,8 +2628,8 @@ footer p {
 }
 
 .nav-product-btn:hover {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     transform: translateX(5px);
 }
 
@@ -2934,7 +2949,7 @@ body.searching .products-section {
 }
 
 .faq-container {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-md);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
@@ -2943,8 +2958,8 @@ body.searching .products-section {
 .faq-header {
     text-align: center;
     padding: 3rem 2rem 2rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-    color: white;
+    background: linear-gradient(135deg, var(--primary-solid), var(--primary-solid-hover));
+    color: var(--text-on-primary);
 }
 
 .faq-header h1 {
@@ -2959,7 +2974,7 @@ body.searching .products-section {
 }
 
 .faq-intro a {
-    color: white;
+    color: var(--text-on-primary);
     text-decoration: underline;
     font-weight: 400;
 }
@@ -3015,7 +3030,7 @@ body.searching .products-section {
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    background: white;
+    background: var(--surface);
     border: none;
     text-align: left;
     font-size: var(--fs-body);
@@ -3058,7 +3073,7 @@ body.searching .products-section {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.4s ease;
-    background: white;
+    background: var(--surface);
 }
 
 .faq-answer p,
@@ -3144,12 +3159,12 @@ body.searching .products-section {
 }
 
 .faq-cta .btn-primary {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
 }
 
 .faq-cta .btn-primary:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
@@ -3161,8 +3176,8 @@ body.searching .products-section {
 }
 
 .faq-cta .btn-secondary:hover {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
@@ -3212,7 +3227,7 @@ body.searching .products-section {
 }
 
 .iconos-pie {
-    background-color: #ffffff;
+    background-color: var(--surface);
     margin-top: 4rem;
     padding: 4rem 0 2rem 0;
 }
@@ -3260,7 +3275,7 @@ body.searching .products-section {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--primary-color) 10%, #ffffff);
+    background: var(--primary-tint);
     color: var(--primary-color);
     font-size: 2rem;
     line-height: 1;
@@ -3331,7 +3346,7 @@ body.searching .products-section {
 }
 
 .zoom-close:hover {
-    background: white;
+    background: var(--surface);
     color: #000;
     transform: rotate(90deg);
 }
@@ -3357,7 +3372,7 @@ body.searching .products-section {
 }
 
 .zoom-nav-btn:hover {
-    background: white;
+    background: var(--surface);
     color: #000;
     transform: translateY(-50%) scale(1.1);
 }
@@ -3565,7 +3580,7 @@ body.zoom-active {
     width: 48px;
     height: 48px;
     border: 2px solid var(--border-color);
-    background: white;
+    background: var(--surface);
     border-radius: 50%;
     cursor: pointer;
     display: flex;
@@ -3583,7 +3598,7 @@ body.zoom-active {
 
 .btn-favorito:hover {
     border-color: #ef4444;
-    background: #fef2f2;
+    background: var(--danger-soft-hover);
     transform: scale(1.1);
 }
 
@@ -3593,7 +3608,7 @@ body.zoom-active {
 
 .btn-favorito.active {
     border-color: #ef4444;
-    background: #fef2f2;
+    background: var(--danger-soft-hover);
 }
 
 .btn-favorito.active i {
@@ -3660,7 +3675,7 @@ body.zoom-active {
 }
 
 .favoritos-list {
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
@@ -3732,8 +3747,8 @@ body.zoom-active {
 
 .favorito-ver-btn {
     padding: 0.6rem 1.25rem;
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     border: none;
     text-decoration: none;
     font-size: var(--fs-button);
@@ -3746,14 +3761,14 @@ body.zoom-active {
 }
 
 .favorito-ver-btn:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow);
 }
 
 .favorito-eliminar-btn {
     padding: 0.6rem 1rem;
-    background: white;
+    background: var(--surface);
     color: #ef4444;
     border: 2px solid #ef4444;
     cursor: pointer;
@@ -3775,7 +3790,7 @@ body.zoom-active {
 .favoritos-empty {
     text-align: center;
     padding: 4rem 2rem;
-    background: white;
+    background: var(--surface);
     border-radius: var(--curva-surface);
     box-shadow: var(--shadow-lg);
 }
@@ -3965,9 +3980,9 @@ body.zoom-active {
 }
 
 .slider-nav:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: #ffffff;
+    background: var(--primary-solid);
+    border-color: var(--primary-solid);
+    color: var(--text-on-primary);
     box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
     transform: translateY(-50%) scale(1.08);
 }
@@ -4172,7 +4187,7 @@ body.zoom-active {
     display: inline-block;
     width: 6px;
     height: 6px;
-    background-color: #ffffff;
+    background-color: var(--surface);
     border-radius: 50%;
     opacity: 0.5;
     margin: 0 1rem;
@@ -4229,7 +4244,7 @@ body.zoom-active {
 }
 
 .testimonio-body {
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: var(--curva-md);
     box-shadow: var(--shadow);
@@ -4415,8 +4430,8 @@ body.zoom-active {
     align-items: center;
     gap: 0.5rem;
     padding: 0.85rem 1.75rem;
-    background: var(--primary-color);
-    color: #fff;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     font-weight: 400;
     font-size: var(--fs-button);
     line-height: 1.2;
@@ -4426,7 +4441,7 @@ body.zoom-active {
 }
 
 .btn-404-primary:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
 }
@@ -4436,7 +4451,7 @@ body.zoom-active {
     align-items: center;
     gap: 0.5rem;
     padding: 0.85rem 1.75rem;
-    background: #fff;
+    background: var(--surface);
     color: var(--primary-color);
     border: 2px solid var(--border-color);
     font-weight: 400;
@@ -4448,7 +4463,7 @@ body.zoom-active {
 
 .btn-404-secondary:hover {
     border-color: var(--primary-color);
-    background: #eff6ff;
+    background: var(--primary-soft-bg);
     transform: translateY(-2px);
 }
 
@@ -4539,14 +4554,14 @@ body.zoom-active {
     text-decoration: none;
     padding: 0.35rem 0.75rem;
     border-radius: 99px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
+    background: var(--primary-soft-bg);
+    border: 1px solid var(--primary-soft-border);
     transition: background 0.2s, transform 0.15s;
     font-weight: 400;
 }
 
 .page-404__quick-links a:hover {
-    background: #dbeafe;
+    background: var(--primary-soft-hover);
     transform: translateY(-1px);
 }
 
@@ -4642,7 +4657,7 @@ html.exit-intent-locked body {
     z-index: 1;
     width: 100%;
     max-width: 420px;
-    background: #fff;
+    background: var(--surface);
     color: var(--text-color);
     border-radius: var(--curva-xl);
     padding: 2rem 1.75rem 1.75rem;
@@ -4703,8 +4718,8 @@ html.exit-intent-locked body {
     align-items: center;
     justify-content: center;
     padding: 0.65rem 1.25rem;
-    background: var(--primary-color);
-    color: #fff !important;
+    background: var(--primary-solid);
+    color: var(--text-on-primary) !important;
     font-weight: 400;
     font-size: var(--fs-button);
     line-height: 1.2;
@@ -4714,7 +4729,7 @@ html.exit-intent-locked body {
 }
 
 .exit-intent__cta:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
 }
 
 .exit-intent__secondary {
@@ -4787,7 +4802,7 @@ html.exit-intent-locked body {
 }
 
 .confirmacion-modal {
-    background: white;
+    background: var(--surface);
     padding: 2rem;
     border-radius: var(--curva-surface);
     box-shadow: var(--shadow-lg);
@@ -4827,8 +4842,8 @@ html.exit-intent-locked body {
 
 .confirmacion-btn {
     padding: 0.75rem 2rem;
-    background: var(--primary-color);
-    color: #fff;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     border: none;
     border-radius: var(--curva-sm);
     cursor: pointer;
@@ -4846,7 +4861,7 @@ html.exit-intent-locked body {
 /* Carrito: item sin stock y alertas */
 .cart-item.sin-stock {
     border: 1px solid var(--danger-color);
-    background: #fff5f5;
+    background: var(--danger-soft-bg);
 }
 
 .cart-item.sin-stock .item-image {
@@ -4906,7 +4921,7 @@ html.cart-sidemenu-locked body {
     right: 0;
     height: 100%;
     width: min(420px, 100%);
-    background: #fff;
+    background: var(--surface);
     color: var(--text-color);
     display: flex;
     flex-direction: column;
@@ -4981,7 +4996,7 @@ html.cart-sidemenu-locked body {
     padding: 0.75rem;
     border: 1px solid var(--danger-color);
     border-radius: var(--curva);
-    background: #fff5f5;
+    background: var(--danger-soft-bg);
 }
 
 .side-cart-item.sin-stock .item-image {
@@ -5051,7 +5066,7 @@ html.cart-sidemenu-locked body {
     flex-shrink: 0;
     border-top: 1px solid var(--border-color);
     padding: 1.25rem 1.5rem 1.5rem;
-    background: #fff;
+    background: var(--surface);
 }
 
 .side-summary-row {
@@ -5082,8 +5097,8 @@ html.cart-sidemenu-locked body {
     width: 100%;
     margin-top: 0.75rem;
     padding: 0.9rem 1rem;
-    background: var(--primary-color);
-    color: #fff;
+    background: var(--primary-solid);
+    color: var(--text-on-primary);
     font-size: var(--fs-button);
     font-weight: 400;
     text-decoration: none;
@@ -5092,7 +5107,7 @@ html.cart-sidemenu-locked body {
 }
 
 .side-cart-checkout:hover {
-    background: var(--primary-hover);
+    background: var(--primary-solid-hover);
 }
 
 .side-cart-checkout i {
@@ -5103,7 +5118,7 @@ html.cart-sidemenu-locked body {
     width: 100%;
     margin-top: 0.5rem;
     padding: 0.75rem 1rem;
-    background: #fff;
+    background: var(--surface);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: var(--curva);
@@ -5183,4 +5198,80 @@ body.diseno-recto {
     --curva-xl: 0;
     --curva-lg: 0;
     --curva-surface: 0;
+}
+
+/* ============================================================================
+   TEMA OSCURO (front)
+   js/tema.js aplica data-tema="dark" a <html>; en modo auto sigue al sistema.
+   Las superficies usan var(--surface). Los fondos sólidos de marca usan
+   var(--primary-solid) (color ORIGINAL: texto blanco siempre legible) y el
+   acento --primary-color se aclara vía template.js (aclararHex).
+   ============================================================================ */
+html[data-tema="dark"] {
+    color-scheme: dark;
+
+    /* Fondo y texto generales */
+    --bg-color: #0f172a;
+    --text-color: #e2e8f0;
+    --border-color: #334155;
+    --secondary-color: #94a3b8;
+    --success-color: #22c55e;
+    --danger-color: #f87171;
+
+    /* Superficies (cards, navbar, modales, inputs) */
+    --surface: #1e293b;
+    --surface-alt: #243349;
+    --input-bg: #0f172a;
+
+    /* Fondos suaves (info, danger, primario) para estados/badges */
+    --info-bg: #13283f;
+    --danger-soft-bg: #3b1c1e;
+    --danger-soft-hover: #472326;
+    --primary-soft-bg: #1d2b47;
+    --primary-soft-border: #2f446b;
+    --primary-soft-hover: #24385c;
+    --primary-tint: color-mix(in srgb, var(--primary-color) 14%, #1e293b);
+
+    /* Sombras más profundas sobre fondo oscuro */
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.45);
+}
+
+/* Switch de tema del header: el chip "Auto" (volver a seguir al dispositivo)
+   solo aparece cuando el usuario forzó claro/oscuro (tema.js lo oculta con
+   [hidden] en modo auto). */
+.tema-switch {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font: inherit;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.tema-auto-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    margin-left: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--secondary-color);
+    background: var(--surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.tema-auto-chip:hover {
+    color: var(--text-color);
+    border-color: var(--secondary-color);
+}
+
+.tema-auto-chip[hidden] {
+    display: none;
 }

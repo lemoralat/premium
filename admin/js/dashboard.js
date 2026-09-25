@@ -31,11 +31,50 @@ const COLOR_ESTADO = Object.freeze({
 
 // Instancias Chart.js vivas: se destruyen en cada render para no filtrar
 // memoria ni duplicar canvas al navegar entre secciones.
-let charts = [];
+let charts = []; // { chart, tipo }
 
 function destruirCharts() {
-    charts.forEach((c) => { try { c.destroy(); } catch { /* noop */ } });
+    charts.forEach((c) => { try { c.chart.destroy(); } catch { /* noop */ } });
     charts = [];
+}
+
+// Colores de los gráficos según el tema del panel (admin: no detecta el
+// dispositivo; el tema viene de settings.admin_tema vía tema-admin.js).
+function coloresChart() {
+    const oscuro = document.documentElement.getAttribute('data-tema') === 'dark';
+    return {
+        ticks: oscuro ? '#cbd5e1' : '#64748b',
+        grid: oscuro ? '#334155' : '#e2e8f0',
+        separador: oscuro ? '#1e293b' : '#ffffff', // borde entre sectores del donut = superficie
+        lineaFill: oscuro ? 'rgba(59, 130, 246, 0.18)' : 'rgba(37, 99, 235, 0.12)'
+    };
+}
+
+// Ajustar los gráficos vivos al tema activo (evento 'lemora:tema-panel').
+// No los recrea: solo recolorea ejes, grids, leyendas y separadores.
+function reaplicarTemaCharts() {
+    if (!charts.length) return;
+    const c = coloresChart();
+    charts.forEach(({ chart, tipo }) => {
+        if (!chart) return;
+        const op = chart.options;
+        if (op.scales) {
+            Object.values(op.scales).forEach((s) => {
+                if (s.ticks) s.ticks.color = c.ticks;
+                if (s.grid) s.grid.color = c.grid;
+            });
+        }
+        if (op.plugins?.legend?.labels) {
+            op.plugins.legend.labels.color = c.ticks;
+        }
+        if (tipo === 'line' && chart.data.datasets?.[0]) {
+            chart.data.datasets[0].backgroundColor = c.lineaFill;
+        }
+        if (tipo === 'estados' && chart.data.datasets?.[0]) {
+            chart.data.datasets[0].borderColor = c.separador;
+        }
+        chart.update();
+    });
 }
 
 // Convierte un timestamp ISO a clave local YYYY-MM-DD (evita el desfase de TZ
@@ -109,13 +148,17 @@ function conteoEstados(ordenes) {
     return conteo;
 }
 
-function crearChart(canvasId, config) {
+function crearChart(canvasId, config, tipo = '') {
     const canvas = document.getElementById(canvasId);
     if (!canvas || typeof window.Chart === 'undefined') return null;
     const chart = new window.Chart(canvas, config);
-    charts.push(chart);
+    charts.push({ chart, tipo });
     return chart;
 }
+
+// Al cambiar el tema del panel (Configuración → Apariencia), los gráficos se
+// recolorean en vivo sin recargar los datos.
+window.addEventListener('lemora:tema-panel', reaplicarTemaCharts);
 
 export async function renderizar(contenedor) {
     estadoCargando(contenedor, 'Reuniendo los datos de la tienda…');
@@ -338,6 +381,7 @@ export async function renderizar(contenedor) {
 
     // ---- Instanciar gráficos (solo si Chart.js cargó y hay datos) ----
     if (typeof window.Chart !== 'undefined' && hayVentas30) {
+        const cc = coloresChart(); // colores de ejes/grid según tema actual
         const serie = serieIngresosDiarios(ventana30, 30);
         crearChart('chart-ingresos', {
             type: 'line',
@@ -347,7 +391,7 @@ export async function renderizar(contenedor) {
                     label: 'Ingresos',
                     data: serie.valores,
                     borderColor: COLORES.primario,
-                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    backgroundColor: cc.lineaFill,
                     fill: true,
                     tension: 0.35,
                     pointRadius: 2,
@@ -363,11 +407,11 @@ export async function renderizar(contenedor) {
                     tooltip: { callbacks: { label: (ctx) => ` $${formatearPrecio(ctx.parsed.y || 0)}` } }
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 10 } } },
-                    y: { beginAtZero: true, ticks: { callback: (v) => `$${formatearPrecio(v)}`, font: { size: 10 } } }
+                    x: { grid: { display: false, color: cc.grid }, ticks: { maxTicksLimit: 10, font: { size: 10 }, color: cc.ticks } },
+                    y: { beginAtZero: true, grid: { color: cc.grid }, ticks: { callback: (v) => `$${formatearPrecio(v)}`, font: { size: 10 }, color: cc.ticks } }
                 }
             }
-        });
+        }, 'line');
 
         const conteo = conteoEstados(ventana30);
         const etiquetas = ESTADOS.filter((e) => conteo[e] > 0);
@@ -379,7 +423,7 @@ export async function renderizar(contenedor) {
                     data: etiquetas.map((e) => conteo[e]),
                     backgroundColor: etiquetas.map((e) => COLOR_ESTADO[e]),
                     borderWidth: 2,
-                    borderColor: '#ffffff'
+                    borderColor: cc.separador
                 }]
             },
             options: {
@@ -387,11 +431,11 @@ export async function renderizar(contenedor) {
                 maintainAspectRatio: false,
                 cutout: '62%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 }, color: cc.ticks } },
                     tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}` } }
                 }
             }
-        });
+        }, 'estados');
 
         crearChart('chart-productos', {
             type: 'bar',
@@ -414,8 +458,8 @@ export async function renderizar(contenedor) {
                     tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.x} un.` } }
                 },
                 scales: {
-                    x: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
-                    y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                    x: { beginAtZero: true, grid: { color: cc.grid }, ticks: { precision: 0, font: { size: 10 }, color: cc.ticks } },
+                    y: { grid: { display: false }, ticks: { font: { size: 11 }, color: cc.ticks } }
                 }
             }
         });
@@ -440,8 +484,8 @@ export async function renderizar(contenedor) {
                     tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} un.` } }
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0 } },
-                    y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } }
+                    x: { grid: { display: false, color: cc.grid }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0, color: cc.ticks } },
+                    y: { beginAtZero: true, grid: { color: cc.grid }, ticks: { precision: 0, font: { size: 10 }, color: cc.ticks } }
                 }
             }
         });

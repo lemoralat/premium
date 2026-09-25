@@ -167,6 +167,22 @@ async function aplicarBrandingPanel() {
     });
 }
 
+// Tema del panel (dark mode global): la fuente de verdad es settings.admin_tema
+// en la BD (migración 0027), no la preferencia del dispositivo. El boot de
+// admin/index.html ya restauró la caché local para no flashear; acá se lee la
+// BD y se reaplica. Sin la columna (migración pendiente) queda 'claro'.
+async function aplicarTemaPanelDesdeBD() {
+    try {
+        const sb = await clienteAdmin();
+        const { data } = await sb.from('settings').select('admin_tema').eq('id', 1).single();
+        const tema = data?.admin_tema === 'oscuro' ? 'oscuro' : 'claro';
+        if (window.TemaPanel) window.TemaPanel.aplicar(tema);
+    } catch {
+        // Sin acceso o sin migración: se mantiene el default claro del boot.
+        if (window.TemaPanel) window.TemaPanel.aplicar('claro');
+    }
+}
+
 // ---------- Arranque ----------
 document.addEventListener('DOMContentLoaded', async () => {
     const sesion = await protegerAdmin();
@@ -181,6 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarMenuMovil();
 
     aplicarBrandingPanel(); // no bloquea el routing
+    aplicarTemaPanelDesdeBD(); // dark mode global (settings.admin_tema), no bloquea
 
     window.addEventListener('hashchange', navegar);
     navegar();

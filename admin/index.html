@@ -14,6 +14,11 @@
         referrerpolicy="no-referrer"
     >
     <link rel="stylesheet" href="/admin/css/admin.css">
+    <!-- Boot del tema del panel: restaura la CACHÉ local (último tema conocido)
+         antes del primer paint. admin-app.js luego lee settings.admin_tema de la
+         BD (fuente de verdad global) y reaplica con window.TemaPanel.aplicar().
+         Default siempre claro; no detecta la preferencia del dispositivo. -->
+    <script src="/admin/js/tema-admin.js"></script>
     <!-- Chart.js (gráficos del Dashboard). SRI fijo: si el hash cambia, el
          navegador bloquea el script y el panel sigue funcionando sin gráficos
          (dashboard.js usa window.Chart con guard). -->

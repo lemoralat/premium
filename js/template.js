@@ -53,6 +53,30 @@ function renderHeader(activePage = '', categorias = []) {
             : '';
     }).join('');
 
+    // Tema claro/oscuro (js/tema.js): el ícono refleja el estado EFECTIVO actual
+    // (sigue al dispositivo en modo auto). El chip "Auto" aparece solo cuando el
+    // usuario forzó claro/oscuro, para permitir volver al seguimiento del sistema.
+    const temaEfectivo = (window.TemaFront && window.TemaFront.efectivo()) || 'light';
+    const temaOscuro = temaEfectivo === 'dark';
+    const temaIcono = temaOscuro ? 'fa-moon' : 'fa-sun';
+    const temaLabel = temaOscuro ? 'Tema oscuro activo' : 'Tema claro activo';
+    const temaForzado = window.TemaFront && window.TemaFront.estado() !== 'auto';
+
+    const temaSwitchDesktop = `
+        <button type="button" class="nav-link tema-switch" data-tema-switch onclick="window.TemaFront && window.TemaFront.ciclar()" aria-label="${temaLabel}" title="${temaLabel}">
+            <i class="fa-solid ${temaIcono}"></i>
+            <span class="nav-label">Tema</span>
+        </button>
+        <button type="button" class="tema-auto-chip" data-tema-auto onclick="window.TemaFront && window.TemaFront.volverAuto()" title="Seguir el tema del dispositivo" ${temaForzado ? '' : 'hidden'}>Auto</button>
+    `;
+
+    const temaSwitchMobile = `
+        <button type="button" class="header-icon tema-switch" data-tema-switch onclick="window.TemaFront && window.TemaFront.ciclar()" aria-label="${temaLabel}" title="${temaLabel}">
+            <i class="fa-solid ${temaIcono}"></i>
+        </button>
+        <button type="button" class="tema-auto-chip" data-tema-auto onclick="window.TemaFront && window.TemaFront.volverAuto()" title="Seguir el tema del dispositivo" ${temaForzado ? '' : 'hidden'}>Auto</button>
+    `;
+
     header.innerHTML = `
         <div class="redes">
             <div class="contenedor">
@@ -64,6 +88,7 @@ function renderHeader(activePage = '', categorias = []) {
                 ${logoSitio}
 
                 <div class="header-actions-mobile">
+                    ${temaSwitchMobile}
                     <button type="button" class="header-icon" onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
@@ -110,6 +135,7 @@ function renderHeader(activePage = '', categorias = []) {
                         <span class="nav-label">Carrito</span>
                         <span class="cart-count">0</span>
                     </button>
+                    ${temaSwitchDesktop}
                 </div>
             </div>
 
@@ -194,9 +220,7 @@ function asegurarCoberturaMarquee(bar, textos) {
 // Aplicar branding configurable (sección "Diseño" del panel): color principal,
 // estilo de bordes, favicon y metas OpenGraph/Twitter. Se ejecuta en cada carga.
 function aplicarDisenoGlobal() {
-    // Color principal + hover derivado (~15% más oscuro) para no romper estados hover
-    document.documentElement.style.setProperty('--primary-color', CONFIG_DISENO.colorPrincipal);
-    document.documentElement.style.setProperty('--primary-hover', oscurecerHex(CONFIG_DISENO.colorPrincipal, 0.85));
+    aplicarColoresMarca();
 
     // Estilo de bordes ("redondeado" es el por defecto: sin clase extra)
     document.body.classList.remove('diseno-circular', 'diseno-recto');
@@ -245,6 +269,38 @@ function oscurecerHex(hex, factor) {
     const g = Math.round(((n >> 8) & 255) * factor);
     const b = Math.round((n & 255) * factor);
     return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
+
+// Aclara un color hex #RRGGBB mezclándolo hacia blanco (t entre 0 y 1).
+function aclararHex(hex, t) {
+    if (!/^#([0-9a-f]{6})$/i.test(hex)) return hex;
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.round(((n >> 16) & 255) + (255 - ((n >> 16) & 255)) * t);
+    const g = Math.round(((n >> 8) & 255) + (255 - ((n >> 8) & 255)) * t);
+    const b = Math.round((n & 255) + (255 - (n & 255)) * t);
+    return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
+
+// Aplica el color de marca según el tema activo. Se separan DOS roles:
+//  - --primary-solid / --primary-solid-hover: color ORIGINAL desde la BD, para
+//    FONDOS SÓLIDOS (botones, banner, redes, cart-count…). No cambia en dark:
+//    conserva el texto blanco (--text-on-primary) siempre legible.
+//  - --primary-color / --primary-hover: acento para links, textos y bordes;
+//    en dark se aclara automáticamente para ganar contraste sobre fondo oscuro.
+// Se re-ejecuta cuando cambia el tema (evento 'lemora:tema') o al cargar.
+function aplicarColoresMarca() {
+    const oscuro = document.documentElement.getAttribute('data-tema') === 'dark';
+    // Fondo sólido: siempre el color original de la BD.
+    document.documentElement.style.setProperty('--primary-solid', CONFIG_DISENO.colorPrincipal);
+    document.documentElement.style.setProperty('--primary-solid-hover', oscurecerHex(CONFIG_DISENO.colorPrincipal, 0.9));
+    // Acento: original en claro, aclarado en oscuro.
+    if (oscuro) {
+        document.documentElement.style.setProperty('--primary-color', aclararHex(CONFIG_DISENO.colorPrincipal, 0.45));
+        document.documentElement.style.setProperty('--primary-hover', aclararHex(CONFIG_DISENO.colorPrincipal, 0.62));
+    } else {
+        document.documentElement.style.setProperty('--primary-color', CONFIG_DISENO.colorPrincipal);
+        document.documentElement.style.setProperty('--primary-hover', oscurecerHex(CONFIG_DISENO.colorPrincipal, 0.85));
+    }
 }
 
 // Inicializar template
@@ -597,6 +653,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Actualizar enlaces y textos de WhatsApp dinámicos
     actualizarElementosWhatsApp();
+
+    // Cambio de tema claro/oscuro (js/tema.js): re-aplicar el color de marca
+    // aclarado en oscuro para mantener contraste sobre fondos oscuros.
+    window.addEventListener('lemora:tema', aplicarColoresMarca);
 
     // Hacer que la función de actualizar favoritos sea accesible para otros módulos
     // sin tener que duplicar el código en cada archivo.
