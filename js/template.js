@@ -84,6 +84,17 @@ function renderHeader(activePage = '', categorias = []) {
             <div class="nav-container contenedor">
                 ${logoSitio}
 
+                <!-- Barra de búsqueda del header: solo desktop. En el inicio filtra
+                     la grilla en vivo (busqueda.js conecta todos los .search-input);
+                     en las demás páginas el submit redirige a index.html#tienda. -->
+                <form class="header-search" id="headerSearch" role="search" onsubmit="return buscarDesdeHeader(event)">
+                    <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
+                        aria-label="¿Qué estás buscando?" autocomplete="off">
+                    <button type="submit" class="header-search-btn" aria-label="Buscar productos">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </form>
+
                 <div class="header-actions-mobile">
                     ${temaSwitchMobile}
                     <button type="button" class="header-icon" onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
@@ -118,10 +129,6 @@ function renderHeader(activePage = '', categorias = []) {
                     <a href="faq.html" class="nav-link ${activePage === 'faq' ? 'active' : ''}">Preguntas</a> 
                     <!-- <a href="index.html#contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>-->
                     <a href="contacto.html" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a> 
-                    <button type="button" class="nav-link search-link" aria-label="Buscar productos" onclick="toggleBusquedaMovil()">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <span class="nav-label">Buscar</span>
-                    </button>
                     <a href="favoritos.html" class="nav-link favorites-link ${activePage === 'favoritos' ? 'active' : ''}" aria-label="Mis Favoritos">
                         <i class="fa-solid fa-heart"></i>
                         <span class="nav-label">Favoritos</span>
@@ -136,16 +143,7 @@ function renderHeader(activePage = '', categorias = []) {
                 </div>
             </div>
 
-            <div class="search-sidemenu-overlay" id="searchSidemenuOverlay" onclick="cerrarBusquedaMovil()"></div>
             <div class="mobile-search" id="mobileSearch">
-                <div class="search-sidemenu-header">
-                    <span class="search-sidemenu-title"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="search" class="search-input search-side-input" placeholder="¿Qué estás buscando?"
-                        aria-label="¿Qué estás buscando?" autocomplete="off">
-                    <button type="button" class="search-sidemenu-close" onclick="cerrarBusquedaMovil()" aria-label="Cerrar búsqueda">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
                 <div class="search-container">
                     <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
                         aria-label="¿Qué estás buscando?">
@@ -582,6 +580,7 @@ function cerrarCarritoSidemenu() {
 }
 
 // ===================== Búsqueda móvil (panel bajo el navbar) =====================
+// El buscador del header es solo móvil (la barra del header se usa en desktop).
 function toggleBusquedaMovil() {
     const panel = document.getElementById('mobileSearch');
     if (!panel) return;
@@ -592,11 +591,6 @@ function toggleBusquedaMovil() {
     // Abrir: si el carrito lateral estaba abierto, lo cerramos primero
     if (window.cerrarCarritoSidemenu) window.cerrarCarritoSidemenu();
     panel.classList.add('open');
-    const overlay = document.getElementById('searchSidemenuOverlay');
-    if (overlay) overlay.classList.add('active');
-    if (window.matchMedia('(min-width: 769px)').matches) {
-        document.documentElement.classList.add('search-sidemenu-locked');
-    }
     const input = [...panel.querySelectorAll('.search-input')]
         .find(i => i.offsetParent !== null) || panel.querySelector('.search-input');
     if (input) input.focus();
@@ -606,10 +600,30 @@ function cerrarBusquedaMovil() {
     const panel = document.getElementById('mobileSearch');
     if (!panel) return;
     panel.classList.remove('open');
-    const overlay = document.getElementById('searchSidemenuOverlay');
-    if (overlay) overlay.classList.remove('active');
-    document.documentElement.classList.remove('search-sidemenu-locked');
     if (window.limpiarBusqueda) window.limpiarBusqueda();
+}
+
+// Submit de la barra del header (desktop): en el inicio la grilla ya se filtra
+// en vivo por busqueda.js; en las demás páginas se guarda la búsqueda y se
+// navega a index.html#tienda para mostrarla en la grilla.
+function buscarDesdeHeader(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const input = document.querySelector('#headerSearch .search-input');
+    if (!input) return false;
+    const q = input.value.trim();
+    if (!q) return false;
+
+    // En el inicio la búsqueda en vivo ya filtra la grilla; si venimos de otra
+    // página con lemora_q, busqueda.js la aplica al cargar.
+    const enInicio = document.body && document.body.dataset.page === 'inicio';
+    if (enInicio) {
+        if (window.buscarDesdeQuery) window.buscarDesdeQuery(q);
+        return false;
+    }
+
+    try { sessionStorage.setItem('lemora_q', q); } catch (err) { /* noop */ }
+    window.location.href = 'index.html#tienda';
+    return false;
 }
 
 // Actualizar elementos de WhatsApp en el contenido de la página
@@ -667,4 +681,5 @@ document.addEventListener('DOMContentLoaded', async function () {
     window.sideEliminarItem = sideEliminarItem;
     window.toggleBusquedaMovil = toggleBusquedaMovil;
     window.cerrarBusquedaMovil = cerrarBusquedaMovil;
+    window.buscarDesdeHeader = buscarDesdeHeader;
 });

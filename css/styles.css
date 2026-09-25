@@ -654,177 +654,87 @@ span {
         display: none;
     }
 
-    /* Favoritos, Carrito y Búsqueda del drawer: ahora son iconos del header */
+    /* Favoritos y Carrito del drawer: ahora son iconos del header */
     .nav-menu .favorites-link,
-    .nav-menu .cart-link,
-    .nav-menu .search-link {
+    .nav-menu .cart-link {
         display: none;
     }
 }
 
-/* Overlay y cabecera del buscador: solo se muestran en escritorio (side menu) */
-.search-sidemenu-overlay,
-.search-sidemenu-header {
+/* Barra de búsqueda del header (solo desktop): siempre visible junto al logo.
+   En el inicio filtra la grilla en vivo; en otras páginas el submit redirige a
+   index.html#tienda. El panel lateral de búsqueda eliminado ya no existe. */
+.header-search {
     display: none;
 }
 
-/* Escritorio: el buscador se abre como side menu deslizable desde la derecha.
-   Los resultados se muestran en 2 columnas para ver mejor los cards. */
 @media (min-width: 769px) {
-    html.search-sidemenu-locked,
-    html.search-sidemenu-locked body {
-        overflow: hidden;
-    }
-
-    .search-sidemenu-overlay {
-        display: block;
-        position: fixed;
-        inset: 0;
-        z-index: calc(var(--z-overlay) + 1);
-        background: rgba(15, 23, 42, 0.72);
-        backdrop-filter: blur(4px);
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition: opacity 0.35s ease, visibility 0.35s ease;
-    }
-
-    .search-sidemenu-overlay.active {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-    }
-
-    .mobile-search {
-        display: flex;
-        flex-direction: column;
-        position: fixed;
-        top: 0;
-        right: 0;
-        height: 100vh;
-        width: min(480px, 100%);
-        background: var(--surface);
-        box-shadow: -15px 0 40px rgba(15, 23, 42, 0.12);
-        z-index: calc(var(--z-overlay) + 2);
-        transform: translateX(100%);
-        transition: transform 0.35s ease;
-        overflow: hidden;
-    }
-
-    .mobile-search.open {
-        transform: translateX(0);
-    }
-
-    .search-sidemenu-header {
+    .header-search {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 1.35rem 1.25rem 1.1rem 1.5rem;
-        flex-shrink: 0;
-    }
-
-    .search-sidemenu-title {
-        display: flex;
-        align-items: center;
-        color: var(--primary-color);
-        font-size: 1.15rem;
-        flex-shrink: 0;
-    }
-
-    /* El título "¿Qué estás buscando?" ES el campo de búsqueda */
-    .mobile-search .search-side-input {
-        flex: 1;
-        min-width: 0;
-        border: none;
-        border-bottom: 2px solid var(--border-color);
-        border-radius: 0;
-        background: transparent;
-        outline: none;
-        padding: 0.35rem 0.25rem 0.45rem;
-        font-size: 1.3rem;
-        color: var(--text-color);
+        flex: 1 1 auto;
+        max-width: 560px;
+        margin-left: clamp(1rem, 3vw, 2.5rem);
+        margin-right: 1.5rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 50px;
         transition: border-color 0.25s ease;
     }
 
-    .mobile-search .search-side-input:focus {
-        border-bottom-color: var(--primary-color);
+    /* En pantallas medianas la barra cede espacio para que el nav-menu no se
+       apriete ni desborde (Inicio | Productos | Preguntas | Contacto | …). */
+    @media (max-width: 1199px) {
+        .header-search {
+            max-width: 300px;
+            margin-right: 1rem;
+        }
     }
 
-    .mobile-search .search-side-input::placeholder {
+    .header-search:focus-within {
+        border-color: var(--primary-color);
+    }
+
+    .header-search .search-input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        background: transparent;
+        outline: none;
+        padding: 0.7rem 0.25rem 0.7rem 1.25rem;
+        font-size: 0.9375rem;
+        line-height: 1.4;
+        color: var(--text-color);
+        font-family: inherit;
+    }
+
+    .header-search .search-input::placeholder {
         color: var(--secondary-color);
-        opacity: 1;
     }
 
-    .search-side-input::-webkit-search-cancel-button {
-        -webkit-appearance: none;
+    .header-search .search-input::-webkit-search-cancel-button {
         display: none;
     }
 
-    .search-sidemenu-close {
-        width: 36px;
-        height: 36px;
+    .header-search-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--bg-color);
-        border: 1px solid var(--border-color);
-        border-radius: var(--curva);
-        cursor: pointer;
-        color: var(--text-color);
-        font-size: 1.05rem;
-        transition: background 0.25s, color 0.25s, border-color 0.25s;
-        flex-shrink: 0;
-    }
-
-    .search-sidemenu-close:hover {
-        background: var(--danger-color);
-        border-color: var(--danger-color);
-        color: #fff;
-    }
-
-    /* La barra clásica no se usa en escritorio: el título es el buscador */
-    .mobile-search .search-container {
-        display: none;
-    }
-
-    .mobile-results-count {
-        margin: 0.9rem 1.25rem 0.5rem;
-        padding: 0.35rem 0 0.5rem;
-        font-size: 0.85rem;
-        color: var(--secondary-color);
-        border-bottom: 1px solid var(--border-color);
-        flex-shrink: 0;
-    }
-
-    .mobile-results {
-        flex: 1;
-        min-height: 0;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: max-content;
-        align-items: start;
-        gap: 0.85rem;
-        padding: 0.9rem 1.25rem 1.5rem;
-        overflow-y: auto;
-    }
-
-    .mobile-results-empty {
-        display: none;
-        padding: 2rem 1.25rem;
-        text-align: center;
-        color: var(--secondary-color);
+        width: 40px;
+        height: 40px;
+        margin: 2px;
+        border: none;
+        border-radius: 50px;
+        background: var(--primary-color);
+        color: var(--text-on-primary);
         font-size: 0.95rem;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+        flex-shrink: 0;
     }
 
-    .mobile-results-empty.visible {
-        display: block;
-    }
-
-    /* Imágenes de resultados: misma proporción que los cards del home (evita que
-       se vean demasiado altas en el panel de 480px) */
-    .mobile-results .product-image {
-        height: auto;
-        aspect-ratio: var(--product-card-aspect-ratio);
+    .header-search-btn:hover {
+        opacity: 0.85;
     }
 }
 
@@ -938,19 +848,6 @@ span {
 }
 
 .cart-link {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    font: inherit;
-}
-
-/* Búsqueda como ícono del header: mismo tratamiento que el botón de carrito */
-.search-link {
     position: relative;
     display: flex;
     align-items: center;

@@ -9,10 +9,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Cargar productos usando el sistema centralizado
     productos = await obtenerProductos();
 
+    // Búsqueda heredada del header (desktop): al llegar a index.html#tienda
+    // desde otra página, la query quedó en sessionStorage (lemora_q).
+    aplicarBusquedaPendiente();
+
     // Vincular inputs del buscador. El header se inyecta de forma asíncrona en
     // template.js, así que también esperamos el evento 'lemora:header-ready'.
     conectarBuscador();
-    document.addEventListener('lemora:header-ready', conectarBuscador, { once: true });
+    document.addEventListener('lemora:header-ready', function() {
+        conectarBuscador();
+        aplicarBusquedaPendiente();
+    }, { once: true });
 
     // Refresco automático (opción A): si hay una búsqueda activa, re-ejecutarla
     // con datos frescos (stock/imagen/precio) sin recargar.
@@ -22,6 +29,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (activo) buscarProductos(activo.value.trim());
     });
 });
+
+// Aplica la búsqueda guardada por el header de desktop al llegar a
+// index.html#tienda desde otra página. Es idempotente: borra el storage.
+function aplicarBusquedaPendiente() {
+    let q = null;
+    try { q = sessionStorage.getItem('lemora_q'); } catch (e) { /* noop */ }
+    if (!q) return;
+    try { sessionStorage.removeItem('lemora_q'); } catch (e) { /* noop */ }
+    const input = document.querySelector('#headerSearch .search-input');
+    if (input) input.value = q;
+    buscarProductos(q);
+}
 
 // Vincular todos los inputs de búsqueda (idempotente por input).
 function conectarBuscador() {
@@ -178,3 +197,9 @@ function limpiarBusqueda() {
 
 // Exponer funciones globalmente
 window.limpiarBusqueda = limpiarBusqueda;
+// Fuerza una búsqueda sobre la grilla del inicio (usada por el submit de la
+// barra del header en index.html, donde el filtrado en vivo ya ocurrió).
+window.buscarDesdeQuery = function(query) {
+    const q = (query || '').trim();
+    if (q) buscarProductos(q);
+};
