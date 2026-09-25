@@ -36,5 +36,10 @@ writeFileSync(destino, contenido);
 if (url && anon) {
     console.log(`✅ env.generated.js generado con Supabase: ${url}`);
 } else {
-    console.warn('⚠️  Supabase sin configurar. La tienda usará el fallback a los JSON locales.');
+    // OJO: este script SOBREESCRIBE el archivo siempre. Como la tienda ya no
+    // tiene fallback a JSON locales (Supabase es la única fuente de datos),
+    // correr el build sin estas variables deja env.generated.js con strings
+    // vacíos y la tienda deja de funcionar. En Vercel no pasa (el build corre
+    // con las variables del proyecto), pero en local hay que exportarlas antes.
+    console.warn('⚠️  Supabase sin configurar: env.generated.js quedó con valores vacíos y la tienda no va a funcionar. Exportá SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY antes de correr el build.');
 }

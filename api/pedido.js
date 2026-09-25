@@ -7,8 +7,14 @@
 //   - Delega toda la sincronización/business logic a la función RPC
 //     `insertar_pedido` (transacción única: valida stock, recalcula montos con
 //     precios de la BD, aplica descuento/cupón, descuenta stock e inserta).
-//   - El frontend NO cambió: sigue POSTeando a /api/pedido y esperando
-//     { status: 'success' } o { status: 'error', message }.
+//   - El frontend POSTea a /api/pedido y espera { status: 'success' } o
+//     { status: 'error', message }. Desde la migración 0028 la respuesta
+//     además trae `items` (snapshot real de order_items) y el frontend arma el
+//     mensaje de WhatsApp con eso, en lugar de con su propio carrito.
+//   - OJO: los montos que mande el cliente (subtotal, descuento, porcentaje,
+//     total) se IGNORAN a propósito: no se leen en ninguna parte de este
+//     handler. El RPC los recalcula contra `products`, así que no tienen por qué
+//     llegar.
 //
 // Variables de entorno requeridas en Vercel:
 //   SUPABASE_URL
