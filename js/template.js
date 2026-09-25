@@ -53,27 +53,6 @@ function renderHeader(activePage = '', categorias = []) {
             : '';
     }).join('');
 
-    // Tema claro/oscuro (js/tema.js): el switch sol/luna forza claro/oscuro y
-    // lo persiste; sin preferencia guardada el front sigue al dispositivo
-    // (sin opción "Auto" en la UI).
-    const temaEfectivo = (window.TemaFront && window.TemaFront.efectivo()) || 'light';
-    const temaOscuro = temaEfectivo === 'dark';
-    const temaIcono = temaOscuro ? 'fa-moon' : 'fa-sun';
-    const temaLabel = temaOscuro ? 'Tema oscuro activo' : 'Tema claro activo';
-
-    const temaSwitchDesktop = `
-        <button type="button" class="nav-link tema-switch" data-tema-switch onclick="window.TemaFront && window.TemaFront.ciclar()" aria-label="${temaLabel}" title="${temaLabel}">
-            <i class="fa-solid ${temaIcono}"></i>
-            <span class="nav-label">Tema</span>
-        </button>
-    `;
-
-    const temaSwitchMobile = `
-        <button type="button" class="header-icon tema-switch" data-tema-switch onclick="window.TemaFront && window.TemaFront.ciclar()" aria-label="${temaLabel}" title="${temaLabel}">
-            <i class="fa-solid ${temaIcono}"></i>
-        </button>
-    `;
-
     header.innerHTML = `
         <div class="redes">
             <div class="contenedor">
@@ -101,7 +80,6 @@ function renderHeader(activePage = '', categorias = []) {
                 </div>
 
                 <div class="header-actions-mobile">
-                    ${temaSwitchMobile}
                     <button type="button" class="header-icon" onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
@@ -144,7 +122,6 @@ function renderHeader(activePage = '', categorias = []) {
                         <span class="nav-label">Carrito</span>
                         <span class="cart-count">0</span>
                     </button>
-                    ${temaSwitchDesktop}
                 </div>
             </div>
 
@@ -277,36 +254,17 @@ function oscurecerHex(hex, factor) {
     return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
 }
 
-// Aclara un color hex #RRGGBB mezclándolo hacia blanco (t entre 0 y 1).
-function aclararHex(hex, t) {
-    if (!/^#([0-9a-f]{6})$/i.test(hex)) return hex;
-    const n = parseInt(hex.slice(1), 16);
-    const r = Math.round(((n >> 16) & 255) + (255 - ((n >> 16) & 255)) * t);
-    const g = Math.round(((n >> 8) & 255) + (255 - ((n >> 8) & 255)) * t);
-    const b = Math.round((n & 255) + (255 - (n & 255)) * t);
-    return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
-}
-
-// Aplica el color de marca según el tema activo. Se separan DOS roles:
-//  - --primary-solid / --primary-solid-hover: color ORIGINAL desde la BD, para
-//    FONDOS SÓLIDOS (botones, banner, redes, cart-count…). No cambia en dark:
-//    conserva el texto blanco (--text-on-primary) siempre legible.
-//  - --primary-color / --primary-hover: acento para links, textos y bordes;
-//    en dark se aclara automáticamente para ganar contraste sobre fondo oscuro.
-// Se re-ejecuta cuando cambia el tema (evento 'lemora:tema') o al cargar.
+// Aplica el color de marca. La tienda es solo tema claro, así que ambos roles
+// usan directamente el color de la BD con su hover oscurecido:
+//  - --primary-solid / --primary-solid-hover: color ORIGINAL, para FONDOS
+//    SÓLIDOS (botones, banner, redes, cart-count…), conservando el texto blanco
+//    (--text-on-primary) siempre legible.
+//  - --primary-color / --primary-hover: acento para links, textos y bordes.
 function aplicarColoresMarca() {
-    const oscuro = document.documentElement.getAttribute('data-tema') === 'dark';
-    // Fondo sólido: siempre el color original de la BD.
     document.documentElement.style.setProperty('--primary-solid', CONFIG_DISENO.colorPrincipal);
     document.documentElement.style.setProperty('--primary-solid-hover', oscurecerHex(CONFIG_DISENO.colorPrincipal, 0.9));
-    // Acento: original en claro, aclarado en oscuro.
-    if (oscuro) {
-        document.documentElement.style.setProperty('--primary-color', aclararHex(CONFIG_DISENO.colorPrincipal, 0.45));
-        document.documentElement.style.setProperty('--primary-hover', aclararHex(CONFIG_DISENO.colorPrincipal, 0.62));
-    } else {
-        document.documentElement.style.setProperty('--primary-color', CONFIG_DISENO.colorPrincipal);
-        document.documentElement.style.setProperty('--primary-hover', oscurecerHex(CONFIG_DISENO.colorPrincipal, 0.85));
-    }
+    document.documentElement.style.setProperty('--primary-color', CONFIG_DISENO.colorPrincipal);
+    document.documentElement.style.setProperty('--primary-hover', oscurecerHex(CONFIG_DISENO.colorPrincipal, 0.85));
 }
 
 // Inicializar template
@@ -653,10 +611,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Actualizar enlaces y textos de WhatsApp dinámicos
     actualizarElementosWhatsApp();
-
-    // Cambio de tema claro/oscuro (js/tema.js): re-aplicar el color de marca
-    // aclarado en oscuro para mantener contraste sobre fondos oscuros.
-    window.addEventListener('lemora:tema', aplicarColoresMarca);
 
     // Hacer que la función de actualizar favoritos sea accesible para otros módulos
     // sin tener que duplicar el código en cada archivo.
