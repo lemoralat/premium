@@ -1,6 +1,6 @@
 // Gestión del formulario de envío y WhatsApp
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, obtenerCupones, obtenerUrlWhatsApp } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, estadoCompraMinima, obtenerUrlWhatsApp } from './utils.js';
 
 // ============ CONFIGURACIÓN ============
 const CONFIG_PEDIDOS = {
@@ -113,49 +113,62 @@ async function enviarPedidoWhatsApp(e) {
         return;
     }
 
+    // Cupón aplicado en el carrito (ya validado contra `coupons` al aplicarlo).
+    // Se manda tal cual: el RPC decide si corresponde (que esté activo, que no
+    // haya vencido y que supere al descuento automático).
+    const cupon = sessionStorage.getItem('appliedCoupon') || '';
+
+    // Generar token único para proteger la página de gracias
+    const token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    sessionStorage.setItem('order_token', token);
+
     // Abrir la ventana de WhatsApp ANTES de cualquier await:
     // la "user activation" del click se pierde al cruzar un await y los navegadores
     // bloquean el window.open posterior como popup
     const ventanaWhatsApp = window.open('', '_blank');
 
+    // ============ REGISTRAR PEDIDO (api/pedido) ============
+    // NO se mandan montos calculados: api/pedido.js los ignora y el RPC los
+    // recalcula contra `products`. La respuesta del servidor es la única fuente
+    // de verdad para el mensaje de WhatsApp y para la página de gracias.
+    let pedido;
     try {
-        // Obtener cupón aplicado
-        const cupon = sessionStorage.getItem('appliedCoupon');
-
-        // Asegurar que los cupones estén cargados para el cálculo final
-        await obtenerCupones();
-
-        // Calcular totales con cupón
-        const { subtotal, descuento, total, esCupon, porcentaje } = calcularTotales(cart, cupon);
-
-        // Guardar el total en localStorage para mostrarlo en la página de gracias
-        localStorage.setItem('orderTotal', total.toString());
-
-        // Generar token único para proteger la página de gracias
-        const token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
-        sessionStorage.setItem('order_token', token);
-
-        // ============ REGISTRAR PEDIDO (api/pedido) ============
-        await enviarPedidoAPI({
+        pedido = await enviarPedidoAPI({
             cliente: datosCliente,
             productos: cart,
-            subtotal: subtotal,
-            descuento: descuento,
-            porcentaje: porcentaje,
-            cupon: esCupon ? cupon : 'NINGUNO',
-            total: total,
-            token: token,
-            website: botAtrapado ? text('website') : '' // honeypot: siempre vacío
+            cupon: cupon,
+            token: token
         });
+    } catch (error) {
+        // El pedido NO quedó registrado. Armar igual el mensaje con el carrito
+        // del cliente sería mandarle al vendedor un pedido que no existe en la
+        // BD, así que se aborta: se cierra la ventana en blanco, se conserva el
+        // carrito y no se redirige. El usuario reintenta sin perder nada.
+        console.error('❌ Error al registrar el pedido:', error);
+        if (ventanaWhatsApp) ventanaWhatsApp.close();
+        sessionStorage.removeItem('order_token');
+        mostrarNotificacion(error.message, 'error');
+        if (btnSubmit) btnSubmit.classList.remove('loading');
+        return;
+    }
+
+    try {
+        // El monto de la página de gracias también sale del servidor, para que
+        // el cliente transfiera exactamente lo que quedó registrado.
+        localStorage.setItem('orderTotal', Number(pedido.total).toString());
 
         // ============ ENVIAR POR WHATSAPP ============
+        // Todo el mensaje se arma con la respuesta del servidor: los ítems
+        // vienen de `order_items` (migración 0028) y los montos, recalculados
+        // por el RPC.
+        //
         // Sin número configurado, obtenerUrlWhatsApp() devuelve '' (el pedido ya
         // quedó registrado vía API): se cierra la ventana en blanco y se sigue
         // a la página de gracias sin abrir un link roto.
-        const urlWhatsApp = construirUrlWhatsApp(datosCliente, cart, subtotal, descuento, total, esCupon ? cupon : null);
+        const urlWhatsApp = construirUrlWhatsApp(datosCliente, pedido, cart);
 
         if (urlWhatsApp && ventanaWhatsApp) {
             ventanaWhatsApp.location.href = urlWhatsApp;
@@ -179,37 +192,68 @@ async function enviarPedidoWhatsApp(e) {
 }
 
 // ============ ENVIAR PEDIDO ============
+// Devuelve la respuesta del servidor (montos e ítems ya recalculados contra la
+// BD) o lanza. Antes se tragaba los errores y dejaba seguir el flujo como si el
+// pedido se hubiera registrado: el mensaje de WhatsApp describía un pedido que
+// no estaba en la base y el stock nunca se había descontado.
 async function enviarPedidoAPI(pedido) {
+    let response;
     try {
-        const response = await fetch(CONFIG_PEDIDOS.API_PEDIDO_URL, {
+        response = await fetch(CONFIG_PEDIDOS.API_PEDIDO_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(pedido)
         });
-
-        const resultado = await response.json();
-
-        if (resultado.status === 'success') {
-            console.log('✅ Pedido registrado');
-        } else {
-            console.warn('⚠️ El backend rechazó el pedido:', resultado.message);
-            mostrarNotificacion(`❌ ${resultado.message || 'No se pudo registrar el pedido.'}`, 'error');
-        }
-
     } catch (error) {
-        console.error('❌ Error al registrar el pedido:', error);
-        mostrarNotificacion('❌ Error al registrar el pedido. Por favor, inténtalo de nuevo o contáctanos por WhatsApp.', 'error');
-        // No bloqueamos el proceso si falla el registro en Supabase:
-        // el pedido se enviará igualmente por WhatsApp
+        // Fallo de red: no hay respuesta y el estado del pedido es desconocido.
+        console.error('❌ No se pudo contactar al servidor:', error);
+        throw new Error('No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.');
     }
+
+    let resultado;
+    try {
+        resultado = await response.json();
+    } catch (error) {
+        console.error('❌ Respuesta ilegible del servidor:', error);
+        throw new Error('El servidor devolvió una respuesta inesperada. Intentá de nuevo en un momento.');
+    }
+
+    if (!response.ok || resultado?.status !== 'success') {
+        // api/pedido.js ya filtra qué mensajes expone (solo los de negocio:
+        // stock, mínimos, cupón, límites de tasa), así que se puede mostrar.
+        throw new Error(resultado?.message || 'No se pudo registrar el pedido. Intentá de nuevo en un momento.');
+    }
+
+    console.log('✅ Pedido registrado:', resultado.numero);
+    return resultado;
 }
 
 // ============ CONSTRUIR URL DE WHATSAPP ============
-function construirUrlWhatsApp(datos, cart, subtotal, descuento, total, cupon) {
+// `pedido` es la respuesta de `insertar_pedido`: todo lo que se imprime acá
+// sale de la base, no del carrito del cliente. `pedido.items` viene de
+// `order_items` (migración 0028) y los montos fueron recalculados por el RPC
+// contra `products`.
+function construirUrlWhatsApp(datos, pedido, cart) {
+    const total     = Number(pedido.total) || 0;
+    const subtotal  = Number(pedido.subtotal) || 0;
+    const descuento = Number(pedido.descuento) || 0;
+    const cupon     = pedido.cupon && pedido.cupon !== 'NINGUNO' ? pedido.cupon : null;
+
+    // Los ítems tienen que ser los del servidor. Si la 0028 todavía no está
+    // aplicada, `items` no llega y se cae al carrito local solo para las líneas
+    // (los montos igual son los del servidor) en vez de dejar al cliente sin
+    // salida; el aviso en consola deja claro que falta aplicar la migración.
+    let items = Array.isArray(pedido.items) ? pedido.items : [];
+    if (items.length === 0) {
+        console.warn('⚠️ El servidor no devolvió los ítems del pedido (falta aplicar la migración 0028). Se usan los del carrito para las líneas.');
+        items = Array.isArray(cart) ? cart : [];
+    }
+
     // Construir mensaje para WhatsApp
     let mensaje = `*NUEVO PEDIDO*\n\n`;
+    if (pedido.numero) mensaje += `N° de pedido: ${pedido.numero}\n\n`;
     mensaje += `*Datos del Cliente:*\n`;
     mensaje += `Nombre: ${datos.nombre}\n`;
     mensaje += `Email: ${datos.email}\n`;
@@ -222,18 +266,25 @@ function construirUrlWhatsApp(datos, cart, subtotal, descuento, total, cupon) {
     mensaje += `Código Postal: ${datos.codigoPostal}\n\n`;
     
     mensaje += `*Productos:*\n`;
-    cart.forEach((item, index) => {
-        const variante = item.varianteTexto ? ` [${String(item.varianteTexto).replace(/[\r\n]+/g, ' ')}]` : '';
+    items.forEach((item, index) => {
+        // `order_items` usa snake_case; el carrito local, camelCase.
+        const varianteTexto = item.variante_texto ?? item.varianteTexto;
+        const precio = Number(item.precio_unitario ?? item.precio) || 0;
+        const cantidad = Number(item.quantity) || 0;
+        const variante = varianteTexto ? ` [${String(varianteTexto).replace(/[\r\n]+/g, ' ')}]` : '';
         mensaje += `${index + 1}. ${item.nombre}${variante}\n`;
-        mensaje += `   Cantidad: ${item.quantity}\n`;
-        mensaje += `   Precio unitario: $${formatearPrecio(item.precio)}\n`;
-        mensaje += `   Subtotal: $${formatearPrecio(item.precio * item.quantity)}\n\n`;
+        mensaje += `   Cantidad: ${cantidad}\n`;
+        mensaje += `   Precio unitario: $${formatearPrecio(precio)}\n`;
+        mensaje += `   Subtotal: $${formatearPrecio(precio * cantidad)}\n\n`;
     });
     
     if (descuento > 0) {
         mensaje += `*Subtotal: $${formatearPrecio(subtotal)}*\n`;
         const etiqueta = cupon ? `Cupón (${cupon})` : 'Descuento Automático';
-        mensaje += `*${etiqueta}: -$${formatearPrecio(descuento)}*\n`;
+        const pct = Number(pedido.porcentaje) || 0;
+        mensaje += pct > 0
+            ? `*${etiqueta} (${pct}%): -$${formatearPrecio(descuento)}*\n`
+            : `*${etiqueta}: -$${formatearPrecio(descuento)}*\n`;
     }
     mensaje += `*TOTAL: $${formatearPrecio(total)}*\n\n`;
     mensaje += `*Notas adicionales:*\n${datos.notas}`;
