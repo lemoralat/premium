@@ -82,18 +82,23 @@ function renderHeader(activePage = '', categorias = []) {
         </div>
         <nav class="navbar" aria-label="Menú principal">
             <div class="nav-container contenedor">
-                ${logoSitio}
+                <!-- Logo + buscador en un mismo contenedor flex: el gap entre
+                     ambos se define aquí (--space-sm) y no con márgenes sueltos. -->
+                <div class="header-brand">
+                    ${logoSitio}
 
-                <!-- Barra de búsqueda del header: solo desktop. En el inicio filtra
-                     la grilla en vivo (busqueda.js conecta todos los .search-input);
-                     en las demás páginas el submit redirige a index.html#tienda. -->
-                <form class="header-search" id="headerSearch" role="search" onsubmit="return buscarDesdeHeader(event)">
-                    <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
-                        aria-label="¿Qué estás buscando?" autocomplete="off">
-                    <button type="submit" class="header-search-btn" aria-label="Buscar productos">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                </form>
+                    <!-- Barra de búsqueda del header: solo desktop. En el inicio
+                         filtra la grilla en vivo (busqueda.js conecta todos los
+                         .search-input); en las demás páginas el submit redirige a
+                         index.html#tienda. -->
+                    <form class="header-search" id="headerSearch" role="search" onsubmit="return buscarDesdeHeader(event)">
+                        <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
+                            aria-label="¿Qué estás buscando?" autocomplete="off">
+                        <button type="submit" class="header-search-btn" aria-label="Buscar productos">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </form>
+                </div>
 
                 <div class="header-actions-mobile">
                     ${temaSwitchMobile}

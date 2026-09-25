@@ -661,6 +661,15 @@ span {
     }
 }
 
+/* Contenedor del logo y la barra de búsqueda del header: el GAP entre ambos se
+   define aquí (--space-sm), no con márgenes sueltos sobre la barra. */
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0; /* permite que la barra encoja en pantallas angostas */
+}
+
 /* Barra de búsqueda del header (solo desktop): siempre visible junto al logo.
    En el inicio filtra la grilla en vivo; en otras páginas el submit redirige a
    index.html#tienda. El panel lateral de búsqueda eliminado ya no existe. */
@@ -669,12 +678,17 @@ span {
 }
 
 @media (min-width: 769px) {
+    /* El grupo logo+buscador crece para que la barra ocupe el espacio libre
+       entre el logo y el nav-menu. */
+    .header-brand {
+        flex: 1 1 auto;
+    }
+
     .header-search {
         display: flex;
         align-items: center;
         flex: 1 1 auto;
         max-width: 560px;
-        margin-left: var(--space-sm);
         margin-right: 1.5rem;
         background: var(--bg-color);
         border: 1px solid var(--border-color);
