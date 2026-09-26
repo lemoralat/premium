@@ -1,6 +1,6 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, imagenOptimizada, obtenerNombreSitio, placeholderImagenPublica } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, imagenOptimizada, obtenerNombreSitio, placeholderImagenPublica, galeriaProducto } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
@@ -172,9 +172,7 @@ function renderizarDetalleProducto(producto) {
     const nextProduct = productos.find(p => p.id === producto.id + 1);
     
     // Usar galería si existe, sino usar imagen principal
-    const imagenesGaleria = (producto.galeria && producto.galeria.length > 0 
-        ? producto.galeria 
-        : [producto.imagen]).map(imagenOptimizada).filter(Boolean);
+    const imagenesGaleria = galeriaProducto(producto);
 
     // V-2: nombre y URLs son contenido administrado → escapar antes de HTML.
     const nombreSeguro = escaparHtml(recortarTexto(producto.nombre));
@@ -399,9 +397,7 @@ function toggleZoom() {
     
     if (!producto) return;
     
-    const imagenesGaleria = (producto.galeria && producto.galeria.length > 0 
-        ? producto.galeria 
-        : [producto.imagen]).map(imagenOptimizada).filter(Boolean);
+    const imagenesGaleria = galeriaProducto(producto);
     if (!imagenesGaleria.length) return;
 
     // V-2: nombre y URLs administradas → escapar antes de interpolar.

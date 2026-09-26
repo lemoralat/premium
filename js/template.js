@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar, obtenerMarquee, placeholderImagenPublica } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, imagenOptimizada, slugificar, obtenerMarquee, placeholderImagenPublica, debeCargarImagenProducto } from './utils.js';
 
 const CARD_ASPECT_RATIOS = Object.freeze({
     '1:1': '1 / 1',
@@ -467,7 +467,7 @@ function renderSidemenuCarrito() {
 
         return `
         <div class="side-cart-item${sinStock ? ' sin-stock' : ''}" data-clave="${claveEscapada}">
-            ${item.imagen
+            ${debeCargarImagenProducto(item)
                 ? `<img src="${escaparHtml(imagenOptimizada(item.imagen))}" alt="${escaparHtml(item.nombre)}" class="item-image" loading="lazy">`
                 : placeholderImagenPublica('item-image')}
             <div class="side-item-details">
