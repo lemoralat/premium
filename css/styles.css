@@ -805,9 +805,9 @@ span {
     }
 
     /* Lupa de entrada: ícono decorativo (aria-hidden) que ancla el campo como
-       buscador. Va en position:absolute contra el .header-search, igual que el
-       ×, y no como flex item — si fuera flex child competiría por el ancho con
-       el input. pointer-events:none para que el clic siempre vaya al input. */
+       buscador. Va en position:absolute contra el .header-search y no como flex
+       item — si lo fuera competiría por el ancho con el input. pointer-events:none
+       para que el clic siempre vaya al campo. */
     .header-search .search-leading {
         position: absolute;
         left: 1.15rem;
@@ -827,9 +827,9 @@ span {
         border: none;
         background: transparent;
         outline: none;
-        /* padding derecho generoso para que el texto no pase por debajo del ×;
-           padding izquierdo para dejarlo libre de la lupa. */
-        padding: 0.7rem 2.75rem 0.7rem 2.6rem;
+        /* padding izquierdo generoso para dejar libre la lupa; a la derecha no
+           hace falta holgura porque la barra ya no lleva el × de limpiar. */
+        padding: 0.7rem 1.25rem 0.7rem 2.6rem;
         font-size: 0.9375rem;
         line-height: 1.4;
         color: var(--text-color);
@@ -844,19 +844,11 @@ span {
         display: none;
     }
 
-    /* El × vive dentro de la barra: necesita que .header-search sea el
-       containing block (position:relative), como ya ocurre con el input del
-       panel a través de .search-container. */
+    /* La lupa va en position:absolute contra .header-search, así que éste tiene
+       que ser su containing block. El × que antes vivía acá (ya no está: la
+       barra de desktop no lleva botón de limpiar) usaba el mismo anclaje. */
     .header-search {
         position: relative;
-    }
-
-    .header-search .search-close {
-        right: 0.9rem;
-    }
-
-    .header-search .search-close:hover {
-        color: var(--primary-color);
     }
 
     /* La lupa acompaña al foco del campo, como el borde de .header-search. */

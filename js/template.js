@@ -74,9 +74,6 @@ function renderHeader(activePage = '', categorias = []) {
                         <i class="fa-solid fa-magnifying-glass search-leading" aria-hidden="true"></i>
                         <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
                             aria-label="¿Qué estás buscando?" autocomplete="off">
-                        <button type="button" class="search-close" onclick="cerrarBusqueda()" aria-label="Limpiar búsqueda">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
                     </div>
                 </div>
 
