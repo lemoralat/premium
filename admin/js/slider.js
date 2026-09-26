@@ -40,6 +40,9 @@ export async function renderizar(contenedor) {
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalSlide(Number(btn.dataset.editar)));
     });
+    contenedor.querySelectorAll('[data-duplicar]').forEach((btn) => {
+        btn.addEventListener('click', () => duplicarSlide(Number(btn.dataset.duplicar), contenedor, btn));
+    });
     contenedor.querySelectorAll('[data-borrar]').forEach((btn) => {
         btn.addEventListener('click', () => borrarSlide(Number(btn.dataset.borrar), contenedor));
     });
@@ -47,7 +50,7 @@ export async function renderizar(contenedor) {
 
 function filas() {
     if (!slides.length) {
-        return `<tr><td colspan="5"><div class="admin-empty"><p>No hay slides. Agregá el primero.</p></div></td></tr>`;
+        return `<tr><td colspan="6"><div class="admin-empty"><p>No hay slides. Agregá el primero.</p></div></td></tr>`;
     }
     return slides.map((s) => `
         <tr>
@@ -66,8 +69,9 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(s.id)}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(s.id)}"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(s.id)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button type="button" class="btn btn-sm" data-duplicar="${esc(s.id)}" title="Duplicar" aria-label="Duplicar slide"><i class="fa-solid fa-copy"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(s.id)}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -248,9 +252,12 @@ async function guardarSlide(payload, id, archivo, urlExterna) {
         const { error } = await sb.from('sliders').update(imagenPayload).eq('id', registroId);
         if (error) throw new Error(error.message);
 
-        // Liberar el archivo del Storage anteriores (si lo había)
-        if (storagePathAnterior && archivo) {
-            await eliminarImagenAdmin(storagePathAnterior);
+        // Liberar el archivo del Storage anterior (si lo había). El chequeo de
+        // referencias va adentro de liberarImagenSiSobra: la copia de un slide
+        // duplicado comparte el archivo con el original, así que borrarlo sin
+        // comprobarlo le dejaría la imagen rota.
+        if (archivo) {
+            await liberarImagenSiSobra(storagePathAnterior);
         }
     }
 
@@ -266,7 +273,95 @@ async function borrarSlide(id, contenedor) {
         toast(`No se pudo eliminar: ${error.message}`, 'error');
         return;
     }
-    if (slide?.storage_path) await eliminarImagenAdmin(slide.storage_path);
+    // La fila ya no está, así que el chequeo de referencias sólo ve a las demás.
+    if (slide?.storage_path) await liberarImagenSiSobra(slide.storage_path);
     toast('Slide eliminado.');
     renderizar(contenedor);
+}
+
+// Copia un slide con todos sus datos, para poder editar la variante sin
+// arrancar de cero (por ejemplo, partir el slide de escritorio en dos). La
+// copia queda activa y con el mismo comportamiento de enlace que el original.
+async function duplicarSlide(id, contenedor, boton) {
+    const sb = await clienteAdmin();
+    const original = slides.find((s) => s.id === id);
+    if (!original) {
+        toast('No se encontró el slide a duplicar.', 'error');
+        return;
+    }
+
+    // Se avisa con el botón en vez de con conCarga(): aquel restaura el
+    // contenido con textContent, y en un botón que sólo tiene un <i> eso deja
+    // el botón sin icono para siempre. Acá se restaura el innerHTML.
+    const htmlOriginal = boton.innerHTML;
+    boton.disabled = true;
+    boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    try {
+        // 1) Desplazar los que van después, para que la copia caiga justo
+        //    detrás del original sin dejar dos slides con la misma posición: el
+        //    front sólo ordena por `position`, así que un empate haría el orden
+        //    no determinista. Va antes del insert a propósito: si el insert
+        //    falla queda un hueco en las posiciones, que es inofensivo, y nunca
+        //    un empate, que sí lo sería.
+        for (const s of slides) {
+            if (s.position <= original.position) continue;
+            const { error } = await sb
+                .from('sliders')
+                .update({ position: s.position + 1 })
+                .eq('id', s.id);
+            if (error) throw new Error(error.message);
+        }
+
+        // 2) Insertar la copia. Comparte el archivo del original (mismo
+        //    storage_path) en vez de copiarlo en el Storage: es el mismo
+        //    contenido, y no ocupa el doble. Ver liberarImagenSiSobra() para
+        //    por qué eso no rompe al original ni a la copia al editar o borrar
+        //    cualquiera de las dos.
+        const { error } = await sb.from('sliders').insert({
+            titulo: original.titulo,
+            texto_soporte: original.texto_soporte,
+            storage_path: original.storage_path,
+            external_url: original.external_url,
+            link: original.link,
+            target: original.target,
+            mostrar_en: original.mostrar_en,
+            activo: original.activo,
+            position: original.position + 1
+        });
+        if (error) throw new Error(error.message);
+
+        toast('Slide duplicado.');
+        renderizar(contenedor);
+    } catch (error) {
+        toast(`No se pudo duplicar: ${error.message}`, 'error');
+        boton.disabled = false;
+        boton.innerHTML = htmlOriginal;
+    }
+}
+
+// Borra el archivo del Storage sólo si ningún otro slide lo sigue usando.
+//
+// Hace falta porque al duplicar las dos filas comparten el mismo storage_path.
+// Sin esta comprobación, cambiarle la imagen a la copia borraba el archivo del
+// original (que se quedaba sin foto), y borrar el original dejaba a la copia sin
+// imagen.
+//
+// Si la consulta no puede responder no se borra nada: dejar un archivo huérfano
+// en el Storage es un menor problema que borrar un archivo que alguien está
+// usando, y el huérfano se limpia desde el panel de Storage.
+async function liberarImagenSiSobra(storagePath) {
+    if (!storagePath) return;
+    const sb = await clienteAdmin();
+    const { data, error } = await sb
+        .from('sliders')
+        .select('id')
+        .eq('storage_path', storagePath)
+        .limit(1);
+    if (error) {
+        console.warn('No se pudo comprobar si la imagen sigue en uso; se conserva el archivo:', error.message);
+        return;
+    }
+    if (data && data.length > 0) return; // otra fila todavía lo apunta
+    await eliminarImagenAdmin(storagePath);
 }
