@@ -25,32 +25,9 @@ const { createClient } = require('@supabase/supabase-js');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Orígenes que pueden POSTear a /api/pedido. Ampliables con la variable de
-// entorno ALLOWED_ORIGINS (separados por coma). «*» admite subdominios
-// (ej. https://*.vercel.app cubre las previews). Si no viene header Origin
-// (curl, server-to-server) se permite: no hay cookies de sesión que robar.
-function origenPermitido(origin) {
-    if (!origin) return true;
-    const permitidos = (process.env.ALLOWED_ORIGINS || [
-        'https://supabase.lemora.lat',
-        'https://*.vercel.app',
-        'http://localhost:3000',
-        'http://localhost:3001'
-    ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
-    return permitidos.some((patron) => {
-        if (patron.includes('*')) {
-            // Patrón tipo "https://*.vercel.app": lo convertimos a una regex
-            // escapando el resto de metacaracteres. (El viejo
-            // replace(/\*/g,'') producía "https://.vercel.app" y nunca
-            // matcheaba ningún origen real de las previews.)
-            const re = new RegExp(
-                '^' + patron.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'
-            );
-            return re.test(origin);
-        }
-        return origin === patron;
-    });
-}
+// Política de orígenes compartida: ver api/_lib/origenes.js. No volver a
+// copiar la lista de permitidos en un cuarto handler.
+const { origenPermitido } = require('./_lib/origenes.js');
 
 module.exports = async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
@@ -61,7 +38,7 @@ module.exports = async function handler(request, response) {
     }
 
     // CSRF/abuso ligero: solo aceptamos POSTs desde orígenes conocidos de la tienda.
-    if (!origenPermitido(String(request.headers.origin || ''))) {
+    if (!origenPermitido(String(request.headers.origin || ''), request)) {
         return response.status(403).json({ status: 'error', message: 'Origen no permitido.' });
     }
 

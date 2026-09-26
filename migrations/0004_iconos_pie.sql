@@ -56,24 +56,27 @@ create policy "Iconos: admin full"
 -- (select/references a anon; all a authenticated y service_role).
 
 -- ----------------------------------------------------------------------------
--- SEED: los 3 iconos actuales del home.
--- La migración 0021 reemplaza las fuentes locales retiradas por Font Awesome.
+-- SEED: vacío a propósito.
+--
+-- Acá sembraban los 3 iconos del pie del home de la tienda que originó la
+-- plantilla. Eran texto de ese negocio, no contenido genérico:
+--   · "Trabajo con mercadopago... la villetera virtual número 1 de Argentina"
+--   · "todos los pedidos salen desde Córdoba, Argentina"
+--   · "yo me comunicaré contigo personalmente"
+-- Un cliente que compra la plantilla no acepta Mercado Pago, no despacha desde
+-- Córdoba y no es esta persona. Si la plantilla los sembraba, cada cliente
+-- tenía que acordarse de borrarlos o su tienda publicaba condiciones de venta
+-- que no cumplía.
+--
+-- Lo mismo se quitó del front: el array ICONOS_ESTATICOS de js/iconos-pie.js
+-- tenía estos mismos tres textos como fallback, así que la duplicación daba
+-- igual desde los dos lados.
+--
+-- La sección se puebla desde el panel (Banner/iconos del pie) y, si no hay
+-- iconos, js/iconos-pie.js la oculta. Es el mismo criterio que el slider.
 -- ----------------------------------------------------------------------------
-insert into public.iconos_pie (titulo, descripcion, external_url, position, activo)
-select * from (values
-('Muchas formas de pago',
- 'Trabajo con mercadopago, lo cuál se aceptan todos los medios de pagos de la villetera virtual número 1 de Argentina, para que compres con total confianza.',
- '', 0, true),
-('Envíos a toda Argentina',
- 'Envío a toda la Argentina de norte a sur, todos los pedidos salen desde Córdoba, Argentina y pueden variar dependiendo tu ubicación.',
- '', 1, true),
-('Stock siempre disponible',
- 'Toda la web opera bajo pedido, compra con total confianza, yo me comunicaré contigo personalmente para asegurar que llegue lo que pidas.',
- '', 2, true)
-) as v(titulo, descripcion, external_url, position, activo)
-where not exists (select 1 from public.iconos_pie);
-
-select setval(pg_get_serial_sequence('public.iconos_pie', 'id'), (select max(id) from public.iconos_pie));
+-- La secuencia queda en 1 en vez de reventar con setval(NULL) en una base nueva.
+select setval(pg_get_serial_sequence('public.iconos_pie', 'id'), greatest(coalesce(max(id), 0), 1)) from public.iconos_pie;
 
 -- ============================================================================
 -- STORAGE: bucket "iconos" + políticas extendidas

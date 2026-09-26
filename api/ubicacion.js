@@ -22,29 +22,9 @@
 //   405 { status:'error', message }  (no es POST)
 // ============================================================================
 
-// Orígenes que pueden POSTear (igual política que api/pedido.js).
-function origenPermitido(origin) {
-    if (!origin) return true;
-    const permitidos = (process.env.ALLOWED_ORIGINS || [
-        'https://supabase.lemora.lat',
-        'https://*.vercel.app',
-        'http://localhost:3000',
-        'http://localhost:3001'
-    ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
-    return permitidos.some((patron) => {
-        if (patron.includes('*')) {
-            // Patrón tipo "https://*.vercel.app": lo convertimos a una regex
-            // escapando el resto de metacaracteres. (El viejo
-            // replace(/\*/g,'') producía "https://.vercel.app" y nunca
-            // matcheaba ningún origen real de las previews.)
-            const re = new RegExp(
-                '^' + patron.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'
-            );
-            return re.test(origin);
-        }
-        return origin === patron;
-    });
-}
+// Política de orígenes compartida: ver api/_lib/origenes.js. No volver a
+// copiar la lista de permitidos en un cuarto handler.
+const { origenPermitido } = require('./_lib/origenes.js');
 
 // Cache en memoria (por instancia serverless): evita golpear a Nominatim
 // repetidamente (su política de uso permite ~1 req/s con User-Agent propio).
@@ -180,7 +160,11 @@ async function geocodificar(texto) {
 
     const res = await fetch(url, {
         headers: {
-            'User-Agent': 'lemora-shop/1.0 (mapa de contacto de https://supabase.lemora.lat)',
+            // La política de uso de Nominatim pide un User-Agent que identifique
+            // a la aplicación, no uno con el dominio de la tienda original: en
+            // una plantilla reutilizable ese dominio no es el del cliente que
+            // termina haciendo las consultas.
+            'User-Agent': 'lemora-tienda/1.0 (geocodificacion del mapa de contacto)',
             'Accept': 'application/json'
         }
     });
@@ -261,7 +245,7 @@ module.exports = async function handler(request, response) {
         return response.status(405).json({ status: 'error', message: 'Método no permitido.' });
     }
 
-    if (!origenPermitido(String(request.headers.origin || ''))) {
+    if (!origenPermitido(String(request.headers.origin || ''), request)) {
         return response.status(403).json({ status: 'error', message: 'Origen no permitido.' });
     }
 

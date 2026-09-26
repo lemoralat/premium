@@ -28,25 +28,9 @@ const COOKIE_TOKEN = 'lemora_admin_token';
 // usan A-Za-z0-9_- , y el header/payload/firma no pueden contener ';' ni CR/LF).
 const JWT_COMPACTO = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 
-// Orígenes que pueden POSTear (misma política que api/pedido.js y api/ubicacion.js).
-function origenPermitido(origin) {
-    if (!origin) return true;
-    const permitidos = (process.env.ALLOWED_ORIGINS || [
-        'https://supabase.lemora.lat',
-        'https://*.vercel.app',
-        'http://localhost:3000',
-        'http://localhost:3001'
-    ].join(',')).split(',').map((s) => s.trim()).filter(Boolean);
-    return permitidos.some((patron) => {
-        if (patron.includes('*')) {
-            const re = new RegExp(
-                '^' + patron.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'
-            );
-            return re.test(origin);
-        }
-        return origin === patron;
-    });
-}
+// Política de orígenes compartida: ver api/_lib/origenes.js. No volver a
+// copiar la lista de permitidos en un cuarto handler.
+const { origenPermitido } = require('./_lib/origenes.js');
 
 module.exports = async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
@@ -56,7 +40,7 @@ module.exports = async function handler(request, response) {
         return response.status(405).json({ status: 'error', message: 'Método no permitido.' });
     }
 
-    if (!origenPermitido(String(request.headers.origin || ''))) {
+    if (!origenPermitido(String(request.headers.origin || ''), request)) {
         return response.status(403).json({ status: 'error', message: 'Origen no permitido.' });
     }
 

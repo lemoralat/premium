@@ -20,7 +20,7 @@ Ahora:
 | Google Sheets (pedidos) + escalado manual | Tabla `orders` + cada pedido con sus líneas en `order_items` |
 | Google Apps Script (proxy webhook de pedidos) | Función serverless `api/pedido.js` → RPC `insertar_pedido` (transacción única en la BD) |
 | Numeración manual / hojas | Trigger `PED-####` automático en la BD |
-| Google Drive (imágenes) | **Supabase Storage** (se pueden seguir mostrando las URLs de Drive como `external_url` durante la transición) |
+| Google Drive (imágenes) | **Supabase Storage**, una sola fuente: las imágenes se suben desde el panel y las columnas de URL externa se eliminaron en la `0043` |
 | Apps Script Auth (admin por hoja) | **Supabase Auth** (correo + contraseña, recuperación de contraseña) |
 | Edición en la planilla | **Panel `/admin`** con CRUD completo y en español |
 
@@ -72,12 +72,12 @@ Reglas de oro:
 | `products` | Productos | `id` **integer identity** (conserva los ids 1–16 del JSON original), `nombre`, `descripcion`, `descripcion_detallada`, `precio` (numeric), `precio_anterior`, `stock`, `caracteristicas` (jsonb array), `activo`, `destacado` (default false: se muestra primero en el home mezclando categorías), `category_id` FK → categories (ON DELETE SET NULL) |
 | `product_options` | Variantes (p. ej. "Talles") | FK → products, cascada al borrar producto |
 | `product_option_values` | Valores de variante (p. ej. "40, 41, 42") | FK → product_options, cascada |
-| `product_images` | Imágenes (1 principal + galería) | `storage_path` **o** `external_url` (restricción `num_nonnulls <= 1`), `es_principal`, `position`, FK cascada |
+| `product_images` | Imágenes (1 principal + galería) | `storage_path` (única fuente de imagen; `external_url` se eliminó en la `0043`), `es_principal`, `position`, FK cascada |
 | `coupons` | Cupones manuales | `codigo`, `porcentaje`, `expira` (date), `activo`. **Máximo 10 filas** (trigger `trg_cupones_max`, `0036`); el tope cuenta vigentes, inactivos y vencidos |
-| `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`/`external_url`, `link`, `target` (`interno` default / `externo`), `position`, `activo`, `mostrar_en` (`ambos` default / `mobile` / `desktop`, filtrado por dispositivo en la tienda). **Máximo 12 filas** (trigger `trg_sliders_max`, `0037`); el tope cuenta activas e inactivas, y cubre también la acción "Duplicar" |
-| `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `target` (`interno` default / `externo`), `position`, `activo`, `en_carrito` (`true` = el del carrito, `0030`). **Tope por destino**: 4 al inicio + 1 al carrito = 5 en total (trigger `trg_banners_max`, `0038`) |
-| `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`/`external_url`, `position`, `activo`. **Máximo 10 filas** (trigger `trg_resenas_max`, `0039`); el tope cuenta activas e inactivas |
-| `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo`. **Máximo 3 filas** (trigger `trg_iconos_pie_max`, `0040`); el 3 no es arbitrario, viene del grid `repeat(3, 1fr)` de `.iconos` en desktop |
+| `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`, `link`, `target` (`interno` default / `externo`), `position`, `activo`, `mostrar_en` (`ambos` default / `mobile` / `desktop`, filtrado por dispositivo en la tienda). **Máximo 12 filas** (trigger `trg_sliders_max`, `0037`); el tope cuenta activas e inactivas, y cubre también la acción "Duplicar" |
+| `banners` | Banners promocionales | `imagen_path`, `logo_path` (las columnas `imagen_url`/`logo_url` se eliminaron en la `0043`), `badge`, `titulo`, `boton`, `link`, `target` (`interno` default / `externo`), `position`, `activo`, `en_carrito` (`true` = el del carrito, `0030`). **Tope por destino**: 4 al inicio + 1 al carrito = 5 en total (trigger `trg_banners_max`, `0038`) |
+| `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`, `position`, `activo`. **Máximo 10 filas** (trigger `trg_resenas_max`, `0039`); el tope cuenta activas e inactivas |
+| `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`, `position`, `activo`. **Máximo 3 filas** (trigger `trg_iconos_pie_max`, `0040`); el 3 no es arbitrario, viene del grid `repeat(3, 1fr)` de `.iconos` en desktop |
 | `preguntas_frecuentes` | Preguntas de la página faq.html (sección Configuración) | `icono` (clase FontAwesome, opcional), `pregunta`, `respuesta`, `position`, `activo`. **Máximo 20 filas** (trigger `trg_preguntas_frecuentes_max`, `0041`); el tope cuenta activas e inactivas |
 | `marquee_items` | Mensajes de la barra marquee (sección Diseño) | `texto` (obligatorio), `position`, `activo`; sin filas activas la barra no se muestra. **Máximo 6 filas** (trigger `trg_marquee_items_max`, `0035`); el tope cuenta activas e inactivas |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
@@ -100,17 +100,23 @@ Reglas de oro:
 
 El frontend mantiene el contrato HTTP: `POST /api/pedido` espera `{ status: 'success' }`.
 
-### 3.3 Datos sembrados (`migrations/0002_seed.sql`)
+### 3.3 Qué siembra la instalación (`migrations/0002_seed.sql`)
 
-Se migraron todos los datos reales actuales, respetando los ids originales del JSON:
+**La plantilla se instala vacía.** Antes esta sección describía el volcado del catálogo de la tienda que originó el proyecto (16 productos con sus precios, 48 imágenes en Google Drive, 3 cupones, 6 slides, 5 banners, 12 reseñas y 3 iconos del pie). Todo eso se sacó: era contenido de ese negocio, no de la plantilla, y un cliente que la compra no tiene por qué heredar el catálogo de otro.
 
-- **16 productos** (ids 1–16, `OVERRIDING SYSTEM VALUE` + `setval`). Incluye el **fix de datos**: el producto 14 pasó de "Remeras" a **"Abrigos"** (revisado contra su nombre/imágenes reales).
-- **Variantes**: solo el producto 1 tiene variante "Talles" (50, 52, 54, 56, 58), igual que el JSON actual.
-- **48 imágenes** de producto apuntando a Google Drive (`external_url`) para que el catálogo se vea idéntico al momento de migrar. El admin puede re-subirlas a Storage desde el panel (se irán usando `storage_path`).
-- **3 cupones**: `sale10` (10%, **inactivo** por estar vencido), `black20` (20%, activo hasta 2026-12-31), `navidad` (25%, activo hasta 2026-12-31).
-- **6 slides** de hero, **5 banners**, **12 reseñas**, todos con orden y estado reales.
-- **3 iconos del pie** (`0004` + `0021`): pagos, envíos y stock. Los assets locales se retiraron; la migración `0021` los convierte a iconos Font Awesome configurables.
-- **Configuración** con los valores que estaban hardcodeados en el código: umbral 100000 → 10%, y los datos propios de la tienda (WhatsApp, alias, entidad y titular de transferencia) llegan **vacíos** desde `0024_plantilla_sin_datos_lemora.sql` — el repo es una plantilla reutilizable, así que el número y los datos bancarios se completan en Configuración desde el panel, no en el seed.
+Lo que **sí** queda en `0002` es la fila `id = 1` de `settings`, que no es opcional:
+
+| Por qué no se puede omitir | |
+|---|---|
+| `admin/js/configuracion.js` hace `.select('*').eq('id', 1).single()` | Con 0 filas el `.single()` tira error y la pestaña Configuración no abre |
+| El guardado es `.update(payload).eq('id', 1)` | Con 0 filas actualiza 0 filas **sin avisar**: el admin creería que guardó |
+| `insertar_pedido` hace `select … from settings where id = 1` | Sin fila no hay configuración de descuento ni de cupón |
+
+Nace con `site_name = 'Mi Tienda Online'`, WhatsApp y datos de transferencia vacíos, redes sociales vacías y **descuento automático en 0 / 0 (desactivado)**. Todo lo demás se carga desde el panel. Las secciones sin datos (hero, banners, reseñas, iconos del pie, FAQ) **se ocultan solas**, no muestran contenido de relleno.
+
+Los `setval` de las secuencias se mantienen, envueltos en `greatest(coalesce(max(id), 0), 1)`: la forma anterior (`setval(seq, (select max(id) from t))`) revienta con *"value NULL is not allowed"* en una base vacía, que es justo el caso de una instalación nueva de la plantilla.
+
+`0004_iconos_pie.sql` ya no siembra los 3 iconos del pie (pagos con Mercado Pago, envíos desde Córdoba, "yo me comunaré contigo"). El texto era de esa tienda; el mismo contenido estaba duplicado en el array `ICONOS_ESTATICOS` de `js/iconos-pie.js`, y los dos se quitaron.
 
 ---
 
@@ -219,9 +225,9 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 1. **Crear proyecto** en https://supabase.com (plan free). Anotar `URL`, `anon key` y `service_role key` (Project Settings → API).
 2. **Ejecutar las migraciones** en el SQL Editor de Supabase, **en orden**:
    - `migrations/0001_schema.sql` (esquema + RLS + funciones)
-   - `migrations/0002_seed.sql` (datos reales)
+   - `migrations/0002_seed.sql` (fila `settings` id=1 y secuencias — **no** siembra catálogo; ver §3.3)
    - `migrations/0003_storage.sql` (buckets y políticas; crea la tabla `admins` y `public.es_admin()`, y es autosuficiente: no depende de 0007)
-   - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas)
+   - `migrations/0004_iconos_pie.sql` (tabla `iconos_pie`, bucket `iconos`, políticas extendidas; **no** siembra los 3 iconos del pie, ver §3.3)
    - `migrations/0005_enlace_target.sql` (columna `target` en `sliders` y `banners`: `interno` → `_self` default, `externo` → `_blank`)
    - `migrations/0006_productos_destacado.sql` (columna `destacado` en `products`, default false)
    - `migrations/0007_seguridad.sql` (tabla `admins` + re-creación de `public.es_admin()` con el mismo cuerpo, policies de escritura exigiendo admin)
@@ -270,8 +276,12 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0039_resenas_max.sql` (tope de 10 testimonios: función `limitar_resenas()` + trigger `trg_resenas_max` BEFORE INSERT sobre `reviews`). Mismo criterio que `0035`–`0038`: el límite va en la BD porque la anon key es pública y "Reseñas: admin full" es `for all`. `security invoker`, no toca los `UPDATE` y **no borra nada**. El tope cuenta activas e inactivas. **Correr el PASO 1 antes de aplicar**: la policy pública muestra 2 testimonios activos con ids 13 y 14, o sea que hubo 14 filas y no se puede distinguir desde afuera cuántas quedaron inactivas. Si el total ya está en 10 o más, el trigger bloquea inserts desde el primer día (aplicar igual es seguro: no borra). Si preferís que los ocultos no cuenten, es agregar `and activo` al `where` del count, y el panel tiene que mostrar los dos números
    - `migrations/0040_iconos_pie_max.sql` (tope de 3 iconos del pie: función `limitar_iconos_pie()` + trigger `trg_iconos_pie_max` BEFORE INSERT sobre `iconos_pie`). El **3 no es arbitrario**: `.iconos` es un grid de `repeat(3, 1fr)` en desktop, así que 3 llena una fila exacta y un cuarto cae a una segunda fila dejando dos huecos. En móvil el grid pasa a `1fr` y se apila bien; el tope responde a cómo se ve en escritorio. `security invoker`, no toca los `UPDATE` y no borra nada. Ojo: esta tabla endureció sus policies en `0026`, no en `0007` como las demás — el resultado para el count es el mismo. **Correr el PASO 1 antes de aplicar**: la policy pública muestra 1 icono activo con id 5, así que hubo 5 filas. Con un tope de 3, si hay más de 3 activos el bloque del pie **ya se está viendo roto hoy**, más allá de que el tope bloquee crear nuevos
    - `migrations/0041_preguntas_frecuentes_max.sql` (tope de 20 preguntas: función `limitar_preguntas_frecuentes()` + trigger `trg_preguntas_frecuentes_max` BEFORE INSERT sobre `preguntas_frecuentes`). `security invoker`, no toca los `UPDATE` y no borra nada. **El trigger no usa `contar_preguntas_frecuentes()`** (0015) aunque cuente lo mismo, y conviene que siga así: esa función es `security definer`, y usarla pasó el chequeo de depender de las policies de RLS a depender de permisos de `EXECUTE` — justo lo que `0031` revocó. Acá no hay apuro: `contar_preguntas_frecuentes()` da 1 en total, o sea que hay una sola pregunta y el id 1 fue borrado, no ocultado
+   - `migrations/0042_descuento_cero_y_columna_huerfana.sql` (el 0 del umbral **desactiva** el descuento automático: la condición del RPC pasa a exigir umbral y porcentaje > 0, y tira la columna huérfana `settings.cargar_imagenes_productos`). **Correr el PASO 2**: `create or replace function` no valida el cuerpo plpgsql, así que un error de tipeo sólo aparece al primer pedido. El bloque del final es un `begin … rollback` que lo compila sin escribir
+   - `migrations/0043_eliminar_external_url.sql` (fuera las 6 columnas de URL externa — `external_url`, `imagen_url`, `logo_url` — y sus 4 CHECK `num_nonnulls(...) <= 1`). **Correr el PASO 1 antes**: dice cuántas filas quedan sin imagen. En una base con las columnas migradas desde Drive eso puede no ser cero, y no hay forma de copiar esas fotos a Storage automáticamente: el endpoint de Drive pide la API key de la cuenta que las subió
+   - `migrations/0044_categoria_inactiva_esconde_productos.sql` (una categoría desactivada **esconde** sus productos: la policy pública de `products` pasa a exigir `category_id is null or exists (categoría activa)`). **Correr el PASO 2**: cambia una policy de la tabla que toda la tienda lee, y el bloque arma el caso completo (categoría activa / inactiva / sin categoría) y lo revierte con `rollback`
+   - `migrations/0045_schema_migrations.sql` (tabla `schema_migrations` con las 42 anteriores registradas, RLS activada y sin policies, más la vista `ultimas_migraciones`). El backfill asume que la base tenía aplicadas esas 42: **si tu base no aplicó alguna, borrala de la lista antes de correrla**. A partir de la 0046 cada migración se registra sola con un `insert … on conflict do nothing` al final
 
-   > **El número `0034` queda libre pero no se reutiliza.** Era el interruptor de imágenes de producto (`cargar_imagenes_productos` en `settings`), que se aplicó y después se revirtió. No vuelvas a correrlo. La lista de arriba es la fuente de verdad: después de `0033` van `0035` a `0041`.
+   > **El número `0034` queda libre pero no se reutiliza.** Era el interruptor de imágenes de producto (`cargar_imagenes_productos` en `settings`), que se aplicó y después se revirtió. No vuelvas a correrlo. La columna huérfana la tira la `0042`. La lista de arriba es la fuente de verdad: después de `0033` van `0035` a `0045`.
 
    > **Backfill de `0031` (paso único,manual):** los pedidos que YA estaban en `Cancelado` cuando corrió la migración no dispararon ningún trigger, así que su stock sigue descontado. Corré el **PASO 1** (es un `SELECT` de diagnóstico) que está al final de `0031_stock_pedidos.sql`. Si devuelve filas y nadie repuso stock a mano, descomentá y corré el **PASO 2** una sola vez. No lo repitas: no es idempotente entre ejecuciones.
 
@@ -279,7 +289,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 
    > Nota: la numeración salta de `0015` a `0017` — **no falta ningún archivo**, `0016` nunca existió. La lista de arriba es la fuente de verdad de qué hay que correr.
 
-   > **Ojo — no hay tracking de migraciones aplicadas.** El proyecto no usa `supabase db push` ni tiene tabla de estado: se aplican a mano por el SQL Editor. Eso significa que **no hay forma de verificar desde el código si una migración quedó sin correr**, y el síntoma es silencioso (por ejemplo, sin `0031` el stock no se reintegra al cancelar, y la tienda sigue funcionando igual). Después de aplicar la lista, confirmá con:
+   > **Cómo se verifica qué se aplicó.** El proyecto no usa `supabase db push`: se aplican a mano por el SQL Editor. Desde la `0045` hay una tabla `schema_migrations` que registra los nombres, así que `select nombre, aplicada_en from public.ultimas_migraciones` muestra el estado. Dos salvedades honestas: el backfill de la `0045` **asume** que la base tenía las 42 anteriores (si no era así, ajustá la lista antes de correrla), y la tabla no puede saber qué archivos hay en el repo, así que para "¿cuál me falta?" sigue haciendo falta comparar `ls migrations/` con un `select nombre`. Para las que ya no se pueden registrar retroactivamente, el chequeo es por objeto — la lista de abajo — y sigue siendo la forma de confirmar una base con datos de antes de la `0045`.
    >
    > ```sql
    > select tgname from pg_trigger
@@ -317,7 +327,14 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual: `cleanUrls: true` (rutas limpias nativas) + el guard `proxy.ts` de `/admin/*` + los headers de seguridad.
-6. **Probar** (sección 9) y luego, si se desea, **ir subiendo las imágenes** del catálogo desde el panel (los `external_url` de Drive siguen funcionando durante la transición).
+6. **Reemplazar el dominio placeholder.** Los 8 HTML raíz tienen `https://TU-DOMINIO.com` en los `canonical` y en las metas `og:url` / `og:image` / `twitter:*`. Buscá y reemplazá:
+
+   ```bash
+   grep -rl "TU-DOMINIO.com" --include="*.html" .
+   ```
+
+   Son 5 líneas por archivo. **No se puede automatizar del todo**: los `og:image` los bajan los crawlers de redes (Facebook, X) sin ejecutar JavaScript, así que un valor incorrecto rompe la vista previa del link aunque el `canonical` lo resuelva por JS.
+7. **Probar** (sección 9) y después cargar contenido desde el panel: productos, banners, reseñas, iconos del pie, FAQ. La tienda arranca vacía y las secciones sin datos se ocultan solas.
 
 > **Nota — rutas limpias (`cleanUrls`) y el guard del panel.** `vercel.json` usa `cleanUrls: true`, la función nativa de Vercel: `/carrito.html` se sirve en `/carrito` y **quien entre a la URL con `.html` recibe un 308 a la limpia**. Por eso se **eliminaron las 7 rewrites manuales** que antes hacían ese trabajo: la doc de Vercel dice explícitamente que con `cleanUrls` los `rewrites` no deben llevar extensión en `source` ni en `destination` (con extensión, `/carrito` → `/carrito.html` → 308 → `/carrito` sería un loop).
 >
@@ -365,7 +382,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 ## 10. Riesgos y decisiones tomadas
 
 - **Precios recalculados servidor-side** (`insertar_pedido`): el front no es de confianza; el negocio lo replica.
-- **`external_url` convive con `storage_path`** durante la transición: los drives originales siguen funcionando; el admin decide cuándo migrar cada imagen al Storage (limpieza progresiva, sin apuro).
+- **Una sola fuente de imagen**: `storage_path` apunta a Supabase Storage y es la única columna de imagen (`0043`). No hay campo para pegar una URL, y la CSP lo refuerza con `img-src 'self' data: blob: https://*.supabase.co` en vez de `https:`. El costo de esa decisión es que toda imagen tiene que pesarse y subirse desde el panel; la Indemnidad es que la plantilla no arrastra el CDN de Google ni permite que un admin pegue un pixel de tracking.
 - **Borrado de productos**: `order_items.product_id` es `SET NULL` → el historial de pedidos no se corrompe; las imágenes se limpian del Storage manualmente desde el panel.
 - **Caché en memoria (60s / 5min en configuración)**: cambios del admin se ven en la tienda en hasta ~1 minuto. Es intencional para no golpear Supabase en cada render.
 - **Secciones resilientes**: si no hay configuración o Supabase está caído, cada `obtener*` devuelve su forma vacía (catálogo `[]`, reseñas/slider/banners/iconos `null` → contenido estático u oculto). El fallback JSON de la era Sheets (archivos `js/*.json` + funciones `*DesdeJSON`) se eliminó del repo: Supabase es la única fuente de datos.
@@ -379,7 +396,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **Descuentos agrupados**: el menú "Cupones" pasó a llamarse "Descuentos" y concentra el CRUD de cupones junto a la card "Descuentos automáticos" (mudada desde Configuración). Sin cambios de esquema: `discount_threshold`/`discount_percent` se guardan en `settings` y la tienda los lee igual.
 - **Compra mínima con refuerzo server-side**: card del menú Descuentos con **dos reglas acumulables** — cantidad mínima de productos y monto mínimo (migración 0023 sobre `settings`; cada una se activa con valor > 0, 0 = inactiva). El front la muestra en el carrito y bloquea el checkout, pero la validación real vive en `insertar_pedido` (RPC, junto al resto de la lógica de negocio): si se saltea el front, el pedido se rechaza y la transacción revierte el stock. Sin la migración 0023, la tienda no cambia (0 y 0 = desactivada).
 - **Placeholders del dashboard**: productos, logos de banners, fotos de reseñas e imágenes de iconos del pie muestran `<i class="fa-regular fa-image"></i>` sobre un fondo gris cuando todavía no tienen una imagen. No se guardan placeholders en Supabase.
-- **Pipeline de imágenes del dashboard**: cada archivo local se valida, redimensiona según el módulo y convierte a WebP antes de subirlo a Supabase Storage. Las URLs externas permanecen como `external_url` y no se descargan.
+- **Pipeline de imágenes del dashboard**: cada archivo local se valida, redimensiona según el módulo y convierte a WebP antes de subirlo a Supabase Storage. Como ya no hay URLs externas, no queda el caso de una imagen que se reference sin pasar por el pipeline.
 - **Imágenes públicas sin archivo**: la tienda no depende de assets PNG/JPG locales eliminados; un producto, slide, banner o reseña sin imagen conserva su espacio con un bloque gris neutro. Los iconos configurados usan Font Awesome.
 
 ---
@@ -401,27 +418,29 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 
 | Servicio Google | Uso anterior | Estado tras la migración |
 |---|---|---|
-| **Google Sheets** (planillas de productos, cupones, slider, banners, reseñas, pedidos, config) | Fuente de datos del frontend y del admin | **Deprecado.** Los datos viven en PostgreSQL (seed con los datos reales a la fecha de migración) |
+| **Google Sheets** (planillas de productos, cupones, slider, banners, reseñas, pedidos, config) | Fuente de datos del frontend y del admin | **Deprecado.** Los datos viven en PostgreSQL. El seed ya no vuelca el catálogo: la plantilla se instala vacía (§3.3) |
 | **Google Apps Script** (web app proxy de pedidos) | `api/pedido.js` reenviaba a `script.google.com/.../exec` | **Deprecado.** `api/pedido.js` ahora escribe directo en Supabase vía RPC |
-| **Google Drive** (imágenes en `drive.google.com` / `googleusercontent.com`) | URLs `external_url` en productos/slider/banners/reseñas | **En desuso gradual.** Se mantienen como `external_url` solo para que el sitio se vea idéntico durante la transición; el objetivo es pasar al **Storage** del proyecto vía panel |
+| **Google Drive** (imágenes en `drive.google.com` / `googleusercontent.com`) | URLs `external_url` en productos/slider/banners/reseñas | **Deprecado por completo.** Las columnas `external_url` / `imagen_url` / `logo_url` se eliminan en la `0043`. Las imágenes salen todas de Supabase Storage, subidas desde el panel |
 
 ### 12.2 Qué hay que apagar (cuando se confirme el funcionamiento)
 
 1. **Apps Script**: **hecho en el repo** (se eliminaron `scripts/MenuPrincipal.gs` y `scripts/script-premium.gs`). Falta solo apagar el proyecto web en script.google.com y retirar `WEB_API_KEY`/`GOOGLE_SCRIPT_URL` de las propiedades del script y del entorno de Vercel.
 2. **Sheets**: pueden dejarse como respaldo histórico, pero **dejar de editarlas** (ya no alimentan la tienda). Si se desea, exportar copia como respaldo antes de borrar.
-3. **Drive**: las imágenes seed seguirán referenciadas hasta que se re-suban al Storage. **No borrar los archivos originales de Drive** hasta migrar cada imagen; al reemplazar desde el panel, la URL externa se reemplaza por `storage_path`.
+3. **Drive**: **ya se puede desconectar**, con una condición. La `0043` tira las columnas de URL externa, así que las imágenes que quedaran sólo con `external_url` pierden el src y hay que volver a subirlas desde el panel. Por eso el **PASO 1 de la 0043** tiene que correrse antes: informa cuántas filas quedan sin imagen. Con 0 filas, se puede cortar el acceso a Drive sin riesgo. **No borrar los archivos originales** hasta que dé 0 (o hasta haber guardado copia de lo que haya que resubir).
 
 ### 12.3 Riesgos de la desconexión
 
-- Si se corta el acceso a Drive (compartido "público con enlace" revocado), el catálogo mostrará imágenes vacías **hasta** que se re-suban al Storage. Mitigación: la tienda tiene placeholder propio y el panel permite re-subir sin prisa.
-- El comercio ya NO depende de Sheets: incluso sin ninguna cuenta de Google activa, la tienda y los pedidos funcionan contra Supabase.
-- Dependencia mínima restante: las URLs de imagen de Drive mientras dure la transición.
+- **Resuelto**: la tienda no tiene ninguna dependencia de Google. Sin cuenta de Google activa funcionan el catálogo, el carrito, el checkout y el panel.
+- **Resuelto**: no queda ninguna URL de Drive en el código. Se eliminaron los 6 puntos de entrada que podían reintroducirlas —los campos para pegar una URL en reseñas, iconos, slider, banners y productos— junto con `imagenOptimizada()`, que reescribía las URLs de `lh3.googleusercontent.com` para pedirle WebP al CDN de Google.
+- **Restricción que sí se puso**: la CSP pasó de `img-src … https:` a `img-src 'self' data: blob: https://*.supabase.co`. Cualquier imagen que venga de un host que no sea Supabase deja de cargar, y eso es intencional: una plantilla que permite pegar URLs es una plantilla donde un admin (o un XSS) puede meter un pixel de tracking desde cualquier lado. Las fuentes de imagen legítimas son el Storage, `data:`, `blob:` (los previews de archivo sin subir) y los assets locales del repo.
 
 ### 12.4 Criterios para considerar la migración completa
 
-- [ ] Las 48 imágenes + slider + logos de banner subidos y verificados en Storage (bucket `products`, `slider`, `banners`, `reviews`).
-- [ ] Sin URLs de `googleusercontent.com` ni `drive.google.com` en la BD (se puede consultar con `select ... where external_url like '%google%'`).
+- [x] Sin URLs de `googleusercontent.com` ni `drive.google.com` en la BD: las columnas que las contenían ya no existen (migración `0043`).
+- [x] Sin forma de reintroducirlas desde el panel: los campos de URL externa se eliminaron de reseñas, iconos, slider, banners y productos.
 - [x] Apps Script eliminado del repositorio (queda apagar el proyecto web en script.google.com y retirar `WEB_API_KEY`/`GOOGLE_SCRIPT_URL`).
+- [x] Sin datos de la tienda original en el repo: ni el seed de `0002`, ni los 3 iconos de `0004`, ni los arrays de relleno `TESTIMONIOS` / `ICONOS_ESTATICOS`, ni el FAQ estático de `faq.html`.
 - [ ] Planillas de Sheets archivadas/exportadas como copia simple.
+- [ ] Imágenes que quedaban sólo con `external_url` resubidas al Storage (el PASO 1 de la `0043` dice cuántas son).
 </content>
 </invoke>
