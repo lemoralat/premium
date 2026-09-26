@@ -1,5 +1,5 @@
 // Iconos del pie del home (sección iconos-pie).
-// Carga dinámica: Supabase primero y fallback a los iconos de Tabler de abajo.
+// Carga dinámica: Supabase primero y fallback a iconos Font Awesome.
 
 import { obtenerIconosPie, imagenOptimizada } from './utils.js';
 
@@ -7,17 +7,17 @@ const ICONOS_ESTATICOS = [
     {
         titulo: 'Muchas formas de pago',
         descripcion: 'Trabajo con mercadopago, lo cuál se aceptan todos los medios de pagos de la villetera virtual número 1 de Argentina, para que compres con total confianza.',
-        icono: 'ti ti-credit-card'
+        icono: 'fa-solid fa-credit-card'
     },
     {
         titulo: 'Envíos a toda Argentina',
         descripcion: 'Envío a toda la Argentina de norte a sur, todos los pedidos salen desde Córdoba, Argentina y pueden variar dependiendo tu ubicación.',
-        icono: 'ti ti-truck'
+        icono: 'fa-solid fa-truck'
     },
     {
         titulo: 'Stock siempre disponible',
         descripcion: 'Toda la web opera bajo pedido, compra con total confianza, yo me comunicaré contigo personalmente para asegurar que llegue lo que pidas.',
-        icono: 'ti ti-box'
+        icono: 'fa-solid fa-box'
     }
 ];
 
@@ -34,14 +34,12 @@ function generarIcono(icono) {
     const titulo = escapar(icono.titulo);
     const descripcion = escapar(icono.descripcion);
 
-    // Ícono de Tabler (configurado desde el dashboard) o imagen.
-    // Ojo: acá el valor YA viene con el prefijo `ti` (lo guarda la columna
-    // iconos_pie.icono), así que no se agrega otra vez.
+    // Ícono de Font Awesome (configurado desde el dashboard) o imagen.
     const visual = icono.icono
         ? `<div class="icono-icono"><i class="${escapar(icono.icono)}" aria-hidden="true"></i></div>`
         : icono.imagen
             ? `<img loading="lazy" src="${escapar(icono.imagen)}" alt="${titulo}" width="60" height="60">`
-            : '<div class="icono-icono"><i class="ti ti-photo" aria-hidden="true"></i></div>';
+            : '<div class="icono-icono"><i class="fa-regular fa-image" aria-hidden="true"></i></div>';
 
     return `
         <div class="icono">
@@ -71,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         titulo: i.titulo,
         descripcion: i.descripcion,
         imagen: imagenOptimizada(i.imagen) || '',
-        icono: i.icono || (i.imagen ? '' : 'ti ti-photo')
+        icono: i.icono || (i.imagen ? '' : 'fa-regular fa-image')
     }));
 
     contenedor.innerHTML = datos.map(generarIcono).join('');

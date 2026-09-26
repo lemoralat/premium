@@ -5,19 +5,19 @@ import { clienteAdmin } from './admin-supabase.js';
 
 // Opciones del selector de red. Debe coincidir con el CHECK de la columna
 // reviews.red (migración 0029) y con el mapa REDES de js/testimonios.js.
-// El ícono de cada opción se pinta con la misma clase de Tabler que usa la
+// El ícono de cada opción se pinta con Font Awesome Brands, igual que en la
 // tienda, así el admin ve exactamente lo que va a ver el cliente.
 const REDES = [
-    { valor: 'ti-brand-google',    etiqueta: 'Google' },
-    { valor: 'ti-brand-facebook',  etiqueta: 'Facebook' },
-    { valor: 'ti-brand-instagram', etiqueta: 'Instagram' },
-    { valor: 'ti-brand-x', etiqueta: 'X' },
-    { valor: 'ti-brand-tiktok',    etiqueta: 'TikTok' },
-    { valor: 'ti-brand-youtube',   etiqueta: 'YouTube' },
-    { valor: 'ti-brand-linkedin',  etiqueta: 'LinkedIn' },
-    { valor: 'ti-brand-whatsapp',  etiqueta: 'WhatsApp' }
+    { valor: 'fa-google',    etiqueta: 'Google' },
+    { valor: 'fa-facebook',  etiqueta: 'Facebook' },
+    { valor: 'fa-instagram', etiqueta: 'Instagram' },
+    { valor: 'fa-x-twitter', etiqueta: 'X' },
+    { valor: 'fa-tiktok',    etiqueta: 'TikTok' },
+    { valor: 'fa-youtube',   etiqueta: 'YouTube' },
+    { valor: 'fa-linkedin',  etiqueta: 'LinkedIn' },
+    { valor: 'fa-whatsapp',  etiqueta: 'WhatsApp' }
 ];
-const RED_POR_DEFECTO = 'ti-brand-google';
+const RED_POR_DEFECTO = 'fa-google';
 
 let reseñas = [];
 
@@ -33,7 +33,7 @@ export async function renderizar(contenedor) {
         <div class="admin-toolbar">
             <p>Testimonios que se muestran en el inicio</p>
             <button type="button" class="btn btn-primary" id="btnNuevaResena">
-                <i class="ti ti-plus"></i> Nueva reseña
+                <i class="fa-solid fa-plus"></i> Nueva reseña
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -67,7 +67,7 @@ function redHtml(red) {
     // ejemplo si se agrandó la migración y el panel quedó atrás) cae en Google
     // en vez de renderizar una clase suelta.
     const opcion = REDES.find((r) => r.valor === red) || REDES[0];
-    return `<span class="admin-red-badge"><i class="ti ${esc(opcion.valor)}" aria-hidden="true"></i><span>${esc(opcion.etiqueta)}</span></span>`;
+    return `<span class="admin-red-badge"><i class="fa-brands ${esc(opcion.valor)}" aria-hidden="true"></i><span>${esc(opcion.etiqueta)}</span></span>`;
 }
 
 function filas() {
@@ -90,8 +90,8 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activa</span>'
                 : '<span class="estado-badge estado-cancelado">Inactiva</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(r.id)}"><i class="ti ti-edit"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(r.id)}"><i class="ti ti-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(r.id)}"><i class="fa-solid fa-pen"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(r.id)}"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -118,7 +118,7 @@ function abrirModalResena(idExistente) {
                         <label class="admin-icon-opcion">
                             <input type="radio" name="rsnRed" value="${esc(red.valor)}"
                                    ${(reseña?.red || RED_POR_DEFECTO) === red.valor ? 'checked' : ''}>
-                            <i class="ti ${esc(red.valor)}" aria-hidden="true"></i>
+                            <i class="fa-brands ${esc(red.valor)}" aria-hidden="true"></i>
                             <span>${esc(red.etiqueta)}</span>
                         </label>
                     `).join('')}
@@ -135,7 +135,7 @@ function abrirModalResena(idExistente) {
                             : placeholderImagen('', 'Sin foto')}
                     </div>
                     <label class="btn btn-outline admin-file-btn">
-                        <i class="ti ti-cloud-upload"></i> Elegir foto
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Elegir foto
                         <input type="file" id="rsnArchivo" accept="image/jpeg,image/png,image/webp">
                     </label>
                     <input type="url" id="rsnUrl" class="admin-url-input" placeholder="…o pegá una URL de foto"

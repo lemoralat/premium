@@ -2,27 +2,24 @@
 
 import { obtenerResenas, imagenOptimizada, escaparHtml, placeholderImagenPublica } from './utils.js';
 
-// Red de origen del testimonio: la clave ES la clase de Tabler (de ahí sale
-// el <i>, con el prefijo `ti` adelante), y el valor es la etiqueta para
-// lectores de pantalla.
+// Red de origen del testimonio: la clave ES la clase de Font Awesome Brands
+// (de ahí sale el <i>), y el valor es la etiqueta para lectores de pantalla.
 // El dato viene de reviews.red y se busca acá, nunca se interpola crudo: si la
 // fila tuviera algo desconocido, cae en Google en vez de volcarlo en el class.
 //
-// El color de cada marca está en css/styles.css, en las reglas
-// .red-isologo.ti-brand-<red> (facebook, instagram, x, tiktok, youtube,
-// linkedin, whatsapp).
+// El color de cada marca está en css/styles.css, como .red-isologo.fa-marca.
 // Al agregar una red hay que tocar también el CHECK de la columna en la
 // migración 0029 y la lista REDES de admin/js/resenas.js.
-const RED_POR_DEFECTO = 'ti-brand-google';
+const RED_POR_DEFECTO = 'fa-google';
 const REDES = {
-    'ti-brand-google':    { etiqueta: 'Google' },
-    'ti-brand-facebook':  { etiqueta: 'Facebook' },
-    'ti-brand-instagram': { etiqueta: 'Instagram' },
-    'ti-brand-x': { etiqueta: 'X' },
-    'ti-brand-tiktok':    { etiqueta: 'TikTok' },
-    'ti-brand-youtube':   { etiqueta: 'YouTube' },
-    'ti-brand-linkedin':  { etiqueta: 'LinkedIn' },
-    'ti-brand-whatsapp':  { etiqueta: 'WhatsApp' }
+    'fa-google':    { etiqueta: 'Google' },
+    'fa-facebook':  { etiqueta: 'Facebook' },
+    'fa-instagram': { etiqueta: 'Instagram' },
+    'fa-x-twitter': { etiqueta: 'X' },
+    'fa-tiktok':    { etiqueta: 'TikTok' },
+    'fa-youtube':   { etiqueta: 'YouTube' },
+    'fa-linkedin':  { etiqueta: 'LinkedIn' },
+    'fa-whatsapp':  { etiqueta: 'WhatsApp' }
 };
 
 const TESTIMONIOS = [
@@ -133,17 +130,14 @@ function generarCard(testimonio) {
     // dónde vino la reseña, que es información, así que se expone.
     const redVisual = `
         <span class="red-isologo-wrap">
-            <i class="ti ${red} red-isologo" aria-hidden="true"></i>
+            <i class="fa-brands ${red} red-isologo" aria-hidden="true"></i>
             <span class="sr-only">Reseña publicada en ${escaparHtml(redEtiqueta)}</span>
         </span>
     `;
 
-    // La estrella llena y la vacía son el mismo ícono (Tabler es outline, sin
-    // variante rellena): las distingue la clase .star-vacia, que el CSS pinta
-    // en gris. Antes era  / .
     let estrellas = '';
     for (let i = 1; i <= 5; i++) {
-        estrellas += `<i class="ti ti-star star${i <= testimonio.rating ? '' : ' star-vacia'}" aria-hidden="true"></i>`;
+        estrellas += `<i class="${i <= testimonio.rating ? 'fa-solid' : 'fa-regular'} fa-star star"></i>`;
     }
 
     card.innerHTML = `

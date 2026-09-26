@@ -2,7 +2,7 @@
 // Se monta dentro de la sección "Configuración" del panel (configuracion.js),
 // debajo del formulario del popup de salida.
 //
-// Repeater field: cada fila es una pregunta con respuesta y un ícono Tabler
+// Repeater field: cada fila es una pregunta con respuesta y un ícono FontAwesome
 // opcional (selector curado con buscador, compartido con la sección "Iconos").
 // Mientras no haya preguntas activas, la tienda mantiene el contenido estático
 // actual de faq.html como fallback.
@@ -17,7 +17,7 @@ let preguntas = [];
 // .admin-card de Configuración). Al guardar/borrar se re-renderiza SOLO este
 // contenedor, para no descartar cambios sin guardar de los demás formularios.
 export async function renderizarGestor(contenedor) {
-    contenedor.innerHTML = '<p class="admin-loading"><i class="ti ti-loader-2 ti-spin"></i> Cargando preguntas…</p>';
+    contenedor.innerHTML = '<p class="admin-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando preguntas…</p>';
 
     const sb = await clienteAdmin();
     const { data, error } = await sb.from('preguntas_frecuentes').select('*').order('position', { ascending: true });
@@ -28,7 +28,7 @@ export async function renderizarGestor(contenedor) {
         <div class="admin-toolbar">
             <p>Se muestran en la página de ayuda (faq.html). Mientras no haya preguntas activas, la tienda usa el contenido estático actual.</p>
             <button type="button" class="btn btn-primary" id="btnNuevaPregunta">
-                <i class="ti ti-plus"></i> Nueva pregunta
+                <i class="fa-solid fa-plus"></i> Nueva pregunta
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -60,7 +60,7 @@ function filas() {
                 <div style="display:flex; align-items:center; gap:0.6rem;">
                     ${p.icono
                         ? `<span class="admin-icono-mini"><i class="${esc(p.icono)}" aria-hidden="true"></i></span>`
-                        : `<span class="admin-icono-mini sin-icono"><i class="ti ti-minus" aria-hidden="true"></i></span>`}
+                        : `<span class="admin-icono-mini sin-icono"><i class="fa-solid fa-minus" aria-hidden="true"></i></span>`}
                     <strong>${esc(p.pregunta)}</strong>
                 </div>
             </td>
@@ -69,8 +69,8 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activa</span>'
                 : '<span class="estado-badge estado-cancelado">Inactiva</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(p.id)}"><i class="ti ti-edit"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(p.id)}"><i class="ti ti-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(p.id)}"><i class="fa-solid fa-pen"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(p.id)}"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -87,7 +87,7 @@ function abrirModalPregunta(idExistente, contenedor) {
             <input type="hidden" id="pfIcono" value="${esc(pregunta?.icono || '')}">
 
             <div class="admin-field full">
-                <label for="pfBuscar">Ícono Tabler</label>
+                <label for="pfBuscar">Ícono FontAwesome</label>
                 <input type="search" id="pfBuscar" class="admin-url-input" placeholder="Buscar ícono… (ej. camión, escudo, tarjeta)">
                 <div class="admin-iconos-grid" id="pfGrilla" role="listbox" aria-label="Catálogo de íconos"></div>
                 <p class="admin-icono-vacio" id="pfVacio" hidden>Sin resultados. Probá con otra palabra.</p>

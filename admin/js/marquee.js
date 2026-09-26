@@ -14,7 +14,7 @@ let items = [];
 // "Marquee promocional" de Diseño). Al guardar/borrar se re-renderiza SOLO
 // este contenedor, para no descartar cambios sin guardar de otros formularios.
 export async function renderizarGestor(contenedor) {
-    contenedor.innerHTML = '<p class="admin-loading"><i class="ti ti-loader-2 ti-spin"></i> Cargando mensajes…</p>';
+    contenedor.innerHTML = '<p class="admin-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando mensajes…</p>';
 
     const sb = await clienteAdmin();
     const { data, error } = await sb.from('marquee_items').select('*').order('position', { ascending: true });
@@ -25,7 +25,7 @@ export async function renderizarGestor(contenedor) {
         <div class="admin-toolbar">
             <p>Se muestran en la barra animada sobre el encabezado de la tienda. Sin mensajes activos, la barra no aparece.</p>
             <button type="button" class="btn btn-primary" id="btnNuevoMensaje">
-                <i class="ti ti-plus"></i> Nuevo mensaje
+                <i class="fa-solid fa-plus"></i> Nuevo mensaje
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -59,8 +59,8 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(m.id)}"><i class="ti ti-edit"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(m.id)}"><i class="ti ti-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(m.id)}"><i class="fa-solid fa-pen"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(m.id)}"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
     `).join('');

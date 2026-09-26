@@ -29,12 +29,13 @@
     <meta name="twitter:description" content="Encontrá respuestas a tus dudas sobre envíos, pagos y productos.">
     <meta name="twitter:image" content="https://supabase.lemora.lat/img/lemora.svg">
 
-    <!-- Tabler Icons: subconjunto propio de la fuente (assets/tabler),
-         generado por scripts/build-tabler-icons.mjs. Para agregar un ícono:
-         usá la clase en el código y corré `npm run build:iconos`. -->
-    <link rel="preload" href="assets/tabler/tabler-icons.woff2" as="font"
-        type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="assets/tabler/tabler-icons.css">
+    <!-- CDN Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"/>
 </head>
 <body data-page="faq">
     <!-- Header se cargará dinámicamente -->
@@ -53,14 +54,14 @@
                 <!-- Sección: Pedidos y Pagos -->
                 <div class="faq-section">
                     <h2 class="section-title">
-                        <i class="ti ti-credit-card"></i>
+                        <i class="fa-solid fa-credit-card"></i>
                         Pedidos y Pagos
                     </h2>
                     
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Cómo realizo un pedido?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Para realizar un pedido sigue estos pasos:</p>
@@ -77,7 +78,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Qué métodos de pago aceptan?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Aceptamos pagos a través de <strong>Mercado Pago</strong>, lo que te permite abonar con los medios disponibles en esa billetera:</p>
@@ -92,7 +93,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Cuándo debo realizar el pago?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Debes realizar el pago mediante transferencia bancaria después de confirmar tu pedido. Una vez que recibamos tu pedido por WhatsApp, te enviaremos los datos para la transferencia. Cuando confirmemos el pago, procederemos con el envío.</p>
@@ -102,7 +103,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Puedo modificar o cancelar mi pedido?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Sí, puedes modificar o cancelar tu pedido antes de realizar el pago. Una vez confirmado el pago, contacta con nosotros por WhatsApp lo antes posible para evaluar si es posible realizar cambios.</p>
@@ -113,14 +114,14 @@
                 <!-- Sección: Envíos -->
                 <div class="faq-section">
                     <h2 class="section-title">
-                        <i class="ti ti-truck"></i>
+                        <i class="fa-solid fa-truck"></i>
                         Envíos
                     </h2>
 
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Realizan envíos a toda Argentina?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Sí, realizamos envíos a todo el país. Todos los pedidos salen desde Córdoba, Argentina y pueden variar en tiempo de entrega dependiendo de tu ubicación.</p>
@@ -130,7 +131,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Cuánto cuesta el envío?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>El costo del envío se calcula según tu ubicación y el peso del pedido. Una vez que confirmes tu pedido por WhatsApp, te informaremos el costo exacto del envío antes de proceder con el pago.</p>
@@ -140,7 +141,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Cuánto tarda en llegar mi pedido?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Los tiempos de entrega varían según tu ubicación:</p>
@@ -157,7 +158,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Puedo hacer seguimiento de mi pedido?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Sí, una vez que tu pedido sea despachado, te enviaremos por WhatsApp el código de seguimiento para que puedas rastrear tu envío en tiempo real.</p>
@@ -168,14 +169,14 @@
                 <!-- Sección: Productos -->
                 <div class="faq-section">
                     <h2 class="section-title">
-                        <i class="ti ti-box"></i>
+                        <i class="fa-solid fa-box"></i>
                         Productos
                     </h2>
 
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Los productos están siempre en stock?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Sí. En cada ficha de producto podes ver el stock disponible en tiempo real:</p>
@@ -191,7 +192,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Puedo elegir el talle de mi producto?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Los productos con variantes (como las botas, que se ofrecen del talle 40 al 44 y en cuero o simil cuero) permiten elegir el talle y el acabado desde la ficha del producto antes de agregarlo al carrito.</p>
@@ -202,7 +203,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Qué materiales utilizan en los productos?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Cada producto tiene su descripción detallada en la ficha. En general trabajamos con:</p>
@@ -218,7 +219,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Cómo cuido mis productos?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Para que tus prendas y calzado duren más, te recomendamos seguir las indicaciones de cuidado de cada etiqueta y evitar el lavado con agua caliente o el uso de lavarropas en prendas delicadas. Ante cualquier duda, consultanos por WhatsApp.</p>
@@ -229,14 +230,14 @@
                 <!-- Sección: Devoluciones -->
                 <div class="faq-section">
                     <h2 class="section-title">
-                        <i class="ti ti-arrow-back-up"></i>
+                        <i class="fa-solid fa-rotate-left"></i>
                         Devoluciones y Cambios
                     </h2>
 
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Puedo devolver un producto?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Aceptamos devoluciones dentro de los 10 días posteriores a la recepción del producto, siempre que el artículo esté en perfectas condiciones, sin uso y con su etiqueta y empaque original. Los productos en oferta o con descuento están sujetos a las mismas condiciones.</p>
@@ -246,7 +247,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Cómo solicito un cambio?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Si necesitas cambiar tu producto por talle o error en el pedido, contáctanos por WhatsApp dentro de los 10 días posteriores a la recepción. Evaluaremos tu caso y te indicaremos los pasos a seguir.</p>
@@ -256,7 +257,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Qué hago si mi producto llega dañado?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Si tu producto llega dañado, contáctanos inmediatamente por WhatsApp enviando fotos del daño. Resolveremos el problema enviándote un reemplazo sin costo adicional.</p>
@@ -267,14 +268,14 @@
                 <!-- Sección: Contacto -->
                 <div class="faq-section">
                     <h2 class="section-title">
-                        <i class="ti ti-phone"></i>
+                        <i class="fa-solid fa-phone"></i>
                         Contacto y Soporte
                     </h2>
 
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Cómo puedo contactarlos?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Puedes contactarnos a través de:</p>
@@ -289,7 +290,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Tienen local físico?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>Actualmente operamos únicamente de forma online. Todos los pedidos se realizan a través de nuestra web y WhatsApp, con envíos a todo el país.</p>
@@ -299,7 +300,7 @@
                     <div class="faq-item">
                         <button class="faq-question" aria-expanded="false">
                             <span>¿Ofrecen soporte post-venta?</span>
-                            <i class="ti ti-chevron-down"></i>
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="faq-answer">
                             <p>¡Por supuesto! Estamos disponibles por WhatsApp para resolver cualquier duda o problema que tengas con tu compra. Tu satisfacción es nuestra prioridad.</p>
@@ -314,7 +315,7 @@
                 <div class="faq-cta">
                     <a href="contacto.html" class="btn-primary btn-border">Enviar Consulta</a>
                     <a href="#" class="btn-secondary btn-border wa-link" target="_blank" rel="noopener">
-                        <i class="ti ti-brand-whatsapp"></i> WhatsApp
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
                     </a>
                 </div>
             </div>

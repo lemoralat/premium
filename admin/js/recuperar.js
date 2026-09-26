@@ -68,7 +68,7 @@ document.getElementById('recuperarForm').addEventListener('submit', async (event
     }
 
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="ti ti-loader-2 ti-spin"></i> Guardando…';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando…';
 
     try {
         const sb = await clienteAdmin();

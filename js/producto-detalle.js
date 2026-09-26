@@ -207,7 +207,7 @@ function renderizarDetalleProducto(producto) {
                     
                     ${imagenesGaleria.length ? `
                     <div class="zoom-hint">
-                        <i class="ti ti-zoom-in"></i>
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
                         <span>Click para ampliar</span>
                     </div>` : ''}
                 </div>
@@ -234,7 +234,7 @@ function renderizarDetalleProducto(producto) {
                             onclick="toggleFavorito(${producto.id})" 
                             aria-label="Agregar a favoritos"
                             id="btnFavorito">
-                        <i class="ti ti-heart" aria-hidden="true"></i>
+                        <i class="${esFavorito(producto.id) ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
                     </button>
                 </div>
                 
@@ -295,18 +295,18 @@ function renderizarDetalleProducto(producto) {
                     <div class="share-buttons">
                         <a href="https://wa.me/?text=${encodeURIComponent('¡Mirá este producto! ' + producto.nombre + ' ' + window.location.href)}" 
                            class="share-btn wa-share" target="_blank" rel="noopener" aria-label="Compartir en WhatsApp">
-                            <i class="ti ti-brand-whatsapp"></i>
+                            <i class="fa-brands fa-whatsapp"></i>
                         </a>
                         <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}" 
                            class="share-btn facebook" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
-                            <i class="ti ti-brand-facebook"></i>
+                            <i class="fa-brands fa-facebook-f"></i>
                         </a>
                         <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent('¡Mirá lo que encontré! ' + producto.nombre)}&url=${encodeURIComponent(window.location.href)}" 
                            class="share-btn twitter" target="_blank" rel="noopener" aria-label="Compartir en Twitter">
-                            <i class="ti ti-brand-x"></i>
+                            <i class="fa-brands fa-x-twitter"></i>
                         </a>
                         <button class="share-btn copy" onclick="copiarEnlace()" title="Copiar enlace">
-                            <i class="ti ti-link"></i>
+                            <i class="fa-solid fa-link"></i>
                         </button>
                     </div>
                 </div>
@@ -414,15 +414,15 @@ function toggleZoom() {
         <div class="zoom-overlay" onclick="cerrarZoom()"></div>
         <div class="zoom-container">
             <button class="zoom-close" onclick="cerrarZoom()" aria-label="Cerrar zoom">
-                <i class="ti ti-x"></i>
+                <i class="fa-solid fa-xmark"></i>
             </button>
             
             ${imagenesGaleria.length > 1 ? `
                 <button class="zoom-nav-btn prev" onclick="event.stopPropagation(); cambiarImagenZoom(-1)" aria-label="Imagen anterior">
-                    <i class="ti ti-chevron-left"></i>
+                    <i class="fa-solid fa-chevron-left"></i>
                 </button>
                 <button class="zoom-nav-btn next" onclick="event.stopPropagation(); cambiarImagenZoom(1)" aria-label="Imagen siguiente">
-                    <i class="ti ti-chevron-right"></i>
+                    <i class="fa-solid fa-chevron-right"></i>
                 </button>
             ` : ''}
             
@@ -845,10 +845,10 @@ function toggleFavorito(id) {
         const icon = btn.querySelector('i');
         if (esFavorito(id)) {
             btn.classList.add('active');
-            icon.className = 'ti ti-heart';
+            icon.className = 'fa-solid fa-heart';
         } else {
             btn.classList.remove('active');
-            icon.className = 'ti ti-heart';
+            icon.className = 'fa-regular fa-heart';
         }
     }
     

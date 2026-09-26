@@ -430,7 +430,7 @@ td.td-expandir .pedido-acciones {
     font-size: 0.85rem;
     color: var(--text);
 }
-.admin-bulkbar-info .ti-checkbox { color: var(--primary); }
+.admin-bulkbar-info .fa-square-check { color: var(--primary); }
 .admin-bulkbar-acciones { display: flex; align-items: center; gap: 0.55rem; }
 
 /* ============================================================================
@@ -943,14 +943,14 @@ td.td-expandir .pedido-acciones {
 
 .admin-red-badge i { font-size: 0.95rem; }
 
-.admin-red-badge i.ti-brand-google    { color: #4285F4; }
-.admin-red-badge i.ti-brand-facebook  { color: #1877F2; }
-.admin-red-badge i.ti-brand-instagram { color: #E4405F; }
-.admin-red-badge i.ti-brand-x { color: #000000; }
-.admin-red-badge i.ti-brand-tiktok    { color: #FE2C55; }
-.admin-red-badge i.ti-brand-youtube   { color: #FF0000; }
-.admin-red-badge i.ti-brand-linkedin  { color: #0A66C2; }
-.admin-red-badge i.ti-brand-whatsapp  { color: #25D366; }
+.admin-red-badge i.fa-google    { color: #4285F4; }
+.admin-red-badge i.fa-facebook  { color: #1877F2; }
+.admin-red-badge i.fa-instagram { color: #E4405F; }
+.admin-red-badge i.fa-x-twitter { color: #000000; }
+.admin-red-badge i.fa-tiktok    { color: #FE2C55; }
+.admin-red-badge i.fa-youtube   { color: #FF0000; }
+.admin-red-badge i.fa-linkedin  { color: #0A66C2; }
+.admin-red-badge i.fa-whatsapp  { color: #25D366; }
 
 .admin-red-badge span { color: var(--text-muted); font-size: 0.85rem; }
 
@@ -1532,7 +1532,7 @@ body.admin-modal-abierto { overflow: hidden; }
 }
 
 /* ============================================================================
-   SELECCIÓN DE ÍCONOS TABLER (sección Iconos)
+   SELECCIÓN DE ÍCONOS FONTAWESOME (sección Iconos)
    ============================================================================ */
 /* El atributo hidden debe ganar al display:flex de .admin-field */
 .admin-field[hidden] { display: none; }

@@ -64,7 +64,7 @@ function renderizarCarrito() {
                     <button class="qty-btn btn-border" onclick="actualizarCantidad(this.dataset.clave, 1)" data-clave="${escaparHtml(clave)}" aria-label="Aumentar cantidad" ${sinStock ? 'disabled' : ''}>+</button>
                 </div>
                 <button class="remove-btn btn-border" onclick="eliminarDelCarrito(this.dataset.clave)" data-clave="${escaparHtml(clave)}" aria-label="Eliminar ${nombreSeguro}">
-                    <i class="ti ti-trash"></i> Eliminar
+                    <i class="fa-solid fa-trash-can"></i> Eliminar
                 </button>
             </div>
         </div>
@@ -319,7 +319,7 @@ function renderizarBannerCarrito(banners) {
                 <div class="banner_info_copy">
                     ${banner.badge ? `<span>${escaparHtml(recortarTexto(banner.badge))}</span>` : ''}
                     <h2>${escaparHtml(recortarTexto(banner.titulo))}</h2>
-                    ${tieneBoton ? `<a href="${link}" ${atributosEnlace(banner)}>${escaparHtml(recortarTexto(banner.boton))} <i class="ti ti-chevron-right"></i></a>` : ''}
+                    ${tieneBoton ? `<a href="${link}" ${atributosEnlace(banner)}>${escaparHtml(recortarTexto(banner.boton))} <i class="fa-solid fa-chevron-right"></i></a>` : ''}
                 </div>
             </div>
         </div>

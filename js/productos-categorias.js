@@ -169,7 +169,7 @@ function generarHTMLBannerDinamico(banner) {
                     <div class="banner_info_copy">
                         ${banner.badge ? `<span>${escaparHtml(recortarTexto(banner.badge))}</span>` : ''}
                         <h2>${escaparHtml(recortarTexto(banner.titulo))}</h2>
-                        ${tieneBoton ? `<a href="${link}" ${atributosEnlace(banner)}>${escaparHtml(recortarTexto(banner.boton))} <i class="ti ti-chevron-right"></i></a>` : ''}
+                        ${tieneBoton ? `<a href="${link}" ${atributosEnlace(banner)}>${escaparHtml(recortarTexto(banner.boton))} <i class="fa-solid fa-chevron-right"></i></a>` : ''}
                     </div>
                 </div>
             </div>
