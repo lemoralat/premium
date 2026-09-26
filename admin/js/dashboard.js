@@ -129,8 +129,10 @@ function calcularDelta(actual, anterior) {
 }
 
 function kpi(icono, valor, etiqueta, delta = null, clase = '') {
+    // Ojo: el template usa `delta`, no `d`. Leer `d` acá (la const que se está
+    // inicializando) es un TDZ: "Cannot access 'd' before initialization".
     const d = delta
-        ? `<span class="kpi-delta ${esc(d.clase)}" title="${esc(d.titulo || 'vs. los 30 días anteriores')}">${esc(d.texto)}</span>`
+        ? `<span class="kpi-delta ${esc(delta.clase)}" title="${esc(delta.titulo || 'vs. los 30 días anteriores')}">${esc(delta.texto)}</span>`
         : '';
     return `
         <div class="admin-stat ${esc(clase)}">
