@@ -5,6 +5,21 @@ import { clienteAdmin } from './admin-supabase.js';
 
 let banners = [];
 
+// Tope de banners POR DESTINO, no un total plano. La garantía real está en la
+// BD (trigger trg_banners_max, migración 0038): esto es la parte amable, que
+// evita que el admin llegue al error.
+//
+// El reparto es 4 al inicio + 1 al carrito, o sea 5 en total. Lo que NO hay que
+// hacer es un tope plano de 5 filas: con ése se podrían crear 5 banners de
+// inicio, el `slice(0, 4)` del front mostraría 4 y el quinto quedaría invisible
+// con el carrito vacío. Contando por destino eso no llega a pasar.
+//
+// Ojo con el botón "Nuevo banner": NO se apaga cuando el inicio llega a 4,
+// porque el lugar del carrito sigue libre y es un destino válido. Recién se
+// apaga cuando los dos están llenos (4 + 1 = 5).
+const MAX_BANNERS_INICIO = 4;
+const MAX_BANNERS_CARRITO = 1;
+
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
@@ -13,13 +28,24 @@ export async function renderizar(contenedor) {
     if (error) throw error;
     banners = data || [];
 
+    // `banners` se relee en cada renderizado, así que el estado nunca queda
+    // desfasado tras un borrado. El botón se apaga sólo con los dos destinos
+    // llenos; con el inicio en 4 y el carrito libre todavía se puede crear el
+    // banner del carrito, que es justamente lo que hay que poder hacer.
+    const enInicio = banners.filter((b) => !b.en_carrito).length;
+    const deCarrito = banners.filter((b) => b.en_carrito).length;
+    const inicioLleno = enInicio >= MAX_BANNERS_INICIO;
+    const carritoLleno = deCarrito >= MAX_BANNERS_CARRITO;
+    const todoLleno = inicioLleno && carritoLleno;
+
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <p>Marcá un banner como el del carrito. Los demás van al inicio (máximo 4).</p>
-            <button type="button" class="btn btn-primary" id="btnNuevoBanner">
+            <button type="button" class="btn btn-primary" id="btnNuevoBanner" ${todoLleno ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo banner
             </button>
         </div>
+        <p class="hint">Inicio ${enInicio}/${MAX_BANNERS_INICIO} · Carrito ${deCarrito}/${MAX_BANNERS_CARRITO}. ${hintTopes(enInicio, deCarrito)}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -30,13 +56,54 @@ export async function renderizar(contenedor) {
         </div>
     `;
 
-    $('#btnNuevoBanner').addEventListener('click', () => abrirModalBanner(null));
+    if (!todoLleno) {
+        $('#btnNuevoBanner').addEventListener('click', () => abrirModalBanner(null));
+    }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalBanner(Number(btn.dataset.editar)));
     });
     contenedor.querySelectorAll('[data-borrar]').forEach((btn) => {
         btn.addEventListener('click', () => borrarBanner(Number(btn.dataset.borrar), contenedor));
     });
+}
+
+// El hint dice qué destino está lleno, porque la solución depende de eso: si
+// el inicio está lleno la salida es borrar o marcar como carrito, no "esperar
+// lugar". Y desactivar no sirve: el tope cuenta inactivos (la fila sigue
+// ocupando lugar en la tabla), igual que en el marquee y los cupones.
+function hintTopes(enInicio, deCarrito) {
+    const inicioLleno = enInicio >= MAX_BANNERS_INICIO;
+    const carritoLleno = deCarrito >= MAX_BANNERS_CARRITO;
+
+    if (inicioLleno && carritoLleno) {
+        return 'Límite alcanzado (4 + 1). Borrá alguno para crear otro: desactivar no libera lugar.';
+    }
+    if (inicioLleno) {
+        return 'El inicio está lleno, así que el único lugar libre es el del carrito: marcá el nuevo como tal, o borrá alguno del inicio.';
+    }
+    if (carritoLleno) {
+        return 'El del carrito ya está cubierto, así que el nuevo va al inicio.';
+    }
+    return 'Desactivar un banner no libera lugar: hay que borrarlo.';
+}
+
+// Aviso del modal, que es donde se decide si el banner va al carrito. Sin
+// esto el admin marca la casilla, guarda, y se come el error del trigger sin
+// entender que el problema era que el lugar del carrito ya estaba tomado.
+function hintModalBanner(idExistente) {
+    const enInicio = banners.filter((b) => !b.en_carrito && b.id !== Number(idExistente)).length;
+    const deCarrito = banners.filter((b) => b.en_carrito && b.id !== Number(idExistente)).length;
+
+    if (deCarrito >= MAX_BANNERS_CARRITO && enInicio >= MAX_BANNERS_INICIO) {
+        return '<br><strong>No hay lugar:</strong> el inicio y el carrito están completos. Borrá alguno antes de guardar.';
+    }
+    if (enInicio >= MAX_BANNERS_INICIO) {
+        return `<br><strong>El inicio ya tiene sus ${MAX_BANNERS_INICIO}.</strong> Si lo guardás sin marcar la casilla, va a ser rechazado: marcá "Banner del carrito" o borrá alguno del inicio.`;
+    }
+    if (deCarrito >= MAX_BANNERS_CARRITO) {
+        return `<br>Ya hay un banner del carrito, así que al marcar la casilla se va a desmarcar el otro.`;
+    }
+    return `<br>Quedan ${MAX_BANNERS_INICIO - enInicio} para el inicio y el del carrito está libre.`;
 }
 
 function filas() {
@@ -165,6 +232,7 @@ function abrirModalBanner(idExistente) {
             <p class="hint" style="margin-top:-0.6rem;">
                 Si lo marcás, este banner va en la página de carrito y deja de mostrarse en el
                 inicio. Al marcarlo se desmarca el que estuviera antes: sólo puede haber uno.
+                ${hintModalBanner(idExistente)}
             </p>
 
             <div class="admin-modal-acciones">
@@ -199,6 +267,30 @@ function abrirModalBanner(idExistente) {
         const submitBtn = event.submitter || $('#bannerForm').querySelector('[type="submit"]');
 
         const idValor = $('#bnrId').value;
+
+        // El tope es por destino, así que lo que decide es el checkbox, no
+        // solamente si es un alta o una edición. Se excluye la fila en edición
+        // del conteo, igual que hace el trigger: sin eso, con el inicio lleno
+        // no se podría ni cambiar el título de un banner.
+        const esCarrito = $('#bnrCarrito').checked;
+        const otros = banners.filter((b) => (idValor ? b.id !== Number(idValor) : true));
+        const enInicio = otros.filter((b) => !b.en_carrito).length;
+        const deCarrito = otros.filter((b) => b.en_carrito).length;
+
+        if (esCarrito && deCarrito >= MAX_BANNERS_CARRITO) {
+            toast('Ya hay un banner del carrito, y sólo puede haber uno. Desmarcá el actual antes de marcar este.', 'error');
+            return;
+        }
+        if (!esCarrito && enInicio >= MAX_BANNERS_INICIO) {
+            // Si el carrito también está cubierto, "marcá como del carrito" es
+            // consejo que no sirve: no queda ningún destino libre y sólo hay
+            // que borrar.
+            toast(deCarrito >= MAX_BANNERS_CARRITO
+                ? `El inicio admite máximo ${MAX_BANNERS_INICIO} banners y el del carrito ya está cubierto. No queda lugar: borrá alguno.`
+                : `El inicio admite máximo ${MAX_BANNERS_INICIO} banners. Marcá este como el del carrito o borrá alguno del inicio.`, 'error');
+            return;
+        }
+
         const payload = {
             badge: $('#bnrBadge').value.trim(),
             titulo: $('#bnrTitulo').value.trim(),

@@ -73,7 +73,7 @@ begin
         raise exception using
             errcode = 'check_violation',
             message = format(
-                'La barra marquee admite maximo %s mensajes. Ya hay %s: borra o desactiva alguno antes de crear otro.',
+                'La barra marquee admite máximo %s mensajes. Ya hay %s: borra o desactiva alguno antes de crear otro.',
                 maximo, actuales
             );
     end if;
@@ -123,6 +123,6 @@ commit;
 -- de prueba y borrarlo después.
 -- ============================================================================
 -- insert into public.marquee_items (texto, position) values ('PRUEBA', 99);
--- -- Si ya hay 6: error "La barra marquee admite maximo 6 mensajes..."  ✓
+-- -- Si ya hay 6: error "La barra marquee admite máximo 6 mensajes..."  ✓
 -- -- Si hay menos de 6: se inserta. Borralo con:
 -- -- delete from public.marquee_items where texto = 'PRUEBA';

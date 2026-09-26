@@ -80,7 +80,7 @@ begin
         raise exception using
             errcode = 'check_violation',
             message = format(
-                'La lista admite maximo %s cupones. Ya hay %s: borra los vencidos o inactivos antes de crear otro.',
+                'La lista admite máximo %s cupones. Ya hay %s: borra los vencidos o inactivos antes de crear otro.',
                 maximo, actuales
             );
     end if;
@@ -138,6 +138,6 @@ commit;
 -- ============================================================================
 -- insert into public.coupons (codigo, porcentaje, expira)
 --      values ('PRUEBA_TOPE', 5, current_date + 30);
--- -- Si ya hay 10: error "La lista admite maximo 10 cupones..."  ✓
+-- -- Si ya hay 10: error "La lista admite máximo 10 cupones..."  ✓
 -- -- Si hay menos de 10: se inserta. Borralo con:
 -- -- delete from public.coupons where codigo = 'PRUEBA_TOPE';

@@ -85,7 +85,7 @@ begin
         raise exception using
             errcode = 'check_violation',
             message = format(
-                'La portada admite maximo %s slides. Ya hay %s: borra alguno antes de crear o duplicar otro.',
+                'La portada admite máximo %s slides. Ya hay %s: borra alguno antes de crear o duplicar otro.',
                 maximo, actuales
             );
     end if;
@@ -140,7 +140,7 @@ commit;
 -- ============================================================================
 -- insert into public.sliders (titulo, position)
 --      values ('PRUEBA TOPE', 99);
--- -- Si ya hay 12: error "La portada admite maximo 12 slides..."  ✓
+-- -- Si ya hay 12: error "La portada admite máximo 12 slides..."  ✓
 -- -- Si hay menos de 12: se inserta. Borralo con:
 -- -- delete from public.sliders where titulo = 'PRUEBA TOPE';
 --
