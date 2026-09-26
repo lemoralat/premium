@@ -73,7 +73,7 @@ Reglas de oro:
 | `product_options` | Variantes (p. ej. "Talles") | FK → products, cascada al borrar producto |
 | `product_option_values` | Valores de variante (p. ej. "40, 41, 42") | FK → product_options, cascada |
 | `product_images` | Imágenes (1 principal + galería) | `storage_path` **o** `external_url` (restricción `num_nonnulls <= 1`), `es_principal`, `position`, FK cascada |
-| `coupons` | Cupones manuales | `codigo`, `porcentaje`, `expira` (date), `activo` |
+| `coupons` | Cupones manuales | `codigo`, `porcentaje`, `expira` (date), `activo`. **Máximo 10 filas** (trigger `trg_cupones_max`, `0036`); el tope cuenta vigentes, inactivos y vencidos |
 | `sliders` | Slides del hero | `titulo`, `texto_soporte`, `storage_path`/`external_url`, `link`, `target` (`interno` default / `externo`), `position`, `activo`, `mostrar_en` (`ambos` default / `mobile` / `desktop`, filtrado por dispositivo en la tienda) |
 | `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `target` (`interno` default / `externo`), `position`, `activo` |
 | `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`/`external_url`, `position`, `activo` |
@@ -252,7 +252,9 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0033_meta_descripcion.sql` (descripción del negocio editable desde Configuración → "Datos generales": columna `site_description` en `settings`, con default = el texto genérico que las metas ya traían hardcodeado. `js/template.js` la aplica por JS a las metas marcadas con `data-desde-config` en el HTML. Es idempotente y va en `begin`/`commit`)
    - `migrations/0035_marquee_max.sql` (tope de 6 mensajes en la barra marquee: función `limitar_marquee_items()` + trigger `trg_marquee_items_max` BEFORE INSERT sobre `marquee_items`. El límite va en la BD y no sólo en el panel a propósito: la anon key es pública y la policy "Marquee: admin full" es `for all to authenticated`, así que un admin con sesión puede insertar por API sin pasar por la UI — un tope que vive sólo en el JavaScript se esquiva con una línea de curl. Es `security invoker` (no necesita definer) y **no toca los UPDATE**: editar un mensaje no cambia la cantidad. **No borra nada** si ya hay más de 6: sólo bloquea inserts nuevos, y el PASO 2 del archivo lista cuáles son para que borres desde el panel. El panel (Diseño → "Marquee promocional") apaga el botón "Nuevo mensaje" al llegar a 6 y muestra el contador. Es idempotente y va en `begin`/`commit`)
 
-   > **El número `0034` queda libre pero no se reutiliza.** Era el interruptor de imágenes de producto (`cargar_imagenes_productos` en `settings`), que se aplicó y después se revirtió. No vuelvas a correrlo. La lista de arriba es la fuente de verdad: después de `0033` va `0035`.
+   - `migrations/0036_cupones_max.sql` (tope de 10 cupones: función `limitar_cupones()` + trigger `trg_cupones_max` BEFORE INSERT sobre `coupons`). Mismo criterio que `0035` en el marquee: el límite va en la BD y no sólo en el panel, porque la anon key es pública y "Cupones: admin full" es `for all`, así que un admin con sesión puede insertar por API sin pasar por la UI. Es `security invoker` (no necesita definer) y **no toca los UPDATE**: con la lista llena, renombrar un código, cambiarle el porcentaje o reactivarlo siguen funcionando. **No borra nada** si ya hay más de 10: sólo bloquea inserts nuevos, y el PASO 2 del archivo lista los cupones marcados como `vencido` para que borres desde el panel. Ojo con el caso de los vencidos: el tope **no** los exime, aunque la tienda no los muestre (la policy de lectura pública filtra por `activo = true and expira >= current_date`). Si se acumulan, hay que borrarlos a mano para liberar lugar. El panel (Descuentos) apaga el botón "Nuevo cupón" al llegar a 10 y muestra el contador. Es idempotente y va en `begin`/`commit`)
+
+   > **El número `0034` queda libre pero no se reutiliza.** Era el interruptor de imágenes de producto (`cargar_imagenes_productos` en `settings`), que se aplicó y después se revirtió. No vuelvas a correrlo. La lista de arriba es la fuente de verdad: después de `0033` van `0035` y `0036`.
 
    > **Backfill de `0031` (paso único,manual):** los pedidos que YA estaban en `Cancelado` cuando corrió la migración no dispararon ningún trigger, así que su stock sigue descontado. Corré el **PASO 1** (es un `SELECT` de diagnóstico) que está al final de `0031_stock_pedidos.sql`. Si devuelve filas y nadie repuso stock a mano, descomentá y corré el **PASO 2** una sola vez. No lo repitas: no es idempotente entre ejecuciones.
 
@@ -276,11 +278,14 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    >
    > select tgname, tgenabled from pg_trigger where tgname = 'trg_marquee_items_max';
    > -- 1 fila con tgenabled = 'O' = 0035 aplicada. 0 filas = falta correrla.
+   >
+   > select tgname, tgenabled from pg_trigger where tgname = 'trg_cupones_max';
+   > -- 1 fila con tgenabled = 'O' = 0036 aplicada. 0 filas = falta correrla.
    > ```
    >
    > `0032` y `0033` tienen su propio aviso en el panel: si faltan, la tarjeta que las contiene muestra un error al guardar y ese campo no se persiste. El resto de los campos de esas tarjetas **siguen guardando** — el panel filtra las columnas inexistentes del `UPDATE` justamente para que la migración pendiente no rompa el guardado que ya funcionaba.
    >
-   > `0035` es al revés: sin ella **el panel anda igual** (el botón se apaga a los 6 y el contador dice "Máximo 6"), lo que falta es la red de seguridad de la BD — un admin con la sesión abierta podría seguir insertando por API. El síntoma es silencioso en el otro sentido: la UI parece acotada pero el límite no existe. Si el trigger no está, corré la migración; no vas a ver ningún error que te avise.
+   > `0035` y `0036` son al revés: sin ellas **el panel anda igual** (el botón se apaga y el contador dice "Máximo 6" / "Máximo 10"), lo que falta es la red de seguridad de la BD — un admin con la sesión abierta podría seguir insertando por API. El síntoma es silencioso en el otro sentido: la UI parece acotada pero el límite no existe. Si el trigger no está, corré la migración; no vas a ver ningún error que te avise.
 
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
@@ -308,7 +313,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 3. **Detalle**: `producto.html?id=1` muestra variantes y galería; el id 14 aparece en Abrigos.
 4. **Checkout**: comprar con stock disponible → genera `PED-####`, descuenta stock, abre WhatsApp y `gracias.html` muestra alias válido y copiable.
 5. **Stock insuficiente**: pedir más unidades de las que hay → respuesta de error (409) y la transacción revierte todo.
-6. **Cupones**: `black20` aplica 20%; intentar `sale10` (inactivo) → no aplica; umbral 100000 y cupón juntos → aplica el mayor, no suma.
+6. **Cupones**: `black20` aplica 20%; intentar `sale10` (inactivo) → no aplica; umbral 100000 y cupón juntos → aplica el mayor, no suma. **Tope de 10** (`0036`): cargar hasta 10 → el botón "Nuevo cupón" se apaga y el contador dice "Límite alcanzado"; al borrar uno vuelve a habilitarse. Con la lista llena, editar un cupón existente (cambiarle el porcentaje, renombrarlo, reactivarlo) tiene que seguir funcionando — los `UPDATE` no pasan por el trigger. Con 10 filas, un `insert` directo contra la tabla debe fallar con el mensaje del trigger (probá el PASO 3 del `.sql`). Ojo: los cupones **vencidos** ocupan lugar igual que los vigentes, aunque la tienda no los muestre; para liberar hay que borrarlos.
 7. **Admin**: login, CRUD de cada sección, subida/reemplazo de imágenes, cambio de estado de pedido y cierre de sesión.
 8. **Popup de salida**: desde configuraciones, cambiar título/descripción/CTA/destino y desactivar → la tienda refleja el contenido nuevo (hasta 1 min por caché) y deja de mostrar la ventana si está inactiva.
 9. **Preguntas frecuentes**: con la tabla vacía, `faq.html` muestra el contenido estático actual; al crear la primera pregunta activa pasa a la lista dinámica (con su ícono) y el acordeón sigue funcionando (delegación de eventos); si se ocultan todas, la sección desaparece.

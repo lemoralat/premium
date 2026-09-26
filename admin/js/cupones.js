@@ -3,6 +3,12 @@
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, fechaInput } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
+// Tope de cupones. La garantía real está en la BD (trigger trg_cupones_max,
+// migración 0036): esto es la parte amable, que evita que el admin llegue al
+// error. El trigger cuenta TODAS las filas, y acá también: un cupón vencido
+// o inactivo sigue ocupando un lugar en la tabla.
+const MAX_CUPONES = 10;
+
 let cupones = [];
 export let cuponesCargados = false;
 
@@ -23,6 +29,11 @@ export async function renderizar(contenedor) {
     // (0 = regla inactiva).
     const minCantidad = Math.max(0, Math.floor(Number(s.compra_minima_cantidad) || 0));
     const minMonto = Math.max(0, Number(s.compra_minima_monto) || 0);
+
+    // El botón se apaga al llegar al tope. `cupones` se relee en cada
+    // renderizado, así que el estado nunca queda desfasado tras un borrado.
+    const alTope = cupones.length >= MAX_CUPONES;
+    const quedan = MAX_CUPONES - cupones.length;
 
     contenedor.innerHTML = `
         <div class="admin-card">
@@ -69,10 +80,13 @@ export async function renderizar(contenedor) {
         </div>
         <div class="admin-toolbar">
             <p>Códigos de descuento manuales</p>
-            <button type="button" class="btn btn-primary" id="btnNuevoCupon">
+            <button type="button" class="btn btn-primary" id="btnNuevoCupon" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo cupón
             </button>
         </div>
+        <p class="hint">Máximo ${MAX_CUPONES} cupones. ${alTope
+            ? 'Límite alcanzado: borrá los vencidos o inactivos para crear otro (desactivar no libera lugar).'
+            : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -118,7 +132,9 @@ export async function renderizar(contenedor) {
             .catch((error) => toast(error.message, 'error'));
     });
 
-    $('#btnNuevoCupon').addEventListener('click', () => abrirModalCupon(null));
+    if (!alTope) {
+        $('#btnNuevoCupon').addEventListener('click', () => abrirModalCupon(null));
+    }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalCupon(Number(btn.dataset.editar)));
     });
@@ -208,6 +224,15 @@ function abrirModalCupon(idExistente) {
         }
 
         const id = $('#cpnId').value;
+        // `id` vacío = cupón nuevo. El botón ya viene deshabilitado en el
+        // tope, pero si el panel está abierto en dos pestañas el `cupones` de
+        // esta quedó viejo: el trigger de 0036 lo rechaza igual, esto sólo
+        // evita que el error llegue como toast de servidor.
+        if (!id && cupones.length >= MAX_CUPONES) {
+            toast(`La lista admite máximo ${MAX_CUPONES} cupones.`, 'error');
+            return;
+        }
+
         conCarga(submitBtn, guardarCupon({ codigo, porcentaje, expira, activo: $('#cpnActivo').checked }, id ? Number(id) : null))
             .then(() => { cerrarModal(); renderizar($('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
