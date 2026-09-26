@@ -245,8 +245,23 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0026_cierre_rls_admin.sql` (**seguridad**: cierra el gap de RLS en las tablas creadas después de 0007 — `iconos_pie` (0004), `preguntas_frecuentes` (0014) y `marquee_items` (0017) seguían con `to authenticated using (true)`, o sea que cualquier usuario autenticado podía escribirlas; las pasa a exigir `public.es_admin()`)
    - `migrations/0027_admin_tema.sql` (tema del panel admin: columna `admin_tema` en `settings` — `claro` | `oscuro`, con check; la preferencia es global, no por navegador)
    - `migrations/0028_pedido_items_fiables.sql` (**integridad del pedido**: `insertar_pedido` devuelve además `items[]` con el snapshot real de `order_items` (nombre, variante, cantidad, precio unitario). El mensaje de WhatsApp pasó a armarse con esa respuesta en lugar del carrito del `localStorage`, que el cliente controla. También devuelve `items` en los caminos idempotentes. **Sin esta migración la tienda funciona igual**, pero el mensaje de WhatsApp vuelve a mostrar los ítems del cliente)
+   - `migrations/0029_resenas_red.sql` (columna `red` en `reviews`: la red de origen del testimonio — Google, Instagram, YouTube… — como clase de Font Awesome Brands, elegible desde el panel en Reseñas → Editar. Conjunto de valores cerrado con `check`)
+   - `migrations/0030_banners_carrito.sql` (columna `banners.en_carrito`: el banner del carrito se elige explícitamente con un check en vez de deducirse de la posición — antes era "el último por `position`", regla que hacía que todo banner nuevo acapara el carrito)
+   - `migrations/0031_stock_pedidos.sql` (**integridad del stock**: el stock pasa a seguir el estado del pedido, con triggers sobre `orders` — `trg_orders_stock_estado` (AFTER UPDATE OF estado) reintegra al cruzar a `Cancelado` y vuelve a descontar al reabrir, y `trg_orders_stock_borrado` (BEFORE DELETE) compensa el descuento original. Las funciones son `security definer` y se les revoca el EXECUTE a todos: **sin ese `revoke`, la anon key podría llamar `descontar_stock_por_pedido()` y vaciar el stock de cualquier producto**. Es idempotente y va en `begin`/`commit`)
+
+   > **Backfill de `0031` (paso único,manual):** los pedidos que YA estaban en `Cancelado` cuando corrió la migración no dispararon ningún trigger, así que su stock sigue descontado. Corré el **PASO 1** (es un `SELECT` de diagnóstico) que está al final de `0031_stock_pedidos.sql`. Si devuelve filas y nadie repuso stock a mano, descomentá y corré el **PASO 2** una sola vez. No lo repitas: no es idempotente entre ejecuciones.
 
    > Nota: `0003` y `0007` se pisan a propósito (ambos crean `admins` con `create table if not exists` y redefinen `es_admin()` con `create or replace`, y el cuerpo de la función es idéntico en los dos archivos). Por eso se pueden correr en cualquier orden y re-aplicar sin efectos. `0021` y `0026` son las que dejan el estado final de las policies de Storage.
+
+   > Nota: la numeración salta de `0015` a `0017` — **no falta ningún archivo**, `0016` nunca existió. La lista de arriba es la fuente de verdad de qué hay que correr.
+
+   > **Ojo — no hay tracking de migraciones aplicadas.** El proyecto no usa `supabase db push` ni tiene tabla de estado: se aplican a mano por el SQL Editor. Eso significa que **no hay forma de verificar desde el código si una migración quedó sin correr**, y el síntoma es silencioso (por ejemplo, sin `0031` el stock no se reintegra al cancelar, y la tienda sigue funcionando igual). Después de aplicar la lista, confirmá con:
+   >
+   > ```sql
+   > select tgname from pg_trigger
+   >  where tgname in ('trg_orders_stock_estado', 'trg_orders_stock_borrado');
+   > -- 2 filas = 0031 aplicada. 0 filas = falta correrla.
+   > ```
 
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.

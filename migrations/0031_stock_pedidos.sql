@@ -37,7 +37,16 @@
 -- con la anon key podría llamar `descontar_stock_por_pedido()` y vaciar el
 -- stock de cualquier producto. Los triggers no necesitan ese privilegio.
 --
--- IDEMPOTENTE: todo es `create or replace` + `drop trigger if exists`.
+-- IDEMPOTENTE: todo es `create or replace` + `drop trigger if exists`, así que
+-- se puede volver a correr las veces que haga falta (cada `create or replace`
+-- pisa la función anterior y cada trigger se dropea antes de rehacerse).
+--
+-- TRANSACCIONAL: todo corre dentro de un `begin`/`commit`, igual que 0026 y
+-- 0028. Importa acá más que en otras migraciones: sin la transacción, un corte
+-- a mitad del archivo dejaba estado parcial (funciones creadas sin sus
+-- triggers, o triggers vivos sin los `revoke` que los cierran al `anon`) —
+-- que es exactamente el agujero que estos mismos `revoke` previenen. Con el
+-- `commit` final, un fallo revierte completo y no queda nada a medias.
 --
 -- PENDIENTE DE REVISAR (ver el bloque de abajo): los pedidos YA cancelados
 -- antes de esta migración no disparan ningún trigger, porque no hubo
@@ -45,6 +54,7 @@
 -- los toca sola a propósito: primero hay que ver cuántos son y decidir.
 -- ============================================================================
 
+begin;
 
 -- ----------------------------------------------------------------------------
 -- 1) Cantidades agregadas por producto para un pedido
@@ -221,6 +231,8 @@ begin
         end if;
     end loop;
 end $$;
+
+commit;
 
 
 -- ----------------------------------------------------------------------------
