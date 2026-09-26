@@ -8,6 +8,17 @@ import { montarSelectorIconos } from './selector-iconos.js';
 
 let iconos = [];
 
+// Tope de iconos. La garantía real está en la BD (trigger
+// trg_iconos_pie_max, migración 0040): esto es la parte amable, que evita que el
+// admin llegue al error.
+//
+// El 3 no es un número arbitrario: el bloque del pie es un grid de tres
+// columnas (css/styles.css → `.iconos { grid-template-columns: repeat(3, 1fr) }`).
+// Con 4 iconos el cuarto cae a una segunda fila y deja dos huecos, así que se
+// ve roto. En móvil el grid pasa a una columna y se apila bien, pero el tope
+// responde a cómo se ve en escritorio.
+const MAX_ICONOS = 3;
+
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
@@ -16,13 +27,21 @@ export async function renderizar(contenedor) {
     if (error) throw error;
     iconos = data || [];
 
+    // El botón se apaga al llegar al tope. `iconos` se relee en cada
+    // renderizado, así que el estado nunca queda desfasado tras un borrado.
+    const alTope = iconos.length >= MAX_ICONOS;
+    const quedan = MAX_ICONOS - iconos.length;
+
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <p>Iconos que se muestran antes del footer en el inicio</p>
-            <button type="button" class="btn btn-primary" id="btnNuevoIcono">
+            <button type="button" class="btn btn-primary" id="btnNuevoIcono" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo icono
             </button>
         </div>
+        <p class="hint">Máximo ${MAX_ICONOS} iconos, uno por columna del bloque. ${alTope
+            ? 'Límite alcanzado: borrá alguno para crear otro (desactivar no libera lugar).'
+            : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -33,7 +52,9 @@ export async function renderizar(contenedor) {
         </div>
     `;
 
-    $('#btnNuevoIcono').addEventListener('click', () => abrirModalIcono(null));
+    if (!alTope) {
+        $('#btnNuevoIcono').addEventListener('click', () => abrirModalIcono(null));
+    }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalIcono(Number(btn.dataset.editar)));
     });
@@ -196,6 +217,15 @@ function abrirModalIcono(idExistente) {
 
         const idValor = $('#icoId').value;
         const modo = $('#icoSeg').querySelector('.admin-seg-btn.activo').dataset.modo;
+
+        // `idValor` vacío = icono nuevo. El botón ya viene deshabilitado en el
+        // tope, pero si el panel está abierto en dos pestañas el `iconos` de
+        // esta quedó viejo: el trigger de 0040 lo rechaza igual, esto sólo
+        // evita que el error llegue como toast de servidor.
+        if (!idValor && iconos.length >= MAX_ICONOS) {
+            toast(`El pie admite máximo ${MAX_ICONOS} iconos.`, 'error');
+            return;
+        }
 
         const archivo = imagenOptimizada;
         const urlExterna = $('#icoUrl').value.trim();

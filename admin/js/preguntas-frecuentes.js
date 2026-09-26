@@ -13,6 +13,12 @@ import { montarSelectorIconos } from './selector-iconos.js';
 
 let preguntas = [];
 
+// Tope de preguntas. La garantía real está en la BD (trigger
+// trg_preguntas_frecuentes_max, migración 0041): esto es la parte amable, que
+// evita que el admin llegue al error. El trigger cuenta TODAS las filas, y acá
+// también: una pregunta oculta sigue ocupando un lugar en la tabla.
+const MAX_PREGUNTAS = 20;
+
 // Renderiza el gestor completo dentro de `contenedor` (el <div> de un
 // .admin-card de Configuración). Al guardar/borrar se re-renderiza SOLO este
 // contenedor, para no descartar cambios sin guardar de los demás formularios.
@@ -24,13 +30,21 @@ export async function renderizarGestor(contenedor) {
     if (error) throw error;
     preguntas = data || [];
 
+    // El botón se apaga al llegar al tope. `preguntas` se relee en cada
+    // renderizado, así que el estado nunca queda desfasado tras un borrado.
+    const alTope = preguntas.length >= MAX_PREGUNTAS;
+    const quedan = MAX_PREGUNTAS - preguntas.length;
+
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <p>Se muestran en la página de ayuda (/faq). Mientras no haya preguntas activas, la tienda usa el contenido estático actual.</p>
-            <button type="button" class="btn btn-primary" id="btnNuevaPregunta">
+            <button type="button" class="btn btn-primary" id="btnNuevaPregunta" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nueva pregunta
             </button>
         </div>
+        <p class="hint">Máximo ${MAX_PREGUNTAS} preguntas. ${alTope
+            ? 'Límite alcanzado: borrá alguna para crear otra (desactivar no libera lugar).'
+            : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -41,7 +55,9 @@ export async function renderizarGestor(contenedor) {
         </div>
     `;
 
-    $('#btnNuevaPregunta').addEventListener('click', () => abrirModalPregunta(null, contenedor));
+    if (!alTope) {
+        $('#btnNuevaPregunta').addEventListener('click', () => abrirModalPregunta(null, contenedor));
+    }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalPregunta(Number(btn.dataset.editar), contenedor));
     });
@@ -135,6 +151,16 @@ function abrirModalPregunta(idExistente, contenedor) {
     $('#pfForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         const submitBtn = event.submitter || $('#pfForm').querySelector('[type="submit"]');
+
+        const idValor = $('#pfId').value;
+        // `idValor` vacío = pregunta nueva. El botón ya viene deshabilitado en
+        // el tope, pero si el panel está abierto en dos pestañas el
+        // `preguntas` de esta quedó viejo: el trigger de 0041 lo rechaza igual,
+        // esto sólo evita que el error llegue como toast de servidor.
+        if (!idValor && preguntas.length >= MAX_PREGUNTAS) {
+            toast(`El FAQ admite máximo ${MAX_PREGUNTAS} preguntas.`, 'error');
+            return;
+        }
 
         const preguntaTxt = $('#pfPregunta').value.trim();
         if (!preguntaTxt) {

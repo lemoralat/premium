@@ -21,6 +21,12 @@ const RED_POR_DEFECTO = 'fa-google';
 
 let reseñas = [];
 
+// Tope de testimonios. La garantía real está en la BD (trigger
+// trg_resenas_max, migración 0039): esto es la parte amable, que evita que el
+// admin llegue al error. El trigger cuenta TODAS las filas, y acá también: un
+// testimonio oculto sigue ocupando un lugar en la tabla.
+const MAX_RESENAS = 10;
+
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
@@ -29,13 +35,21 @@ export async function renderizar(contenedor) {
     if (error) throw error;
     reseñas = data || [];
 
+    // El botón se apaga al llegar al tope. `reseñas` se relee en cada
+    // renderizado, así que el estado nunca queda desfasado tras un borrado.
+    const alTope = reseñas.length >= MAX_RESENAS;
+    const quedan = MAX_RESENAS - reseñas.length;
+
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <p>Testimonios que se muestran en el inicio</p>
-            <button type="button" class="btn btn-primary" id="btnNuevaResena">
+            <button type="button" class="btn btn-primary" id="btnNuevaResena" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nueva reseña
             </button>
         </div>
+        <p class="hint">Máximo ${MAX_RESENAS} testimonios. ${alTope
+            ? 'Límite alcanzado: borrá alguno para crear otro (desactivar no libera lugar).'
+            : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -46,7 +60,9 @@ export async function renderizar(contenedor) {
         </div>
     `;
 
-    $('#btnNuevaResena').addEventListener('click', () => abrirModalResena(null));
+    if (!alTope) {
+        $('#btnNuevaResena').addEventListener('click', () => abrirModalResena(null));
+    }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalResena(Number(btn.dataset.editar)));
     });
@@ -200,6 +216,16 @@ function abrirModalResena(idExistente) {
         const idValor = $('#rsnId').value;
         const archivo = fotoOptimizada;
         const urlExterna = $('#rsnUrl').value.trim();
+
+        // `idValor` vacío = reseña nueva. El botón ya viene deshabilitado en el
+        // tope, pero si el panel está abierto en dos pestañas el `reseñas` de
+        // esta quedó viejo: el trigger de 0039 lo rechaza igual, esto sólo
+        // evita que el error llegue como toast de servidor.
+        if (!idValor && reseñas.length >= MAX_RESENAS) {
+            toast(`La lista admite máximo ${MAX_RESENAS} testimonios.`, 'error');
+            return;
+        }
+
         if (archivo && urlExterna) {
             toast('Elegí una sola fuente de foto: archivo o URL.', 'error');
             return;
