@@ -57,8 +57,29 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Redes y WhatsApp</h2>
-            <p class="card-sub">Redes sociales que se muestran en la barra superior del header (dejá vacía la que no uses) y canal de WhatsApp para contacto y checkout (número + mensaje).</p>
+            <h2>WhatsApp</h2>
+            <p class="card-sub">Canal de contacto y de checkout. El número es el destinatario de todos los enlaces de WhatsApp de la tienda; sin número no se muestra ninguno.</p>
+            <form class="admin-form" id="configFormWhatsapp">
+                <div class="admin-form-grid">
+                    <div class="admin-field">
+                        <label for="cfgWhatsapp">Número de WhatsApp (código país + número)</label>
+                        <input type="text" id="cfgWhatsapp" value="${esc(s.whatsapp_number || '')}" placeholder="ej: 5491122334455">
+                    </div>
+                    <div class="admin-field full">
+                        <label for="cfgWhatsappMsg">Mensaje por defecto</label>
+                        <input type="text" id="cfgWhatsappMsg" value="${esc(s.whatsapp_default_message || '')}" placeholder="Hola, quería consultar ">
+                        <span class="hint">Se precompleta en el botón flotante, en el header y en el pie de página. Ojo: el formulario de contacto y el pedido arman su propio mensaje, así que este texto no aparece ahí.</span>
+                    </div>
+                </div>
+                <div class="admin-modal-acciones">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h2>Redes sociales</h2>
+            <p class="card-sub">Se muestran en la barra superior del header. Dejá vacía la que no uses.</p>
             <form class="admin-form" id="configFormRedes">
                 <div class="admin-form-grid">
                     <div class="admin-field">
@@ -92,15 +113,6 @@ export async function renderizar(contenedor) {
                     <div class="admin-field">
                         <label for="cfgOtra">Otra</label>
                         <input type="url" id="cfgOtra" value="${esc(s.social_otra || '')}" placeholder="https://tu-sitio-o-red.com">
-                    </div>
-                    <div class="admin-field">
-                        <label for="cfgWhatsapp">Número de WhatsApp (código país + número)</label>
-                        <input type="text" id="cfgWhatsapp" value="${esc(s.whatsapp_number || '')}" placeholder="ej: 5491122334455">
-                    </div>
-                    <div class="admin-field full">
-                        <label for="cfgWhatsappMsg">Mensaje por defecto</label>
-                        <input type="text" id="cfgWhatsappMsg" value="${esc(s.whatsapp_default_message || '')}">
-                        <span class="hint">Se precompleta en el enlace de WhatsApp de contacto y de cada pedido.</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -220,7 +232,12 @@ export async function renderizar(contenedor) {
         social_x: $('#cfgX').value.trim(),
         social_pinterest: $('#cfgPinterest').value.trim(),
         social_linkedin: $('#cfgLinkedin').value.trim(),
-        social_otra: $('#cfgOtra').value.trim(),
+        social_otra: $('#cfgOtra').value.trim()
+    });
+
+    // Su propia ficha, aparte de las redes sociales: el número de WhatsApp es
+    // el canal de contacto y de checkout de la tienda, no una red más.
+    const camposWhatsapp = () => ({
         whatsapp_number: $('#cfgWhatsapp').value.trim(),
         whatsapp_default_message: $('#cfgWhatsappMsg').value.trim()
     });
@@ -292,6 +309,7 @@ export async function renderizar(contenedor) {
 
     vincular('#configFormGeneral', () => sinColumnasAusentes(camposGenerales()));
     vincular('#configFormRedes', camposRedes);
+    vincular('#configFormWhatsapp', camposWhatsapp);
     vincular('#configFormTransferencia', () => sinColumnasAusentes(camposTransferencia()));
     vincular('#configFormPopup', camposPopup);
 
