@@ -3,6 +3,22 @@
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
+// Opciones del selector de red. Debe coincidir con el CHECK de la columna
+// reviews.red (migración 0029) y con el mapa REDES de js/testimonios.js.
+// El ícono de cada opción se pinta con Font Awesome Brands, igual que en la
+// tienda, así el admin ve exactamente lo que va a ver el cliente.
+const REDES = [
+    { valor: 'fa-google',    etiqueta: 'Google' },
+    { valor: 'fa-facebook',  etiqueta: 'Facebook' },
+    { valor: 'fa-instagram', etiqueta: 'Instagram' },
+    { valor: 'fa-x-twitter', etiqueta: 'X' },
+    { valor: 'fa-tiktok',    etiqueta: 'TikTok' },
+    { valor: 'fa-youtube',   etiqueta: 'YouTube' },
+    { valor: 'fa-linkedin',  etiqueta: 'LinkedIn' },
+    { valor: 'fa-whatsapp',  etiqueta: 'WhatsApp' }
+];
+const RED_POR_DEFECTO = 'fa-google';
+
 let reseñas = [];
 
 export async function renderizar(contenedor) {
@@ -23,7 +39,7 @@ export async function renderizar(contenedor) {
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
-                    <tr><th>Cliente</th><th>Valoración</th><th>Texto</th><th>Fecha</th><th>Estado</th><th></th></tr>
+                    <tr><th>Cliente</th><th>Red</th><th>Valoración</th><th>Texto</th><th>Fecha</th><th>Estado</th><th></th></tr>
                 </thead>
                 <tbody>${filas()}</tbody>
             </table>
@@ -46,9 +62,17 @@ function fotoClienteHtml(resena) {
         : placeholderImagen('admin-image-placeholder--avatar', 'Sin foto');
 }
 
+function redHtml(red) {
+    // Misma lista que el selector. Una fila con un valor fuera de la lista (por
+    // ejemplo si se agrandó la migración y el panel quedó atrás) cae en Google
+    // en vez de renderizar una clase suelta.
+    const opcion = REDES.find((r) => r.valor === red) || REDES[0];
+    return `<span class="admin-red-badge"><i class="fa-brands ${esc(opcion.valor)}" aria-hidden="true"></i><span>${esc(opcion.etiqueta)}</span></span>`;
+}
+
 function filas() {
     if (!reseñas.length) {
-        return `<tr><td colspan="6"><div class="admin-empty"><p>No hay reseñas.</p></div></td></tr>`;
+        return `<tr><td colspan="7"><div class="admin-empty"><p>No hay reseñas.</p></div></td></tr>`;
     }
     return reseñas.map((r) => `
         <tr>
@@ -58,6 +82,7 @@ function filas() {
                     <strong>${esc(r.nombre)}</strong>
                 </div>
             </td>
+            <td data-label="Red">${redHtml(r.red)}</td>
             <td data-label="Valoración"><span style="color:var(--warning);">${'★'.repeat(r.valoracion)}${'☆'.repeat(5 - r.valoracion)}</span></td>
             <td data-label="Texto">${esc(recCorto(r.resena))}</td>
             <td data-label="Fecha">${esc(String(r.fecha || ''))}</td>
@@ -85,6 +110,21 @@ function abrirModalResena(idExistente) {
         <p class="modal-sub">${reseña ? esc(reseña.nombre) : 'Agregá un testimonio de un cliente'}</p>
         <form class="admin-form" id="resenaForm">
             <input type="hidden" id="rsnId" value="${reseña ? reseña.id : ''}">
+
+            <div class="admin-field full">
+                <label>Red de origen</label>
+                <div class="admin-icon-picker" role="radiogroup" aria-label="Red de origen de la reseña">
+                    ${REDES.map((red) => `
+                        <label class="admin-icon-opcion">
+                            <input type="radio" name="rsnRed" value="${esc(red.valor)}"
+                                   ${(reseña?.red || RED_POR_DEFECTO) === red.valor ? 'checked' : ''}>
+                            <i class="fa-brands ${esc(red.valor)}" aria-hidden="true"></i>
+                            <span>${esc(red.etiqueta)}</span>
+                        </label>
+                    `).join('')}
+                </div>
+                <p class="hint">Se muestra el ícono de esa red en la card del testimonio.</p>
+            </div>
 
             <div class="admin-field full">
                 <label>Foto del cliente (opcional)</label>
@@ -165,13 +205,15 @@ function abrirModalResena(idExistente) {
             return;
         }
 
+        const redElegida = document.querySelector('input[name="rsnRed"]:checked');
         const payload = {
             nombre: $('#rsnNombre').value.trim(),
             valoracion: parseInt($('#rsnValoracion').value),
             resena: $('#rsnTexto').value.trim(),
             fecha: $('#rsnFecha').value,
             position: parseInt($('#rsnPosition').value) || 0,
-            activo: $('#rsnActivo').checked
+            activo: $('#rsnActivo').checked,
+            red: redElegida ? redElegida.value : RED_POR_DEFECTO
         };
         if (!payload.nombre || !payload.resena || !payload.fecha) {
             toast('Completá nombre, reseña y fecha.', 'error');

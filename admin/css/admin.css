@@ -931,6 +931,103 @@ td.td-expandir .pedido-acciones {
 .admin-stock-medio { color: var(--warning); font-weight: 600; }
 .admin-stock-ok { color: var(--success); font-weight: 600; }
 
+/* Ícono + nombre de la red en la tabla de reseñas. El ícono conserva su color
+   de marca con `color`, y el texto va en muted para no competir con el nombre
+   del cliente, que es la columna principal. */
+.admin-red-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+.admin-red-badge i { font-size: 0.95rem; }
+
+.admin-red-badge i.fa-google    { color: #4285F4; }
+.admin-red-badge i.fa-facebook  { color: #1877F2; }
+.admin-red-badge i.fa-instagram { color: #E4405F; }
+.admin-red-badge i.fa-x-twitter { color: #000000; }
+.admin-red-badge i.fa-tiktok    { color: #FE2C55; }
+.admin-red-badge i.fa-youtube   { color: #FF0000; }
+.admin-red-badge i.fa-linkedin  { color: #0A66C2; }
+.admin-red-badge i.fa-whatsapp  { color: #25D366; }
+
+.admin-red-badge span { color: var(--text-muted); font-size: 0.85rem; }
+
+/* ============================================================================
+   SELECTOR DE ÍCONOS (red de origen del testimonio)
+   Usa los radios nativos, ocultos: el navegador se encarga del foco, del
+   cambio con flechas y de la semántica de formulario. Lo visible es el <i> del
+   ícono, y el estado activo se marca con input:checked + i (el input y el ícono
+   son hermanos, así que no hace falta :has()).
+   Cada opción es una columna (caja + nombre) en vez de tener el nombre en
+   position:absolute. En absoluto no suma altura, el picker quedaba con la
+   altura de sólo los íconos y el nombre de la última fila se montaba sobre el
+   .hint de abajo. En flujo el picker crece solo y el wrap se acomoda.
+   ============================================================================ */
+.admin-icon-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 0.5rem;
+}
+
+.admin-icon-opcion {
+    position: relative; /* ancla del input oculto */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.admin-icon-opcion input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    pointer-events: none;
+}
+
+.admin-icon-opcion i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-icon-opcion i {
+    width: 2.35rem;
+    height: 2.35rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+
+.admin-icon-opcion span {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.admin-icon-opcion:hover i { border-color: var(--primary); color: var(--text); }
+
+.admin-icon-opcion input:checked + i {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.admin-icon-opcion input:checked ~ span { color: var(--primary); font-weight: 600; }
+
+.admin-icon-opcion input:focus-visible + i {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 /* ============================================================================
    LOADING / VACÍO / ERROR
    ============================================================================ */

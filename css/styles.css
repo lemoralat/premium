@@ -4261,12 +4261,42 @@ body.zoom-active {
     color: var(--secondary-color);
 }
 
-.google-isologo {
+/* Texto sólo para lectores de pantalla (la red del testimonio va en el ícono,
+   que es decorativo, pero el nombre de la red es información real). */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Red de origen del testimonio: mismo tamaño y posición que el ícono de
+   Google que había antes, sólo cambia el color según la marca. */
+.red-isologo-wrap {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.red-isologo {
     font-size: 1.4rem;
     color: #4285F4;
-    flex-shrink: 0;
     line-height: 1;
 }
+
+.red-isologo.fa-facebook  { color: #1877F2; }
+.red-isologo.fa-instagram { color: #E4405F; }
+.red-isologo.fa-x-twitter { color: #000000; }
+.red-isologo.fa-tiktok    { color: #FE2C55; }
+.red-isologo.fa-youtube   { color: #FF0000; }
+.red-isologo.fa-linkedin  { color: #0A66C2; }
+.red-isologo.fa-whatsapp  { color: #25D366; }
+/* fa-google usa el #4285F4 de la regla base, que era el color original */
 
 .testimonio-texto {
     margin-top: 0.9rem;

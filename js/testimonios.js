@@ -2,6 +2,26 @@
 
 import { obtenerResenas, imagenOptimizada, escaparHtml, placeholderImagenPublica } from './utils.js';
 
+// Red de origen del testimonio: la clave ES la clase de Font Awesome Brands
+// (de ahí sale el <i>), y el valor es la etiqueta para lectores de pantalla.
+// El dato viene de reviews.red y se busca acá, nunca se interpola crudo: si la
+// fila tuviera algo desconocido, cae en Google en vez de volcarlo en el class.
+//
+// El color de cada marca está en css/styles.css, como .red-isologo.fa-marca.
+// Al agregar una red hay que tocar también el CHECK de la columna en la
+// migración 0029 y la lista REDES de admin/js/resenas.js.
+const RED_POR_DEFECTO = 'fa-google';
+const REDES = {
+    'fa-google':    { etiqueta: 'Google' },
+    'fa-facebook':  { etiqueta: 'Facebook' },
+    'fa-instagram': { etiqueta: 'Instagram' },
+    'fa-x-twitter': { etiqueta: 'X' },
+    'fa-tiktok':    { etiqueta: 'TikTok' },
+    'fa-youtube':   { etiqueta: 'YouTube' },
+    'fa-linkedin':  { etiqueta: 'LinkedIn' },
+    'fa-whatsapp':  { etiqueta: 'WhatsApp' }
+};
+
 const TESTIMONIOS = [
     {
         nombre: 'María González',
@@ -102,6 +122,19 @@ function generarCard(testimonio) {
         ? `<img src="${avatar}" alt="Foto de ${nombre}" class="testimonio-foto" loading="lazy" width="56" height="56">`
         : placeholderImagenPublica('testimonio-foto testimonio-foto-placeholder');
 
+    // Ícono de la red de origen. La clase sale del mapa, no de la fila.
+    const red = REDES[testimonio.red] ? testimonio.red : RED_POR_DEFECTO;
+    const redEtiqueta = REDES[red].etiqueta;
+    // El texto va oculto a ojo pero no a lectores de pantalla: antes el ícono
+    // era siempre Google y por eso era decorativo (aria-hidden). Ahora dice de
+    // dónde vino la reseña, que es información, así que se expone.
+    const redVisual = `
+        <span class="red-isologo-wrap">
+            <i class="fa-brands ${red} red-isologo" aria-hidden="true"></i>
+            <span class="sr-only">Reseña publicada en ${escaparHtml(redEtiqueta)}</span>
+        </span>
+    `;
+
     let estrellas = '';
     for (let i = 1; i <= 5; i++) {
         estrellas += `<i class="${i <= testimonio.rating ? 'fa-solid' : 'fa-regular'} fa-star star"></i>`;
@@ -116,7 +149,7 @@ function generarCard(testimonio) {
                     <div class="testimonio-stars">${estrellas}</div>
                     <p class="testimonio-fecha">${fecha}</p>
                 </div>
-                <i class="fa-brands fa-google google-isologo" aria-hidden="true"></i>
+                ${redVisual}
             </div>
             <p class="testimonio-texto">"${texto}"</p>
         </div>
@@ -145,7 +178,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         avatar: imagenOptimizada(r.imagen) || '',
         rating: r.valoracion ?? r.rating ?? 5,
         fecha: r.fecha,
-        texto: r.resena || r.texto
+        texto: r.resena || r.texto,
+        // Las reseñas estáticas de TESTIMONIOS no traen red: usan el default.
+        red: r.red
     }));
 
     // Un solo testimonio no se anima: se muestra como una card estática y

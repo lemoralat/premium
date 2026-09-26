@@ -295,7 +295,7 @@ export async function cargarResenas() {
     try {
         const { data, error } = await sb
             .from('reviews')
-            .select('id, nombre, valoracion, resena, fecha, storage_path, external_url')
+            .select('id, nombre, valoracion, resena, fecha, storage_path, external_url, red')
             .eq('activo', true)
             .order('position', { ascending: true });
 
@@ -306,7 +306,8 @@ export async function cargarResenas() {
             nombre: r.nombre,
             valoracion: Number(r.valoracion),
             resena: r.resena || '',
-            imagen: urlImagen(r) || ''
+            imagen: urlImagen(r) || '',
+            red: r.red || 'fa-google'
         }));
 
         cachear('resenas', resenas);
