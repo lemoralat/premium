@@ -72,7 +72,7 @@ export async function renderizar(contenedor) {
 }
 
 function fotoClienteHtml(resena) {
-    const imagen = urlPublica(resena.storage_path || resena.external_url || '');
+    const imagen = urlPublica(resena.storage_path || '');
     return imagen
         ? `<img src="${esc(imagen)}" alt="" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid var(--border); flex-shrink:0;">`
         : placeholderImagen('admin-image-placeholder--avatar', 'Sin foto');
@@ -146,16 +146,14 @@ function abrirModalResena(idExistente) {
                 <label>Foto del cliente (opcional)</label>
                 <div class="admin-img-upload">
                     <div id="rsnPreview" class="admin-preview admin-preview--avatar">
-                        ${reseña?.storage_path || reseña?.external_url
-                            ? `<img class="admin-preview-image" src="${esc(urlPublica(reseña.storage_path || reseña.external_url))}" alt="">`
+                        ${reseña?.storage_path
+                            ? `<img class="admin-preview-image" src="${esc(urlPublica(reseña.storage_path))}" alt="">`
                             : placeholderImagen('', 'Sin foto')}
                     </div>
                     <label class="btn btn-outline admin-file-btn">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Elegir foto
                         <input type="file" id="rsnArchivo" accept="image/jpeg,image/png,image/webp">
                     </label>
-                    <input type="url" id="rsnUrl" class="admin-url-input" placeholder="…o pegá una URL de foto"
-                           value="${esc(reseña && !reseña.storage_path ? (reseña.external_url || '') : '')}">
                 </div>
             </div>
 
@@ -215,7 +213,6 @@ function abrirModalResena(idExistente) {
 
         const idValor = $('#rsnId').value;
         const archivo = fotoOptimizada;
-        const urlExterna = $('#rsnUrl').value.trim();
 
         // `idValor` vacío = reseña nueva. El botón ya viene deshabilitado en el
         // tope, pero si el panel está abierto en dos pestañas el `reseñas` de
@@ -223,11 +220,6 @@ function abrirModalResena(idExistente) {
         // evita que el error llegue como toast de servidor.
         if (!idValor && reseñas.length >= MAX_RESENAS) {
             toast(`La lista admite máximo ${MAX_RESENAS} testimonios.`, 'error');
-            return;
-        }
-
-        if (archivo && urlExterna) {
-            toast('Elegí una sola fuente de foto: archivo o URL.', 'error');
             return;
         }
 
@@ -246,13 +238,13 @@ function abrirModalResena(idExistente) {
             return;
         }
 
-        conCarga(submitBtn, guardarResena(payload, idValor ? Number(idValor) : null, archivo, urlExterna))
+        conCarga(submitBtn, guardarResena(payload, idValor ? Number(idValor) : null, archivo))
             .then(() => { cerrarModal(); renderizar($('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
     });
 }
 
-async function guardarResena(payload, id, archivo, urlExterna) {
+async function guardarResena(payload, id, archivo) {
     const sb = await clienteAdmin();
     const previo = id ? reseñas.find((r) => r.id === id) : null;
 
@@ -266,18 +258,12 @@ async function guardarResena(payload, id, archivo, urlExterna) {
         registroId = data?.id;
     }
 
-    if (archivo || urlExterna) {
-        const actualizacion = {};
-        if (archivo) {
-            actualizacion.storage_path = await subirImagenAdmin('reviews', 'avatares', archivo);
-            actualizacion.external_url = null;
-        } else {
-            actualizacion.storage_path = null;
-            actualizacion.external_url = urlExterna;
-        }
-        const { error } = await sb.from('reviews').update(actualizacion).eq('id', registroId);
+    if (archivo) {
+        const { error } = await sb.from('reviews')
+            .update({ storage_path: await subirImagenAdmin('reviews', 'avatares', archivo) })
+            .eq('id', registroId);
         if (error) throw new Error(error.message);
-        if (archivo && previo?.storage_path) await eliminarImagenAdmin(previo.storage_path);
+        if (previo?.storage_path) await eliminarImagenAdmin(previo.storage_path);
     }
 
     toast(id ? 'Reseña actualizada.' : 'Reseña creada.');

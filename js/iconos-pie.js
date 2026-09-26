@@ -1,7 +1,7 @@
 // Iconos del pie del home (sección iconos-pie).
 // Carga dinámica desde Supabase. Sin datos, la sección se oculta.
 
-import { obtenerIconosPie, imagenOptimizada } from './utils.js';
+import { obtenerIconosPie } from './utils.js';
 
 function escapar(texto) {
     return String(texto ?? '')
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const datos = iconos.map((i) => ({
         titulo: i.titulo,
         descripcion: i.descripcion,
-        imagen: imagenOptimizada(i.imagen) || '',
+        imagen: i.imagen || '',
         icono: i.icono || (i.imagen ? '' : 'fa-regular fa-image')
     }));
 

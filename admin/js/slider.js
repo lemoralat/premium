@@ -78,7 +78,7 @@ function filas() {
     return slides.map((s) => `
         <tr>
             <td class="td-principal">
-                <img src="${esc(urlPublica(s.storage_path || s.external_url))}" alt=""
+                <img src="${esc(urlPublica(s.storage_path))}" alt=""
                      style="width:100px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--border); flex-shrink:0;">
             </td>
             <td data-label="Título">
@@ -125,7 +125,7 @@ function abrirModalSlide(idExistente) {
             <div class="admin-field full">
                 <label>Imagen de fondo (recomendado 1920×800)</label>
                 <div class="admin-imagenes">
-                    <img src="${esc(urlPublica(slide?.storage_path || slide?.external_url || ''))}"
+                    <img src="${esc(urlPublica(slide?.storage_path || ''))}"
                          alt="" id="sldPreview"
                          style="max-width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border);">
                     <div class="admin-img-upload">
@@ -133,11 +133,6 @@ function abrirModalSlide(idExistente) {
                             <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
                             <input type="file" id="sldArchivo" accept="image/jpeg,image/png,image/webp">
                         </label>
-                        <div class="admin-field admin-url-field">
-                            <input type="url" id="sldUrlExterna" class="admin-url-input" placeholder="…o pegá una URL de imagen externa"
-                                   value="${esc(slide && !slide.storage_path ? (slide.external_url || '') : '')}">
-                            <span class="hint">Si elegís archivo, este campo se ignora.</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -224,7 +219,6 @@ function abrirModalSlide(idExistente) {
 
         const idValor = $('#sldId').value;
         const archivo = archivoOptimizado;
-        const urlExterna = $('#sldUrlExterna').value.trim();
 
         // `idValor` vacío = slide nuevo. El botón ya viene deshabilitado en el
         // tope, pero si el panel está abierto en dos pestañas el `slides` de
@@ -232,11 +226,6 @@ function abrirModalSlide(idExistente) {
         // evita que el error llegue como toast de servidor.
         if (!idValor && slides.length >= MAX_SLIDES) {
             toast(`La portada admite máximo ${MAX_SLIDES} slides.`, 'error');
-            return;
-        }
-
-        if (archivo && urlExterna) {
-            toast('Elegí una sola fuente de imagen: archivo o URL externa.', 'error');
             return;
         }
 
@@ -250,13 +239,13 @@ function abrirModalSlide(idExistente) {
             mostrar_en: document.querySelector('input[name="sldMostrarEn"]:checked')?.value || 'ambos'
         };
 
-        conCarga(submitBtn, guardarSlide(payload, idValor ? Number(idValor) : null, archivo, urlExterna))
+        conCarga(submitBtn, guardarSlide(payload, idValor ? Number(idValor) : null, archivo))
             .then(() => { cerrarModal(); renderizar($('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
     });
 }
 
-async function guardarSlide(payload, id, archivo, urlExterna) {
+async function guardarSlide(payload, id, archivo) {
     const sb = await clienteAdmin();
     let storagePathAnterior = id ? slides.find((s) => s.id === id)?.storage_path || '' : '';
 
@@ -274,10 +263,7 @@ async function guardarSlide(payload, id, archivo, urlExterna) {
     // 2) Imagen: archivo nuevo, URL externa o sin cambios
     let imagenPayload = null;
     if (archivo) {
-        const storagePath = await subirImagenAdmin('slider', 'slides', archivo);
-        imagenPayload = { storage_path: storagePath, external_url: null };
-    } else if (urlExterna) {
-        imagenPayload = { storage_path: null, external_url: urlExterna };
+        imagenPayload = { storage_path: await subirImagenAdmin('slider', 'slides', archivo) };
     }
 
     if (imagenPayload) {
@@ -363,7 +349,6 @@ async function duplicarSlide(id, contenedor, boton) {
             titulo: original.titulo,
             texto_soporte: original.texto_soporte,
             storage_path: original.storage_path,
-            external_url: original.external_url,
             link: original.link,
             target: original.target,
             mostrar_en: original.mostrar_en,

@@ -64,7 +64,7 @@ export async function renderizar(contenedor) {
 }
 
 function imagenIconoHtml(icono) {
-    const imagen = urlPublica(icono.storage_path || icono.external_url || '');
+    const imagen = urlPublica(icono.storage_path || '');
     return imagen
         ? `<img src="${esc(imagen)}" alt="" style="width:34px; height:34px; object-fit:contain; border:1px solid var(--border); background:#fff; flex-shrink:0;">`
         : placeholderImagen('admin-image-placeholder--icon', 'Sin imagen');
@@ -125,16 +125,14 @@ function abrirModalIcono(idExistente) {
                 <label>Imagen</label>
                 <div class="admin-img-upload">
                     <div id="icoPreview" class="admin-preview admin-preview--icon">
-                        ${icono && !icono.icono && (icono.storage_path || icono.external_url)
-                            ? `<img class="admin-preview-image" src="${esc(urlPublica(icono.storage_path || icono.external_url))}" alt="">`
+                        ${icono && !icono.icono && icono.storage_path
+                            ? `<img class="admin-preview-image" src="${esc(urlPublica(icono.storage_path))}" alt="">`
                             : placeholderImagen('', 'Sin imagen')}
                     </div>
                     <label class="btn btn-outline admin-file-btn">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
                         <input type="file" id="icoArchivo" accept="image/jpeg,image/png,image/webp">
                     </label>
-                    <input type="url" id="icoUrl" class="admin-url-input" placeholder="…o pegá una URL de imagen"
-                           value="${esc(icono && !icono.icono && !icono?.storage_path ? (icono.external_url || '') : '')}">
                 </div>
             </div>
 
@@ -228,11 +226,6 @@ function abrirModalIcono(idExistente) {
         }
 
         const archivo = imagenOptimizada;
-        const urlExterna = $('#icoUrl').value.trim();
-        if (modo === 'imagen' && archivo && urlExterna) {
-            toast('Elegí una sola fuente de imagen: archivo o URL.', 'error');
-            return;
-        }
 
         const titulo = $('#icoTitulo').value.trim();
         if (!titulo) {
@@ -254,13 +247,13 @@ function abrirModalIcono(idExistente) {
             icono: modo === 'icono' ? iconoClase : null
         };
 
-        conCarga(submitBtn, guardarIcono(payload, idValor ? Number(idValor) : null, modo, archivo, urlExterna))
+        conCarga(submitBtn, guardarIcono(payload, idValor ? Number(idValor) : null, modo, archivo))
             .then(() => { cerrarModal(); renderizar($('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
     });
 }
 
-async function guardarIcono(payload, id, modo, archivo, urlExterna) {
+async function guardarIcono(payload, id, modo, archivo) {
     const sb = await clienteAdmin();
     const previo = id ? iconos.find((i) => i.id === id) : null;
 
@@ -276,24 +269,18 @@ async function guardarIcono(payload, id, modo, archivo, urlExterna) {
 
     // Fuente de la visual según el modo elegido.
     if (modo === 'imagen') {
-        if (archivo || urlExterna) {
-            const actualizacion = {};
-            if (archivo) {
-                actualizacion.storage_path = await subirImagenAdmin('iconos', 'iconos', archivo);
-                actualizacion.external_url = null;
-            } else {
-                actualizacion.storage_path = null;
-                actualizacion.external_url = urlExterna;
-            }
-            const { error } = await sb.from('iconos_pie').update(actualizacion).eq('id', registroId);
+        if (archivo) {
+            const { error } = await sb.from('iconos_pie')
+                .update({ storage_path: await subirImagenAdmin('iconos', 'iconos', archivo) })
+                .eq('id', registroId);
             if (error) throw new Error(error.message);
-            if (archivo && previo?.storage_path) await eliminarImagenAdmin(previo.storage_path);
+            if (previo?.storage_path) await eliminarImagenAdmin(previo.storage_path);
         }
-    } else if (previo?.storage_path || previo?.external_url) {
-        // Al pasar a ícono se limpia la fuente de imagen anterior.
-        const { error } = await sb.from('iconos_pie').update({ storage_path: null, external_url: null }).eq('id', registroId);
+    } else if (previo?.storage_path) {
+        // Al pasar a ícono se limpia la imagen anterior.
+        const { error } = await sb.from('iconos_pie').update({ storage_path: null }).eq('id', registroId);
         if (error) throw new Error(error.message);
-        if (previo?.storage_path) await eliminarImagenAdmin(previo.storage_path);
+        await eliminarImagenAdmin(previo.storage_path);
     }
 
     toast(id ? 'Icono actualizado.' : 'Icono creado.');

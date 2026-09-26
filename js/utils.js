@@ -455,7 +455,7 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
     const { conAcciones = false, conBadge = false } = opciones;
     const esAgotado = producto.stock === 0;
     const nombre = escaparHtml(recortarTexto(producto.nombre));
-    const imagen = escaparHtml(imagenOptimizada(producto.imagen));
+    const imagen = escaparHtml(producto.imagen);
 
     return `
         <div class="favorito-item${conBadge && esAgotado ? ' out-of-stock' : ''}">
@@ -491,7 +491,7 @@ export function generarHTMLTarjetaProducto(producto) {
     // V-2: todo texto/URL administrado se escapa antes de interpolarse en HTML.
     const nombre = escaparHtml(recortarTexto(producto.nombre));
     const descripcion = escaparHtml(recortarTexto(producto.descripcion));
-    const imagen = escaparHtml(imagenOptimizada(producto.imagen));
+    const imagen = escaparHtml(producto.imagen);
 
     return `
         <a href="/producto?id=${producto.id}" class="product-card product-link ${esAgotado ? 'out-of-stock' : ''}" aria-label="Ver detalle de ${nombre}">
@@ -550,15 +550,11 @@ export function recortarTexto(texto) {
     return String(texto ?? '');
 }
 
-// Fuerza al CDN de Google a entregar WebP (sufijo "-rw") sin cambiar el tamaño pedido.
-// Solo toca URLs de Drive (lh3.googleusercontent.com); deja intactas las rutas locales
-// y las de Supabase Storage.
-export function imagenOptimizada(url) {
-    const u = String(url ?? '');
-    if (!u.includes('lh3.googleusercontent.com')) return u;
-    if (/-rw/.test(u)) return u;
-    return /=[swh]\d+$/.test(u) ? `${u}-rw` : u;
-}
+// ( acá estaba imagenOptimizada(), que añadía el sufijo "-rw" a las URLs de
+// lh3.googleusercontent.com para que el CDN de Google Drive entregara WebP.
+// Se fue con el resto del andamiaje de Drive: hoy las imágenes salen de
+// Supabase Storage y el admin las sube desde el panel, así que no hay URLs
+// que reescribir. Los 12 call sites quedaron usando la URL tal cual. )
 
 // Mostrar notificación
 export function mostrarNotificacion(mensaje, tipo = 'success') {

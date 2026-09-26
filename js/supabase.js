@@ -147,8 +147,13 @@ export function obtenerClienteSupabase() {
 
 // storage_path usa la convención "<bucket>/<ruta>". Deriva la URL pública
 // (por ejemplo "products/3/foto.webp" → .../object/public/products/3/foto.webp).
-// Si solo hay external_url (migración desde Drive), la devuelve tal cual.
-export function urlImagen({ storage_path = null, external_url = null } = {}) {
+//
+// OJO: antes esta función aceptaba `external_url` como segunda fuente, que era
+// el puente de la migración desde Google Drive. La columna se eliminó en la
+// migración 0043: hoy toda imagen sale de Supabase Storage, subida desde el
+// panel. Si algún día vuelve a hacer falta una URL externa, que sea una
+// decisión consciente y no un resto del modelo de Drive.
+export function urlImagen({ storage_path = null } = {}) {
     if (storage_path) {
         const [bucket, ...resto] = String(storage_path).split('/');
         if (cliente && resto.length > 0) {
@@ -157,7 +162,7 @@ export function urlImagen({ storage_path = null, external_url = null } = {}) {
         }
         return storage_path; // último recurso (debería estar correcto ya)
     }
-    return String(external_url || '');
+    return '';
 }
 
 // Formatear fecha ISO (YYYY-MM-DD) al formato de la tienda (DD/MM/YYYY)
@@ -252,7 +257,7 @@ export async function cargarProductos() {
                 stock, caracteristicas, activo, destacado,
                 categoria:categories(id, name),
                 opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
-                imagenes:product_images(id, storage_path, external_url, es_principal, position)
+                imagenes:product_images(id, storage_path, es_principal, position)
             `)
             .eq('activo', true)
             .order('id', { ascending: true });
@@ -363,7 +368,7 @@ export async function cargarResenas() {
     try {
         const { data, error } = await sb
             .from('reviews')
-            .select('id, nombre, valoracion, resena, fecha, storage_path, external_url, red')
+            .select('id, nombre, valoracion, resena, fecha, storage_path, red')
             .eq('activo', true)
             .order('position', { ascending: true });
 
@@ -440,15 +445,15 @@ export async function cargarBanners() {
     try {
         const { data, error } = await sb
             .from('banners')
-            .select('id, imagen_path, imagen_url, logo_path, logo_url, badge, titulo, boton, link, target, en_carrito')
+            .select('id, imagen_path, logo_path, badge, titulo, boton, link, target, en_carrito')
             .eq('activo', true)
             .order('position', { ascending: true });
 
         if (error) throw error;
 
         const banners = (data || []).map(b => ({
-            imagen: urlImagen({ storage_path: b.imagen_path, external_url: b.imagen_url }) || '',
-            logo: urlImagen({ storage_path: b.logo_path, external_url: b.logo_url }),
+            imagen: urlImagen({ storage_path: b.imagen_path }) || '',
+            logo: urlImagen({ storage_path: b.logo_path }),
             badge: b.badge || '',
             titulo: b.titulo || '',
             boton: b.boton || '',
@@ -479,7 +484,7 @@ export async function cargarIconosPie() {
     try {
         const { data, error } = await sb
             .from('iconos_pie')
-            .select('id, titulo, descripcion, storage_path, external_url, icono')
+            .select('id, titulo, descripcion, storage_path, icono')
             .eq('activo', true)
             .order('position', { ascending: true });
 

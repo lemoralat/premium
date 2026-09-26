@@ -142,7 +142,12 @@ export async function confirmarBorrado(mensaje, { html = false } = {}) {
 }
 
 // ---------- URL pública de una imagen ----------
-// storage_path usa la convención "<bucket>/<ruta>"; external_url se usa tal cual.
+// Acepta un storage_path con la convención "<bucket>/<ruta>" y lo convierte en
+// la URL pública de Supabase. También deja pasar tal cual las URLs absolutas y
+// los prefijos blob: (los previews de archivo sin subir, en el editor de
+// galería) y las rutas locales del repositorio (img/…), que no son storage
+// paths. Lo que ya no acepta es una columna external_url guardada: la
+// migración 0043 la eliminó, todas las imágenes salen de Storage.
 export function urlPublica(src) {
     if (!src) return '';
     const valor = String(src).trim();

@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, placeholderImagenPublica } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, atributosEnlace, placeholderImagenPublica } from './utils.js';
 
 let productosGlobales = [];
 
@@ -43,7 +43,7 @@ function renderizarCarrito() {
         // V-2: el nombre del producto (contenido administrado) viaja en el
         // carrito → escapar antes de interpolar en HTML.
         const nombreSeguro = escaparHtml(recortarTexto(item.nombre));
-        const imagenSegura = escaparHtml(imagenOptimizada(item.imagen));
+        const imagenSegura = escaparHtml(item.imagen);
 
         return `
         <div class="cart-item${sinStock ? ' sin-stock' : ''}" data-clave="${escaparHtml(clave)}">
@@ -282,7 +282,7 @@ function renderizarBannerCarrito(banners) {
 
     // Banner "solo imagen": imagen a ancho completo como fondo con cover
     if (esBannerSoloImagen(banner)) {
-        const img = escaparHtml(imagenOptimizada(banner.imagen));
+        const img = escaparHtml(banner.imagen);
         // V-3: urlSegura bloquea esquemas peligrosos (javascript:, data:, …)
         const link = banner.link ? escaparHtml(urlSegura(banner.link)) : '';
         const etiqueta = link ? `aria-label="${escaparHtml(banner.titulo || 'Banner')}" ` : '';
@@ -299,7 +299,7 @@ function renderizarBannerCarrito(banners) {
     const link = banner.link ? escaparHtml(urlSegura(banner.link)) : '';
     const tieneBoton = Boolean(banner.boton && link);
     const imagenVisual = banner.imagen
-        ? `<img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">`
+        ? `<img loading="lazy" src="${escaparHtml(banner.imagen)}" alt="${titulo}" width="1200" height="400">`
         : placeholderImagenPublica('banner-image-placeholder');
 
     contenedor.innerHTML = `
@@ -312,7 +312,7 @@ function renderizarBannerCarrito(banners) {
             <div class="banner_info">
                 ${banner.logo ? `
                 <div class="banner_info_icono banner-border">
-                    <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.logo))}" alt="" class="block" width="60">
+                    <img loading="lazy" src="${escaparHtml(banner.logo)}" alt="" class="block" width="60">
                 </div>
                 ` : ''}
 

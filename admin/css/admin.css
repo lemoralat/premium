@@ -568,9 +568,11 @@ td.td-expandir .pedido-acciones {
     cursor: pointer;
 }
 
-/* Inputs de URL en gestores de imágenes (comparten estilo fijo en modales) */
-.admin-url-field { flex: 1; min-width: 200px; }
-
+/* Ancho fijo para los inputs que comparten fila en los modales del panel
+   (hoy los buscadores de ícono de Reseñas/Iconos e Historial de pedidos).
+   Antes esta regla también la usaba .admin-url-field, el wrapper de los campos
+   para pegar una URL de imagen: ya no existe, porque las imágenes se suben
+   siempre como archivo y no hay URL que pegar (ver migración 0043). */
 .admin-url-input {
     flex: 1;
     min-width: 200px;

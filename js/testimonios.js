@@ -1,6 +1,6 @@
 // Testimonios - carrusel de reseñas (motor JS + drag/swipe)
 
-import { obtenerResenas, imagenOptimizada, escaparHtml, placeholderImagenPublica } from './utils.js';
+import { obtenerResenas, escaparHtml, placeholderImagenPublica } from './utils.js';
 
 // Red de origen del testimonio: la clave ES la clase de Font Awesome Brands
 // (de ahí sale el <i>), y el valor es la etiqueta para lectores de pantalla.
@@ -28,7 +28,7 @@ function generarCard(testimonio) {
 
     // V-2: reseñas son contenido administrado → escapar antes de interpolar.
     const nombre = escaparHtml(testimonio.nombre);
-    const avatar = escaparHtml(imagenOptimizada(testimonio.avatar));
+    const avatar = escaparHtml(testimonio.avatar);
     const fecha = escaparHtml(testimonio.fecha);
     const texto = escaparHtml(testimonio.texto);
     const avatarVisual = avatar
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const datos = resenas.map(r => ({
         nombre: r.nombre,
-        avatar: imagenOptimizada(r.imagen) || '',
+        avatar: r.imagen || '',
         rating: r.valoracion ?? r.rating ?? 5,
         fecha: r.fecha,
         texto: r.resena || r.texto,

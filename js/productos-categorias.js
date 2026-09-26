@@ -1,5 +1,5 @@
 // Renderizar productos por categorías en el index
-import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, urlSegura, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, slugificar, placeholderImagenPublica } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, urlSegura, esBannerSoloImagen, recortarTexto, atributosEnlace, slugificar, placeholderImagenPublica } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
@@ -123,7 +123,7 @@ function renderizarCategoriasAutomaticas(banners) {
 // Banner "solo imagen": imagen a ancho completo como fondo con cover,
 // mismo alto de banner (aspect-ratio 3:1). Con link => bloque clicable.
 function generarHTMLBannerSoloImagen(banner) {
-    const img = escaparHtml(imagenOptimizada(banner.imagen));
+    const img = escaparHtml(banner.imagen);
     // V-3: urlSegura bloquea esquemas peligrosos (javascript:, data:, vbscript:…)
     // en el href administrado; si no es navegable, no se renderiza el enlace.
     const link = banner.link ? escaparHtml(urlSegura(banner.link)) : '';
@@ -147,7 +147,7 @@ function generarHTMLBannerDinamico(banner) {
     const link = banner.link ? escaparHtml(urlSegura(banner.link)) : '';
     const tieneBoton = Boolean(banner.boton && link);
     const imagenVisual = banner.imagen
-        ? `<img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.imagen))}" alt="${titulo}" width="1200" height="400">`
+        ? `<img loading="lazy" src="${escaparHtml(banner.imagen)}" alt="${titulo}" width="1200" height="400">`
         : placeholderImagenPublica('banner-image-placeholder');
 
     return `
@@ -162,7 +162,7 @@ function generarHTMLBannerDinamico(banner) {
                 <div class="banner_info">
                     ${banner.logo ? `
                     <div class="banner_info_icono banner-border">
-                        <img loading="lazy" src="${escaparHtml(imagenOptimizada(banner.logo))}" alt="" class="block" width="60">
+                        <img loading="lazy" src="${escaparHtml(banner.logo)}" alt="" class="block" width="60">
                     </div>
                     ` : ''}
 

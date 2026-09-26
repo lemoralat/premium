@@ -31,7 +31,7 @@ export async function renderizar(contenedor) {
             category_id,
             categoria:categories(id, name),
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
-            imagenes:product_images(id, storage_path, external_url, es_principal, position)
+            imagenes:product_images(id, storage_path, es_principal, position)
         `).order('id', { ascending: true }),
         sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true })
     ]);
@@ -122,7 +122,7 @@ function pintar(contenedor) {
 function imagenPrincipalDe(p) {
     const imgs = Array.isArray(p.imagenes) ? p.imagenes : [];
     const principal = imgs.find((i) => i.es_principal) || imgs[0] || null;
-    const imagen = principal ? urlPublica(principal.storage_path || principal.external_url) : '';
+    const imagen = principal ? urlPublica(principal.storage_path) : '';
     return imagen
         ? `<img src="${esc(imagen)}" alt="" loading="lazy" style="width:46px; height:46px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">`
         : placeholderImagen('admin-image-placeholder--thumb', 'Sin imagen');
@@ -195,13 +195,12 @@ function abrirModalProducto(idExistente) {
         .map((i) => ({
         dbId: i.id,
         storage_path: i.storage_path,
-        external_url: i.external_url,
         esPrincipal: Boolean(i.es_principal),
         file: null,
         paraBorrar: false,
         nuevoId: null
     }));
-    if (imagenesModal.length === 0) imagenesModal = [{ dbId: null, storage_path: null, external_url: null, esPrincipal: true, file: null, paraBorrar: false, nuevoId: null }];
+    if (imagenesModal.length === 0) imagenesModal = [{ dbId: null, storage_path: null, esPrincipal: true, file: null, paraBorrar: false, nuevoId: null }];
 
     // Estado inicial de características (repeater): cada fila es una string.
     // Se filtra vacío por si algún producto histórico trae huecos.
@@ -300,8 +299,6 @@ function abrirModalProducto(idExistente) {
                         <i class="fa-solid fa-cloud-arrow-up"></i> Subir imagen
                         <input type="file" id="prdImagenArchivo" accept="image/jpeg,image/png,image/webp" multiple>
                     </label>
-                    <input type="url" id="prdImagenUrl" class="admin-url-input" placeholder="…o pegá una URL de imagen (ej: de googleusercontent.com)">
-                    <button type="button" class="btn btn-sm" id="btnAgregarUrlImagen">Agregar URL</button>
                 </div>
             </div>
 
@@ -372,7 +369,7 @@ function abrirModalProducto(idExistente) {
                     return;
                 }
                 imagenesModal.push({
-                    dbId: null, storage_path: null, external_url: null,
+                    dbId: null, storage_path: null,
                     esPrincipal: false, file: archivo, paraBorrar: false, nuevoId: null
                 });
             });
@@ -382,18 +379,6 @@ function abrirModalProducto(idExistente) {
             toast(error.message, 'error');
             $('#prdImagenArchivo').value = '';
         }
-    });
-
-    $('#btnAgregarUrlImagen').addEventListener('click', () => {
-        const url = $('#prdImagenUrl').value.trim();
-        if (!url || !/^https?:\/\//i.test(url)) {
-            toast('Pegá una URL válida (https://…).', 'error');
-            return;
-        }
-        capturarImagenes();
-        imagenesModal.push({ dbId: null, storage_path: null, external_url: url, esPrincipal: false, file: null, paraBorrar: false, nuevoId: null });
-        $('#prdImagenUrl').value = '';
-        renderImagenes();
     });
 
     $('#productoForm').addEventListener('submit', async (event) => {
@@ -624,7 +609,7 @@ function capturarImagenes() {
 }
 
 function tieneFuenteImagen(entrada) {
-    return Boolean(entrada && (entrada.file || entrada.storage_path || entrada.external_url));
+    return Boolean(entrada && (entrada.file || entrada.storage_path));
 }
 
 function renderImagenes() {
@@ -646,8 +631,8 @@ function renderImagenes() {
                 <div class="admin-img-card ${i.esPrincipal ? 'principal' : ''}" data-imagen-idx="${esc(i.idx)}">
                     ${i.file
                         ? `<img src="${esc(URL.createObjectURL(i.file))}" alt="">`
-                        : (i.storage_path || i.external_url)
-                            ? `<img src="${esc(urlPublica(i.storage_path || i.external_url))}" alt="">`
+                        : i.storage_path
+                            ? `<img src="${esc(urlPublica(i.storage_path))}" alt="">`
                             : placeholderImagen('admin-image-placeholder--card', 'Sin imagen')}
                     <div class="admin-img-acciones">
                         <label style="display:flex; align-items:center; gap:0.3rem; color:#fff; font-size:0.68rem;">
@@ -749,17 +734,13 @@ async function guardarProducto(payload, id, variantes) {
             posicion++;
             continue;
         }
-        let storagePath = img.storage_path;
-        let externalUrl = img.external_url;
-        if (img.file) {
-            storagePath = await subirImagenAdmin('products', `products/${productoId}`, img.file);
-            externalUrl = null;
-        }
+        const storagePath = img.file
+            ? await subirImagenAdmin('products', `products/${productoId}`, img.file)
+            : img.storage_path;
         const { data: imgData, error: imgError } = await sb.from('product_images')
             .insert({
                 product_id: productoId,
                 storage_path: storagePath || null,
-                external_url: externalUrl || null,
                 es_principal: false,
                 position: posicion
             })

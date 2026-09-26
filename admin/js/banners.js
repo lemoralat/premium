@@ -111,11 +111,11 @@ function filas() {
         return `<tr><td colspan="5"><div class="admin-empty"><p>No hay banners.</p></div></td></tr>`;
     }
     return banners.map((b) => {
-        const soloImagen = !b.logo_url && !b.logo_path && !b.badge && !b.titulo && !b.boton;
+        const soloImagen = !b.logo_path && !b.badge && !b.titulo && !b.boton;
         return `
         <tr>
             <td class="td-principal">
-                <img src="${esc(urlPublica(b.imagen_path || b.imagen_url))}" alt=""
+                <img src="${esc(urlPublica(b.imagen_path))}" alt=""
                      style="width:120px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); flex-shrink:0;">
             </td>
             <td data-label="Contenido">
@@ -139,7 +139,7 @@ function filas() {
 
 function abrirModalBanner(idExistente) {
     const banner = idExistente ? banners.find((b) => b.id === idExistente) : null;
-    const logoPreview = banner?.logo_path || banner?.logo_url || '';
+    const logoPreview = banner?.logo_path || '';
     let imagenOptimizada = null;
     let logoOptimizada = null;
 
@@ -154,15 +154,13 @@ function abrirModalBanner(idExistente) {
             <div class="admin-field full">
                 <label>Imagen de fondo (recomendado 1200×600)</label>
                 <div class="admin-imagenes">
-                    <img src="${esc(urlPublica(banner?.imagen_path || banner?.imagen_url || ''))}" alt=""
+                    <img src="${esc(urlPublica(banner?.imagen_path || ''))}" alt=""
                          id="bnrImagenPreview" style="max-width:100%; height:150px; object-fit:cover; border-radius:10px; border:1px solid var(--border);">
                     <div class="admin-img-upload">
                         <label class="btn btn-outline admin-file-btn">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
                             <input type="file" id="bnrImagenArchivo" accept="image/jpeg,image/png,image/webp">
                         </label>
-                        <input type="url" id="bnrImagenUrl" class="admin-url-input" placeholder="…o pegá una URL externa"
-                               value="${esc(banner && !banner.imagen_path ? (banner.imagen_url || '') : '')}">
                     </div>
                 </div>
             </div>
@@ -182,9 +180,6 @@ function abrirModalBanner(idExistente) {
                                 <i class="fa-solid fa-cloud-arrow-up"></i> Elegir logo
                                 <input type="file" id="bnrLogoArchivo" accept="image/jpeg,image/png,image/webp">
                             </label>
-                            <input type="url" id="bnrLogoUrl" placeholder="…o pegá una URL de logo"
-                                   value="${esc(banner && !banner.logo_path ? (banner.logo_url || '') : '')}"
-                                   style="width:100%; padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
                         </div>
                     </div>
                 </div>
@@ -303,24 +298,16 @@ function abrirModalBanner(idExistente) {
         };
 
         const imagenArchivo = imagenOptimizada;
-        const imagenUrl = $('#bnrImagenUrl').value.trim();
         const logoArchivo = logoOptimizada;
-        const logoUrl = $('#bnrLogoUrl').value.trim();
-
-        if ((imagenArchivo && imagenUrl) || (logoArchivo && logoUrl)) {
-            toast('Elegí una sola fuente (archivo o URL) para cada imagen.', 'error');
-            return;
-        }
-
         conCarga(submitBtn, guardarBanner(payload, idValor ? Number(idValor) : null, {
-            imagenArchivo, imagenUrl, logoArchivo, logoUrl
+            imagenArchivo, logoArchivo
         }))
             .then(() => { cerrarModal(); renderizar($('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
     });
 }
 
-async function guardarBanner(payload, id, { imagenArchivo, imagenUrl, logoArchivo, logoUrl }) {
+async function guardarBanner(payload, id, { imagenArchivo, logoArchivo }) {
     const sb = await clienteAdmin();
     const previo = id ? banners.find((b) => b.id === id) : null;
 
@@ -348,38 +335,21 @@ async function guardarBanner(payload, id, { imagenArchivo, imagenUrl, logoArchiv
         registroId = data?.id;
     }
 
-    let debeLimpiarImagenVieja = false;
-    if (imagenArchivo || imagenUrl) {
-        const actualizacion = {};
-        if (imagenArchivo) {
-            actualizacion.imagen_path = await subirImagenAdmin('banners', 'banners', imagenArchivo);
-            actualizacion.imagen_url = null;
-            debeLimpiarImagenVieja = Boolean(previo?.imagen_path);
-        } else {
-            actualizacion.imagen_path = null;
-            actualizacion.imagen_url = imagenUrl;
-        }
-        const { error } = await sb.from('banners').update(actualizacion).eq('id', registroId);
+    if (imagenArchivo) {
+        const { error } = await sb.from('banners')
+            .update({ imagen_path: await subirImagenAdmin('banners', 'banners', imagenArchivo) })
+            .eq('id', registroId);
         if (error) throw new Error(error.message);
+        if (previo?.imagen_path) await eliminarImagenAdmin(previo.imagen_path);
     }
 
-    let debeLimpiarLogoViejo = false;
-    if (logoArchivo || logoUrl) {
-        const actualizacion = {};
-        if (logoArchivo) {
-            actualizacion.logo_path = await subirImagenAdmin('banners', 'logos', logoArchivo);
-            actualizacion.logo_url = null;
-            debeLimpiarLogoViejo = Boolean(previo?.logo_path);
-        } else {
-            actualizacion.logo_path = null;
-            actualizacion.logo_url = logoUrl;
-        }
-        const { error } = await sb.from('banners').update(actualizacion).eq('id', registroId);
+    if (logoArchivo) {
+        const { error } = await sb.from('banners')
+            .update({ logo_path: await subirImagenAdmin('banners', 'logos', logoArchivo) })
+            .eq('id', registroId);
         if (error) throw new Error(error.message);
+        if (previo?.logo_path) await eliminarImagenAdmin(previo.logo_path);
     }
-
-    if (debeLimpiarImagenVieja && previo?.imagen_path) await eliminarImagenAdmin(previo.imagen_path);
-    if (debeLimpiarLogoViejo && previo?.logo_path) await eliminarImagenAdmin(previo.logo_path);
 
     toast(id ? 'Banner actualizado.' : 'Banner creado.');
 }

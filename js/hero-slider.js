@@ -2,7 +2,7 @@
 // Slides dinámicos desde Supabase (tabla slider).
 // Sin slides => la sección se mantiene oculta (hidden en el HTML).
 
-import { obtenerSlider, recortarTexto, imagenOptimizada, atributosEnlace, escaparHtml, urlSegura, placeholderImagenPublica } from './utils.js';
+import { obtenerSlider, recortarTexto, atributosEnlace, escaparHtml, urlSegura, placeholderImagenPublica } from './utils.js';
 
 class HeroSlider {
     constructor() {
@@ -147,7 +147,7 @@ class HeroSlider {
             // filtrar esquemas peligrosos antes de interpolar en HTML.
             const titulo = recortarTexto(slide.titulo);
             const textoSoporte = recortarTexto(slide.textoSoporte);
-            const imagen = escaparHtml(imagenOptimizada(slide.imagen));
+            const imagen = escaparHtml(slide.imagen);
             const link = slide.link ? urlSegura(slide.link) : '';
             const visual = imagen
                 ? `<img src="${imagen}" alt="${escaparHtml(titulo)}" width="1920" height="1280"${i === 0 ? ' fetchpriority="high"' : ''}>`
