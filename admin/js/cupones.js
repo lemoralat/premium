@@ -43,12 +43,13 @@ export async function renderizar(contenedor) {
                 <div class="admin-form-grid">
                     <div class="admin-field">
                         <label for="cfgUmbral">Umbral para descuento automático ($)</label>
-                        <input type="number" id="cfgUmbral" min="0" step="1000" value="${esc(s.discount_threshold || '')}">
-                        <span class="hint">Compras desde este monto obtienen descuento.</span>
+                        <input type="number" id="cfgUmbral" min="0" step="1000" value="${esc(s.discount_threshold ?? '')}">
+                        <span class="hint">Compras desde este monto obtienen descuento. Dejalo en <strong>0</strong> para desactivar el descuento automático.</span>
                     </div>
                     <div class="admin-field">
                         <label for="cfgPorcentaje">Porcentaje de descuento automático (%)</label>
-                        <input type="number" id="cfgPorcentaje" min="1" max="100" step="1" value="${esc(s.discount_percent || '')}">
+                        <input type="number" id="cfgPorcentaje" min="0" max="100" step="1" value="${esc(s.discount_percent ?? '')}">
+                        <span class="hint">Entre 1 y 100 para aplicarlo. En <strong>0</strong> queda desactivado.</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -99,6 +100,11 @@ export async function renderizar(contenedor) {
 
     $('#formDescuentosAuto').addEventListener('submit', async (event) => {
         event.preventDefault();
+        // OJO: el `|| 0` acá es correcto y no hay que cambiarlo por `??`. El 0 es
+        // un valor que el admin quiere guardar (desactivar el descuento), y
+        // `parseFloat('') || 0` también da 0 para un campo vacío. El bug
+        // estaba en js/utils.js, donde el `||` caía a un default que
+        // NO era 0 (100000/10) y por eso pisaba lo que el admin había pedido.
         conCarga(event.submitter, guardarDescuentos({
             discount_threshold: parseFloat($('#cfgUmbral').value) || 0,
             discount_percent: parseFloat($('#cfgPorcentaje').value) || 0

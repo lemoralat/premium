@@ -90,6 +90,25 @@ export const CONFIG_DISENO = {
     estiloBordes: 'redondeado' // redondeado | circular | recto
 };
 
+// Un número que venga de la BD vale siempre, incluido el 0. Por eso no se
+// puede usar `||` para el default: `Number(0) || 100000` devuelve 100000.
+//
+// Con los defaults de arriba (umbral 100000, 10%) eso rompía el descuento
+// automático en dos direcciones:
+//   - El admin ponía 0 para desactivarlo y el `||` lo descartaba: la tienda
+//     mostraba 10% en todo pedido ≥ $100.000 y el servidor —que sí respeta el
+//     0— cobraba el total completo. Precio mostrado ≠ precio cobrado.
+//   - El 0 en la hoja original significaba "sin descuento"; en Postgres es un
+//     número, y `||` siguió tratándolo como "no configurado".
+//
+// Sólo caemos al default cuando la columna no vino (migración no aplicada) o
+// cuando el valor no es un número.
+function numeroOVacio(valor, porDefecto) {
+    if (valor === null || valor === undefined || valor === '') return porDefecto;
+    const n = Number(valor);
+    return Number.isFinite(n) ? n : porDefecto;
+}
+
 // Aplicar la configuración remota (settings) sobre CONFIG_APP / WHATSAPP_CONFIG / CONFIG_DESCUENTO.
 // Llamar una vez al inicio (template.js) y antes de calcular totales (formulario).
 export async function cargarConfiguracionGlobal() {
@@ -103,8 +122,8 @@ export async function cargarConfiguracionGlobal() {
             WHATSAPP_CONFIG.defaultMessage = c.whatsapp_default_message ?? WHATSAPP_CONFIG.defaultMessage;
             CONFIG_APP.whatsappNumber = WHATSAPP_CONFIG.number;
             CONFIG_APP.whatsappMessage = WHATSAPP_CONFIG.defaultMessage;
-            CONFIG_DESCUENTO.UMBRAL = Number(c.discount_threshold) || CONFIG_DESCUENTO.UMBRAL;
-            CONFIG_DESCUENTO.PORCENTAJE = Number(c.discount_percent) || CONFIG_DESCUENTO.PORCENTAJE;
+            CONFIG_DESCUENTO.UMBRAL = numeroOVacio(c.discount_threshold, CONFIG_DESCUENTO.UMBRAL);
+            CONFIG_DESCUENTO.PORCENTAJE = numeroOVacio(c.discount_percent, CONFIG_DESCUENTO.PORCENTAJE);
             // Compra mínima (menú Descuentos → Compra mínima): cantidad de
             // productos y monto, ambas reglas acumulables. 0 = regla inactiva.
             CONFIG_COMPRA_MINIMA.cantidad = Math.max(0, Math.floor(Number(c.compra_minima_cantidad) || 0));
