@@ -2135,13 +2135,11 @@ footer p {
 
 .table-value {
     color: var(--text-color);
-    font-size: var(--fs-product-secondary);
     line-height: 1.35;
 }
 
 .alias-highlight {
     color: var(--primary-color);
-    font-size: var(--fs-product-secondary);
     line-height: 1.35;
     display: inline-block;
     margin-right: 0.5rem;
@@ -2177,7 +2175,6 @@ footer p {
 }
 
 .amount-label {
-    font-size: var(--fs-label);
     line-height: 1.2;
     margin-bottom: 0.5rem;
     opacity: 0.9;
