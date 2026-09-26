@@ -135,8 +135,8 @@ html {
 /* Tipografía - Mobile (<768px) */
 @media (max-width: 767px) {
     :root {
-        --fs-h1: 1.5rem;                   /* 24px */
-        --fs-h2: 1.25rem;                  /* 20px */
+        --fs-h1: 1.4rem;                   /* 24px */
+        --fs-h2: 1.2rem;                  /* 20px */
         --fs-h3: 1.0625rem;                /* 17px */
         --fs-h4: 1rem;                     /* 16px */
         --fs-h5: 0.9375rem;                /* 15px */
@@ -320,6 +320,7 @@ html {
     }
 
     .banner_info_copy h2 {
+        font-size: var(--fs-h2);
         margin: .4rem 0;
     }
 
@@ -333,8 +334,8 @@ html {
     }
 
     .banner_info_icono img {
-        width: 50px;
-        height: auto;
+        width: auto;
+        height: 50px;
     }
 
 }
@@ -4027,6 +4028,7 @@ body.zoom-active {
 
     .slider-text h1 {
         margin: 0;
+        font-size: var(--fs-h1);
     }
 
 
