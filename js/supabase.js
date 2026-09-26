@@ -170,6 +170,69 @@ function fechaLocal(dato) {
 }
 
 // ============================================================================
+// FAVORITOS: podar los que ya no existen en el catálogo
+// ============================================================================
+// Los favoritos viven SÓLO en localStorage: no hay tabla de ellos en la base,
+// así que borrar un producto desde el panel no los toca. El ID queda para
+// siempre, el contador del header sigue marcando un favorito que no se puede
+// ver ni desmarcar (no hay nada renderizado contra lo que desmarcarlo), y la
+// única forma de sacarlo era Clear Site Data. Esto reconcilia la lista contra
+// el catálogo en cada carga.
+//
+// Va acá y no en favoritos.js porque cargarProductos() es el único punto por el
+// que pasa una carga EXITOSA del catálogo en todas las páginas: template.js lo
+// pide siempre (js/template.js, para el buscador del header) y refrescarCatalogo()
+// vuelve por acá, así que también se arregla solo con la pestaña abierta y el
+// producto borrado desde el panel en otra.
+//
+// EL GUARD ES LO IMPORTANTE: un catálogo vacío NO es evidencia de que los
+// favoritos estén viejos, y podar contra él vaciaría la lista de todos los
+// clientes sin que puedan recuperarla. El catálogo vacío llega por dos motivos:
+//   · `.eq('activo', true)` + la policy "Productos: lectura pública activos"
+//     (using (activo = true)): desactivar todos los productos —por
+//     mantenimiento o por error— devuelve [] de forma legítima. Que la tienda
+//     esté vacía no es motivo para tirarle la lista al usuario.
+//   · (el camino `ok: false` no llega hasta acá, es sólo defensa de segundo
+//     nivel).
+// Por eso sólo se poda cuando hay productos vivos contra los que comparar.
+//
+// Los IDs se comparan como números a propósito: el catálogo hace `id:
+// Number(p.id)` y el onclick inline del botón de favorito interpola el número
+// como literal JS, así que en localStorage siempre hay números. Un Set con
+// tipos cruzados ("5" contra 5) borraría favoritos válidos.
+function podarFavoritosInvalidos(catalogo) {
+    if (!Array.isArray(catalogo) || catalogo.length === 0) return catalogo;
+
+    const vivos = new Set(catalogo.map(p => p.id));
+    try {
+        const guardados = JSON.parse(localStorage.getItem('favorites'));
+        if (!Array.isArray(guardados) || guardados.length === 0) return catalogo;
+
+        // El Set deduplica además de filtrar: un mismo ID repetido haría que el
+        // contador sume dos por un producto marcado una vez, y que haya que
+        // desmarcarlo dos veces para sacarlo. Hoy el toggle no puede duplicar
+        // (sólo hace push si indexOf da -1), pero como esta línea ya está
+        // reescribiendo el array, sale gratis y deja el contador del header igual
+        // a la lista por definición.
+        const limpios = [...new Set(guardados.filter(id => vivos.has(id)))];
+        // No escribir si no cambió nada: cargarProductos corre en cada página y en
+        // cada refresco del catálogo, y escribir siempre dispararía el contador.
+        if (limpios.length === guardados.length) return catalogo;
+
+        localStorage.setItem('favorites', JSON.stringify(limpios));
+    } catch (error) {
+        // Sin localStorage (navegador privado) o JSON corrupto: los favoritos son
+        // un extra y no pueden romper la carga del catálogo.
+        return catalogo;
+    }
+
+    if (typeof window.actualizarContadorFavoritosGlobal === 'function') {
+        window.actualizarContadorFavoritosGlobal();
+    }
+    return catalogo;
+}
+
+// ============================================================================
 // PRODUCTOS
 // ============================================================================
 export async function cargarProductos() {
@@ -177,7 +240,7 @@ export async function cargarProductos() {
     if (!sb) return { ok: false };
 
     const cacheado = leerCache('productos');
-    if (cacheado) return { ok: true, datos: cacheado };
+    if (cacheado) return { ok: true, datos: podarFavoritosInvalidos(cacheado) };
 
     try {
         // Un solo query con las relaciones anidadas (categoría, variantes, imágenes)
@@ -197,7 +260,7 @@ export async function cargarProductos() {
 
         const productos = (filas || []).map(mapaProducto);
         cachear('productos', productos);
-        return { ok: true, datos: productos };
+        return { ok: true, datos: podarFavoritosInvalidos(productos) };
     } catch (error) {
         console.warn('⚠️ Supabase: no se pudieron cargar productos, usando fallback JSON.', error);
         return { ok: false, error };
