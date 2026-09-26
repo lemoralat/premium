@@ -3957,6 +3957,18 @@ body.zoom-active {
     right: 2rem;
 }
 
+/* js/hero-slider.js agrega .hero-slider-unico al slider cuando, en el breakpoint
+   actual, quedó un solo slide visible (los slides declaran su mostrarEn). Sin
+   flechas porque no hay a dónde ir: next/prev harían loop al mismo slide.
+
+   La regla tiene que ser explícita porque .slider-nav declara display: flex, que
+   le gana al [hidden] del navegador, así que un atributo hidden no alcanzaría.
+   display: none además las saca del recorrido del teclado y del árbol de
+   accesibilidad, que es lo que corresponde con botones que ya no hacen nada. */
+.hero-slider.hero-slider-unico .slider-nav {
+    display: none;
+}
+
 /* Animación de entrada del contenido */
 @keyframes slideInContent {
     from {

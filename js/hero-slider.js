@@ -65,7 +65,12 @@ class HeroSlider {
         return window.matchMedia('(max-width: 768px)').matches;
     }
 
-    // Un slide sin `mostrarEn` (o con valor desconocido) se muestra en ambos.
+    // Un slide sin `mostrarEn` se muestra en ambos. Ojo: eso sólo cubre el valor
+    // ausente; un valor desconocido (por ejemplo 'inventado') no cae en 'ambos'
+    // y el slide no se muestra en ningún breakpoint, con lo que el slider entero
+    // puede quedar oculto. No se cambia acá porque es semántica de visibilidad
+    // y ajena a la navegación; la columna tiene un CHECK que la limita a los
+    // tres valores válidos, así que sólo se alcanzaría con datos corruptos.
     esVisibleEnDispositivo(slide) {
         const m = (slide.mostrarEn || 'ambos').toLowerCase();
         if (m === 'ambos') return true;
@@ -95,7 +100,26 @@ class HeroSlider {
         this.isTransitioning = false;
         this.stopAutoplay();
         this.goToSlide(0);
-        this.startAutoplay();
+        this.ajustarNav();
+    }
+
+    // ¿Se muestran las flechas? Depende del breakpoint, no del total: cada slide
+    // declara su `mostrarEn`, así que con 2 slides en la base (uno mobile y otro
+    // desktop) hay 1 solo visible en cada lado y las flechas sobran igual. Por eso
+    // se cuenta lo que quedó pintado, no lo que llegó de la base, y se recalcula
+    // en cada repintado, o sea también al cruzar el breakpoint.
+    //
+    // Con un solo slide, next/prev hacen loop a sí mismo y el autoplay giraba en
+    // vacío cada 5 s, así que también se corta: no hay a dónde navegar.
+    ajustarNav() {
+        const navegable = this.slides.length > 1;
+        this.slider.classList.toggle('hero-slider-unico', !navegable);
+
+        if (navegable) {
+            this.startAutoplay();
+        } else {
+            this.stopAutoplay();
+        }
     }
 
     // Al cruzar el breakpoint (≤768px), repinta con el set que corresponda.
@@ -242,6 +266,11 @@ class HeroSlider {
     }
     
     nextSlide() {
+        // Sin destino: con un solo slide el loop volvería al mismo. El guard
+        // también evita que el teclado y el swipe muevan el flag
+        // isTransitioning sin cambiar nada.
+        if (this.slides.length <= 1) return;
+
         let next = this.currentSlide + 1;
         if (next >= this.slides.length) {
             next = 0; // Loop
@@ -253,6 +282,9 @@ class HeroSlider {
     }
     
     prevSlide() {
+        // Mismo guard que nextSlide().
+        if (this.slides.length <= 1) return;
+
         let prev = this.currentSlide - 1;
         if (prev < 0) {
             prev = this.slides.length - 1; // Loop
@@ -264,6 +296,12 @@ class HeroSlider {
     }
     
     startAutoplay() {
+        // Con un solo slide no hay giro. El guard va acá y no sólo en
+        // ajustarNav() porque mouseleave y visibilitychange llaman a
+        // startAutoplay() directo: sin esto volvían a levantar el intervalo en
+        // vacío después de que ajustarNav() lo cortara.
+        if (this.slides.length <= 1) return;
+
         this.stopAutoplay(); // Limpiar cualquier intervalo anterior
         this.autoplayInterval = setInterval(() => {
             this.nextSlide();
