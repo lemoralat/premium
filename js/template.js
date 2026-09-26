@@ -19,7 +19,7 @@ function renderHeader(activePage = '', categorias = []) {
     const submenuHTML = categorias.length > 0 ? `
         <ul class="submenu">
             ${categorias.map(cat => `
-                <li><a href="index.html#cat-${slugificar(cat)}">${escaparHtml(cat)}</a></li>
+                <li><a href="/#cat-${slugificar(cat)}">${escaparHtml(cat)}</a></li>
             `).join('')}
         </ul>
     ` : '';
@@ -27,10 +27,10 @@ function renderHeader(activePage = '', categorias = []) {
     // Logo del header: si hay logotipo subido (sección Diseño) se muestra la
     // imagen; si no, el nombre de la tienda (settings.site_name) como texto.
     const logoSitio = CONFIG_DISENO.logoUrl
-        ? `<a href="index.html" class="logo-link">
+        ? `<a href="/" class="logo-link">
                     <img src="${escaparHtml(CONFIG_DISENO.logoUrl)}" alt="${escaparHtml(obtenerNombreSitio())}" class="logo logo--${CONFIG_DISENO.logoTamano}">
                 </a>`
-        : `<a href="index.html" class="logo-link logo-text" title="${escaparHtml(obtenerNombreSitio())}">${escaparHtml(obtenerNombreSitio())}</a>`;
+        : `<a href="/" class="logo-link logo-text" title="${escaparHtml(obtenerNombreSitio())}">${escaparHtml(obtenerNombreSitio())}</a>`;
 
     // Redes sociales del header: se muestran solo las que tienen URL configurada
     // (Configuración → Redes sociales del dashboard).
@@ -87,7 +87,7 @@ function renderHeader(activePage = '', categorias = []) {
                     <button type="button" class="header-icon" data-search-toggle onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
-                    <a href="favoritos.html" class="header-icon" aria-label="Mis favoritos">
+                    <a href="/favoritos" class="header-icon" aria-label="Mis favoritos">
                         <i class="fa-solid fa-heart"></i>
                         <span class="favorites-count">0</span>
                     </a>
@@ -107,16 +107,16 @@ function renderHeader(activePage = '', categorias = []) {
                     <button type="button" class="nav-menu-close" aria-label="Cerrar menú">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
-                    <a href="index.html" class="nav-link ${activePage === 'inicio' ? 'active' : ''}">Inicio</a>
+                    <a href="/" class="nav-link ${activePage === 'inicio' ? 'active' : ''}">Inicio</a>
                     <div class="nav-item-dropdown">
-                        <a href="index.html#tienda" class="nav-link ${activePage === 'productos' ? 'active' : ''}">Productos <i class="fa-solid fa-chevron-down"></i></a>
+                        <a href="/#tienda" class="nav-link ${activePage === 'productos' ? 'active' : ''}">Productos <i class="fa-solid fa-chevron-down"></i></a>
                         ${submenuHTML}
                     </div>
-                    <!-- <a href="nosotros.html" class="nav-link ${activePage === 'nosotros' ? 'active' : ''}">Nosotros</a> -->
-                    <a href="faq.html" class="nav-link ${activePage === 'faq' ? 'active' : ''}">Preguntas</a> 
-                    <!-- <a href="index.html#contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>-->
-                    <a href="contacto.html" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a> 
-                    <a href="favoritos.html" class="nav-link favorites-link ${activePage === 'favoritos' ? 'active' : ''}" aria-label="Mis Favoritos">
+                    <!-- <a href="/nosotros" class="nav-link ${activePage === 'nosotros' ? 'active' : ''}">Nosotros</a> -->
+                    <a href="/faq" class="nav-link ${activePage === 'faq' ? 'active' : ''}">Preguntas</a> 
+                    <!-- <a href="/#contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>-->
+                    <a href="/contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a> 
+                    <a href="/favoritos" class="nav-link favorites-link ${activePage === 'favoritos' ? 'active' : ''}" aria-label="Mis Favoritos">
                         <i class="fa-solid fa-heart"></i>
                         <span class="nav-label">Favoritos</span>
                         <span class="favorites-count">0</span>
@@ -452,7 +452,7 @@ function renderSidemenuCarrito() {
                 <i class="fa-solid fa-cart-shopping"></i>
                 <h3>Tu carrito está vacío</h3>
                 <p>Agregá productos para comenzar tu compra</p>
-                <a href="index.html" class="shop-btn btn-border">Ir a la tienda</a>
+                <a href="/" class="shop-btn btn-border">Ir a la tienda</a>
             </div>
         `;
         contenedorFooter.innerHTML = '';
@@ -509,7 +509,7 @@ function renderSidemenuCarrito() {
             <span>Total</span>
             <span>$${formatearPrecio(total)}</span>
         </div>
-        <a href="carrito.html" class="side-cart-checkout">
+        <a href="/carrito" class="side-cart-checkout">
             Ir al carrito <i class="fa-solid fa-arrow-right"></i>
         </a>
         <button type="button" class="side-cart-continue" data-cerrar-sidemenu>Seguir comprando</button>

@@ -81,7 +81,7 @@ async function enviarRecuperacion() {
     try {
         const sb = await clienteAdmin();
         const { error } = await sb.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/admin/recuperar.html`
+            redirectTo: `${window.location.origin}/admin/recuperar`
         });
         if (error) throw error;
         errorBox.className = 'admin-success-text';

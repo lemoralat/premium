@@ -39,7 +39,7 @@ function renderizarFavoritos() {
                 <i class="fa-regular fa-heart"></i>
                 <h2>Aún no tienes productos favoritos</h2>
                 <p>Agrega los productos que más te gusten para verlos aquí.</p>
-                <a href="index.html" class="shop-btn btn-border">Explorar productos</a>
+                <a href="/" class="shop-btn btn-border">Explorar productos</a>
             </div>
         `;
         return;
@@ -55,7 +55,7 @@ function renderizarFavoritos() {
                 <i class="fa-regular fa-heart"></i>
                 <h2>No se encontraron tus productos favoritos</h2>
                 <p>Parece que los productos que marcaste como favoritos ya no están disponibles.</p>
-                <a href="index.html" class="shop-btn btn-border">Explorar productos</a>
+                <a href="/" class="shop-btn btn-border">Explorar productos</a>
             </div>
         `;
         return;

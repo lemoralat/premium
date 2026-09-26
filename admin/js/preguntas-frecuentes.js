@@ -26,7 +26,7 @@ export async function renderizarGestor(contenedor) {
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
-            <p>Se muestran en la página de ayuda (faq.html). Mientras no haya preguntas activas, la tienda usa el contenido estático actual.</p>
+            <p>Se muestran en la página de ayuda (/faq). Mientras no haya preguntas activas, la tienda usa el contenido estático actual.</p>
             <button type="button" class="btn btn-primary" id="btnNuevaPregunta">
                 <i class="fa-solid fa-plus"></i> Nueva pregunta
             </button>

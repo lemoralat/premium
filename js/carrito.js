@@ -27,7 +27,7 @@ function renderizarCarrito() {
             <div class="empty-cart">
                 <h2>Tu carrito está vacío</h2>
                 <p>Agrega productos para comenzar tu compra</p>
-                <a href="index.html" class="shop-btn btn-border">Ir a la tienda</a>
+                <a href="/" class="shop-btn btn-border">Ir a la tienda</a>
             </div>
         `;
         actualizarTotales();
