@@ -179,6 +179,7 @@ export async function renderizar(contenedor) {
                         </label>
                     </div>
                 </div>
+                </div>
                 <div class="admin-modal-acciones">
                     <button type="submit" class="btn btn-primary">Guardar diseño</button>
                 </div>
