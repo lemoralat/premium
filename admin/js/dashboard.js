@@ -40,13 +40,16 @@ function destruirCharts() {
 
 // Colores de los gráficos según el tema del panel (admin: no detecta el
 // dispositivo; el tema viene de settings.admin_tema vía tema-admin.js).
+// Los valores de `oscuro` son los mismos tokens que el bloque
+// html[data-tema="dark"] de admin.css: si se cambia la paleta ahí, hay que
+// cambiarlos acá también o los gráficos quedan con matiz azul sobre fondo gris.
 function coloresChart() {
     const oscuro = document.documentElement.getAttribute('data-tema') === 'dark';
     return {
-        ticks: oscuro ? '#cbd5e1' : '#64748b',
-        grid: oscuro ? '#334155' : '#e2e8f0',
-        separador: oscuro ? '#1e293b' : '#ffffff', // borde entre sectores del donut = superficie
-        lineaFill: oscuro ? 'rgba(59, 130, 246, 0.18)' : 'rgba(37, 99, 235, 0.12)'
+        ticks: oscuro ? '#a3a3a3' : '#64748b',
+        grid: oscuro ? '#2e2e2e' : '#e2e8f0',
+        separador: oscuro ? '#1f1f1f' : '#ffffff', // borde entre sectores del donut = superficie
+        lineaFill: oscuro ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.12)'
     };
 }
 

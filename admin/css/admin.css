@@ -1635,23 +1635,32 @@ body.admin-modal-abierto { overflow: hidden; }
 html[data-tema="dark"] {
     color-scheme: dark;
 
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --surface-alt: #243349;
-    --surface-hover: #2b3a55;
-    --surface-borde-info: #14263a;
+    /* Escala de grises NEUTRALES (sin matiz de color). La anterior era la
+       familia slate de Tailwind (#0f172a/#1e293b/#334155), que tiraba a azul y
+       se confundía con el azul de --primary. Ahora los tres niveles separan
+       bien: --bg el fondo de la página, --surface las tarjetas, --surface-alt
+       las zonas internas (thead, filas alternas). */
+    --bg: #171717;
+    --surface: #1f1f1f;
+    --surface-alt: #262626;
+    --surface-hover: #2e2e2e;
+    --surface-borde-info: #1a1a1a;
 
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --border: #334155;
+    --text: #e5e5e5;
+    --text-muted: #a3a3a3;
+    --border: #383838;
 
     /* Primario del panel se mantiene IGUAL en dark (decisión: no se aclara como
-       en la tienda pública); los botones primarios conservan texto blanco. */
+       en la tienda pública); los botones primarios conservan texto blanco. Es
+       el único color con matiz del tema, y es a propósito. --primary-light pasa
+       a gris neutro (en light es azul claro) porque sus 8 usos son superficies
+       de fondo — badges tipo Procesando, focus rings, hovers — y una superficie
+       azulada era justamente lo que ensuciaba la paleta. */
     --primary: #2563eb;
     --primary-hover: #1d4ed8;
-    --primary-light: #1d3a5f;
+    --primary-light: #2a2a2a;
 
-    --secondary: #94a3b8;
+    --secondary: #a3a3a3;
     --success: #22c55e;
     --success-bg: #16301f;
     --success-border: #1e4d31;
@@ -1661,21 +1670,28 @@ html[data-tema="dark"] {
     --danger-bg: #3b1c1e;
     --danger-border: #552a2e;
 
-    --fila-activa-bg: #3a2c0e;
+    --fila-activa-bg: #2e2e2e;
 
-    --placeholder-bg: #243349;
-    --placeholder-text: #94a3b8;
+    --placeholder-bg: #262626;
+    --placeholder-text: #a3a3a3;
 
-    --estado-cupon-bg: #26303c;
-    --estado-cupon-text: #e2e8f0;
-    --estado-enviado-bg: #1e2a52;
+    --estado-cupon-bg: #262626;
+    --estado-cupon-text: #e5e5e5;
+    --estado-enviado-bg: #262626;
     --estado-enviado-text: #93a8f5;
-    --estado-cancelado-bg: #24303c;
+    --estado-cancelado-bg: #262626;
 
     /* Toast: mismo fondo/texto en ambos temas (varía según tipo) */
-    --toast-bg: #334155;
-    --toast-text: #f8fafc;
+    --toast-bg: #383838;
+    --toast-text: #fafafa;
 
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+    /* El badge "Procesando" pinta el texto con --primary sobre --primary-light.
+       Con el fondo gris neutro, #2563eb se queda en 2.78:1 (antes, sobre el
+       azul #1d3a5f, estaba en 2.23:1 — tampoco cumplía). En dark el texto
+       pasa a un azul claro, el mismo criterio que ya usa --estado-enviado-text.
+       Solo en dark: en light el par azul sobre azul claro es el que hay. */
+    .estado-procesando { color: #93a8f5; }
 }
