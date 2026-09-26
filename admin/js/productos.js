@@ -28,6 +28,7 @@ export async function renderizar(contenedor) {
         sb.from('products').select(`
             id, nombre, descripcion, descripcion_detallada, precio, precio_anterior, stock,
             caracteristicas, activo, destacado,
+            category_id,
             categoria:categories(id, name),
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
             imagenes:product_images(id, storage_path, external_url, es_principal, position)
@@ -235,7 +236,7 @@ function abrirModalProducto(idExistente) {
                         <select id="prdCategoria" style="flex:1;">
                             <option value="">Sin categoría</option>
                             ${categorias.map((c) => `
-                                <option value="${esc(c.id)}" ${producto?.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>
+                                <option value="${esc(c.id)}" ${String(producto?.category_id ?? '') === String(c.id) ? 'selected' : ''}>${esc(c.name)}</option>
                             `).join('')}
                         </select>
                         <button type="button" class="btn btn-sm btn-outline" id="btnCrearCategoria" title="Crear categoría nueva">
