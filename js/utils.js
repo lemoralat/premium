@@ -86,11 +86,6 @@ export const CONFIG_DISENO = {
     faviconUrl: '',         // URL pública del favicon (vacío ⇒ favicon por defecto)
     ogImageUrl: '',         // URL pública de la imagen OpenGraph (vacío ⇒ por defecto)
     cardImageFormat: '1:1', // 1:1 | 3:2 | 4:5 para los cards de catálogo
-    // Si es false, la tienda no pide NINGUNA foto de producto y pinta el
-    // placeholder neutro (Diseño → Identidad visual). El default es true, que
-    // es como venía la tienda; además la carga usa `!== false`, así que si la
-    // columna todavía no existe (migración 0034 sin aplicar) sigue cargando.
-    cargarImagenesProductos: true,
     colorPrincipal: '#000000',
     estiloBordes: 'redondeado' // redondeado | circular | recto
 };
@@ -159,10 +154,6 @@ export async function cargarConfiguracionGlobal() {
             if (['1:1', '3:2', '4:5'].includes(c.card_image_format)) {
                 CONFIG_DISENO.cardImageFormat = c.card_image_format;
             }
-            // `!== false` a propósito: si la migración 0034 todavía no está
-            // aplicada la columna no viene y el interruptor queda en su
-            // default (sí cargar), que es como venía la tienda.
-            CONFIG_DISENO.cargarImagenesProductos = c.cargar_imagenes_productos !== false;
             if (/^#[0-9a-fA-F]{6}$/.test(c.color_principal || '')) {
                 CONFIG_DISENO.colorPrincipal = c.color_principal.toLowerCase();
             }
@@ -175,24 +166,6 @@ export async function cargarConfiguracionGlobal() {
     } catch (error) {
         console.warn('No se pudo aplicar la configuración remota:', error);
     }
-}
-
-// Puerta única a la configuración, deduplicada.
-//
-// Los <script type="module"> de cada página corren en PARALELO, no en orden:
-// template.js, productos.js y carrito.js piden la config casi al mismo tiempo y
-// cada uno la aplicaba por su cuenta. La cache de supabase.js es un Map con TTL
-// que sólo evita el request una vez que la primera promesa RESUELVE, así que en
-// el primer pintado se disparaban varias consultas a `settings` en paralelo.
-//
-// Además, sin esperar, un módulo puede armar el HTML de un producto antes de
-// que llegue la config: el interruptor de imágenes (CONFIG_DISENO) seguiría en
-// su default y la primera vez que se dibuja el catálogo no se respetaría. Por
-// eso obtenerProductos() pasa por acá antes de devolver nada.
-let configGlobalEnCurso = null;
-export function esperarConfiguracionGlobal() {
-    configGlobalEnCurso ??= cargarConfiguracionGlobal();
-    return configGlobalEnCurso;
 }
 
 // Nombre del sitio (configurable desde supabase settings)
@@ -297,12 +270,6 @@ function transformarCupones(cuponesArray) {
 
 // ================= PRODUCTOS =================
 export async function obtenerProductos() {
-    // Antes de devolver nada: la config tiene que estar aplicada, porque el
-    // interruptor de imágenes de Diseño se lee al ARMAR el HTML de cada
-    // producto, no después. Sin esta espera, catálogo/detalle/favoritos/
-    // búsqueda pueden pintar la foto de un producto aunque esté apagado, y
-    // recién al segundo render se ve el placeholder.
-    await esperarConfiguracionGlobal();
     const remoto = await cargarProductos();
     if (remoto.ok) return remoto.datos;
     // Sin Supabase: catálogo vacío (el resto de la web sigue funcionando).
@@ -457,35 +424,6 @@ export function placeholderImagenPublica(clase = 'product-image') {
     return `<div class="${escaparHtml(clase)} public-image-placeholder" role="img" aria-label="Sin imagen"></div>`;
 }
 
-// ¿Se pide la foto de este producto?
-//
-// Es la ÚNICA decisión de si la tienda carga imágenes de producto (Diseño →
-// Identidad visual → "Cargar imágenes de productos"). Con el interruptor
-// apagado devuelve false aunque el producto tenga foto, y el llamador cae al
-// placeholder: no se emite el <img>, así que el navegador no pide nada. Con el
-// interruptor apagado el catálogo queda indistinguible de uno sin fotos, que es
-// justo lo que se busca: que se vea prolijo, no roto.
-//
-// Recibe un producto del catálogo o una línea del carrito: lo único que mira
-// es `.imagen`.
-export function debeCargarImagenProducto(producto) {
-    if (!CONFIG_DISENO.cargarImagenesProductos) return false;
-    return Boolean(producto?.imagen);
-}
-
-// Galería de imágenes de un producto para la ficha de detalle.
-//
-// Devuelve un array VACÍO cuando no hay que cargar nada, y eso es lo que hace
-// que el resto del código no toque nada: la imagen principal cae al placeholder,
-// no se dibujan las flechas ni el contador, no se pintan las miniaturas y el
-// zoom no se puede abrir. Se usa en los DOS lugares que arman la galería (el
-// render inicial y el modal de zoom) para que no puedan desincronizarse.
-export function galeriaProducto(producto) {
-    if (!CONFIG_DISENO.cargarImagenesProductos) return [];
-    const fuentes = producto?.galeria?.length ? producto.galeria : [producto?.imagen];
-    return fuentes.map(imagenOptimizada).filter(Boolean);
-}
-
 // Fila de producto con el diseño de la página de favoritos: miniatura cuadrada a
 // la izquierda y, a la derecha, nombre, categoría y precio.
 //
@@ -502,7 +440,7 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
     return `
         <div class="favorito-item${conBadge && esAgotado ? ' out-of-stock' : ''}">
             <div class="favorito-media">
-                ${debeCargarImagenProducto(producto)
+                ${producto.imagen
                     ? `<img src="${imagen}" alt="${nombre}" class="favorito-imagen" loading="lazy">`
                     : placeholderImagenPublica('favorito-imagen')}
                 ${conBadge && esAgotado ? '<span class="out-of-stock-badge">Sin Stock</span>' : ''}
@@ -539,7 +477,7 @@ export function generarHTMLTarjetaProducto(producto) {
         <a href="producto.html?id=${producto.id}" class="product-card product-link ${esAgotado ? 'out-of-stock' : ''}" aria-label="Ver detalle de ${nombre}">
             ${esAgotado ? '<span class="out-of-stock-badge">Sin Stock</span>' : ''}
             <div class="product-image-wrapper">
-                ${debeCargarImagenProducto(producto)
+                ${producto.imagen
                     ? `<img src="${imagen}" alt="${nombre}" class="product-image" loading="lazy">`
                     : placeholderImagenPublica('product-image')}
                 <span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>

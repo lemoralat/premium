@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, placeholderImagenPublica, debeCargarImagenProducto } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, imagenOptimizada, atributosEnlace, placeholderImagenPublica } from './utils.js';
 
 let productosGlobales = [];
 
@@ -47,7 +47,7 @@ function renderizarCarrito() {
 
         return `
         <div class="cart-item${sinStock ? ' sin-stock' : ''}" data-clave="${escaparHtml(clave)}">
-            ${debeCargarImagenProducto(item)
+            ${item.imagen
                 ? `<img src="${imagenSegura}" alt="${nombreSeguro}" class="item-image" loading="lazy">`
                 : placeholderImagenPublica('item-image')}
             <div class="item-details">

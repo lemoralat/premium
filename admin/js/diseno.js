@@ -172,13 +172,6 @@ export async function renderizar(contenedor) {
                         <label>Estilo de bordes</label>
                         <div class="diseno-bordes">${bordesHTML}</div>
                     </div>
-                    <div class="admin-field full">
-                        <label class="admin-check">
-                            <input type="checkbox" id="dsnImagenesProductos" ${s.cargar_imagenes_productos !== false ? 'checked' : ''}>
-                            Cargar imágenes de los productos (catálogo, detalle, carrito)
-                        </label>
-                    </div>
-                </div>
                 </div>
                 <div class="admin-modal-acciones">
                     <button type="submit" class="btn btn-primary">Guardar diseño</button>
@@ -471,16 +464,6 @@ async function guardar() {
     if (!/^#[0-9a-f]{6}$/.test(marqueeHex)) throw new Error('Color del marquee inválido. Usá formato #RRGGBB.');
     payload.marquee_color_fondo = marqueeHex;
     payload.marquee_activo = $('#dsnMarqueeActivo').checked;
-
-    // Imágenes de productos
-    payload.cargar_imagenes_productos = $('#dsnImagenesProductos').checked;
-
-    // La migración 0034 puede no estar aplicada todavía. El update de
-    // Diseño NO filtra columnas: sin este guard, guardar con ella sin
-    // aplicar rompería ENTERO el guardado (logo, favicon, color, bordes…
-    // que sí funcionan) por una columna inexistente. Se detecta por la
-    // fila leída, como en el panel de Configuración.
-    if (s.cargar_imagenes_productos === undefined) delete payload.cargar_imagenes_productos;
 
     // Recursos de imagen: subir/actualizar primero y borrar el anterior
     // solo después de que la base de datos acepte el nuevo estado.
