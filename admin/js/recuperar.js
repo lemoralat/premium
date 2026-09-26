@@ -39,7 +39,7 @@ async function iniciar() {
         } else {
             const { data } = await sb.auth.getSession();
             if (!data.session) {
-                window.location.href = '/admin/login.html';
+                window.location.href = '/admin/login';
                 return;
             }
         }
@@ -77,7 +77,7 @@ document.getElementById('recuperarForm').addEventListener('submit', async (event
 
         // Cerrar sesión restante y volver al login con mensaje.
         await sb.auth.signOut();
-        window.location.href = '/admin/login.html';
+        window.location.href = '/admin/login';
     } catch (error) {
         mostrarError(error.message || 'No se pudo actualizar la contraseña.');
         submitBtn.disabled = false;

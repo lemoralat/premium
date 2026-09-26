@@ -67,7 +67,7 @@ export const CONFIG_APP = {
     popupTitulo: '¿Te vas tan pronto?',
     popupDescripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
     popupCta: 'Ver productos',
-    popupCtaUrl: 'index.html#tienda',
+    popupCtaUrl: '/#tienda',
     popupActivo: true,
     // Marquee promocional (sección "Diseño" del panel). Conservadores: antes de
     // la migración 0017 (columna ausente) la barra queda oculta.
@@ -446,13 +446,13 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
                 ${conBadge && esAgotado ? '<span class="out-of-stock-badge">Sin Stock</span>' : ''}
             </div>
             <div class="favorito-info">
-                <a href="producto.html?id=${producto.id}" class="favorito-nombre">${nombre}</a>
+                <a href="/producto?id=${producto.id}" class="favorito-nombre">${nombre}</a>
                 <p class="favorito-categoria">${escaparHtml(producto.categoria)}</p>
                 <p class="favorito-precio">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
             </div>
             ${conAcciones ? `
             <div class="favorito-acciones">
-                <a href="producto.html?id=${producto.id}" class="favorito-ver-btn btn-border">
+                <a href="/producto?id=${producto.id}" class="favorito-ver-btn btn-border">
                     <i class="fa-solid fa-eye"></i> Ver
                 </a>
                 <button class="favorito-eliminar-btn btn-border" onclick="eliminarDeFavoritos(${producto.id})">
@@ -474,7 +474,7 @@ export function generarHTMLTarjetaProducto(producto) {
     const imagen = escaparHtml(imagenOptimizada(producto.imagen));
 
     return `
-        <a href="producto.html?id=${producto.id}" class="product-card product-link ${esAgotado ? 'out-of-stock' : ''}" aria-label="Ver detalle de ${nombre}">
+        <a href="/producto?id=${producto.id}" class="product-card product-link ${esAgotado ? 'out-of-stock' : ''}" aria-label="Ver detalle de ${nombre}">
             ${esAgotado ? '<span class="out-of-stock-badge">Sin Stock</span>' : ''}
             <div class="product-image-wrapper">
                 ${producto.imagen
@@ -498,7 +498,7 @@ export function agregarAlCarritoBase(id, listaProductos) {
 
     // Productos con variantes se eligen en la página de detalle
     if (tieneVariantes(producto)) {
-        window.location.href = `producto.html?id=${id}`;
+        window.location.href = `/producto?id=${id}`;
         return;
     }
 

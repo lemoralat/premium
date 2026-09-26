@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
   "proxy": {
     "entrypoint": "proxy.ts",
     "matcher": ["/admin/:path*"]
@@ -9,36 +10,6 @@
       "source": "/admin",
       "destination": "/admin/",
       "permanent": true
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/carrito",
-      "destination": "/carrito.html"
-    },
-    {
-      "source": "/contacto",
-      "destination": "/contacto.html"
-    },
-    {
-      "source": "/faq",
-      "destination": "/faq.html"
-    },
-    {
-      "source": "/gracias",
-      "destination": "/gracias.html"
-    },
-    {
-      "source": "/producto",
-      "destination": "/producto.html"
-    },
-    {
-      "source": "/favoritos",
-      "destination": "/favoritos.html"
     }
   ],
   "headers": [

@@ -284,8 +284,18 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
-5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual (rewrites de rutas limpias; `/admin/...` se sirve estático).
+5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual: `cleanUrls: true` (rutas limpias nativas) + el guard `proxy.ts` de `/admin/*` + los headers de seguridad.
 6. **Probar** (sección 9) y luego, si se desea, **ir subiendo las imágenes** del catálogo desde el panel (los `external_url` de Drive siguen funcionando durante la transición).
+
+> **Nota — rutas limpias (`cleanUrls`) y el guard del panel.** `vercel.json` usa `cleanUrls: true`, la función nativa de Vercel: `/carrito.html` se sirve en `/carrito` y **quien entre a la URL con `.html` recibe un 308 a la limpia**. Por eso se **eliminaron las 7 rewrites manuales** que antes hacían ese trabajo: la doc de Vercel dice explícitamente que con `cleanUrls` los `rewrites` no deben llevar extensión en `source` ni en `destination` (con extensión, `/carrito` → `/carrito.html` → 308 → `/carrito` sería un loop).
+>
+> Eso obliga a que **`proxy.ts` compare siempre el pathname normalizado**, sin `.html`. Es la única parte del proyecto donde el routing y el guard están acoplados:
+>
+> - `RUTAS_PUBLICAS` y `ASSETS_PUBLICOS` guardan rutas **sin** extensión (`/admin/login`, no `/admin/login.html`), y `esRutaPublica()` normaliza con `normalizar()` antes de comparar.
+> - El 307 de `redirigirALogin()` apunta a `/admin/login` (la URL limpia).
+> - Si se agrega una página pública nueva bajo `/admin`, hay que whitelistearla **sin extensión**. Si se agrega con `.html`, el 308 de `cleanUrls` la manda a la forma limpia, el guard no la reconoce y la manda a login: **queda inalcanzable y, peor, el login mismo entra en loop** (307 a `/admin/login.html` → 308 a `/admin/login` → 307…). Ese es el fallo que este acoplamiento previene.
+>
+> Los enlaces internos ya apuntan a las URLs limpias (`/`, `/carrito`, `/producto?id=…`), igual que los `canonical` y `og:url`: si apuntaran a `.html`, cada navegación pagaría un 308 y el `canonical` describiría una URL que redirige. Lo mismo para el CTA del popup de salida, que el admin edita en Configuración (si guardaste ahí un valor con `.html`, actualizalo a `/#tienda`: el default del panel ya viene sin extensión).
 
 > Si se usa Supabase CLI: `supabase link` + `supabase db push`. Las migraciones son idempotentes (usan `drop policy if exists` / `on conflict do nothing`).
 

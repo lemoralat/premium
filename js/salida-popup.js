@@ -49,7 +49,7 @@
             titulo: c.titulo || '¿Te vas tan pronto?',
             descripcion: c.descripcion || 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
             cta: c.cta || 'Ver productos',
-            ctaUrl: c.ctaUrl || 'index.html#tienda',
+            ctaUrl: c.ctaUrl || '/#tienda',
             activo: c.activo !== false
         };
     }
@@ -62,9 +62,9 @@
         const cta = modalEl.querySelector('.exit-intent__cta');
         cta.textContent = cfg.cta;
         // El destino lo escribe el admin en Configuración → Popup de salida.
-        // Solo se permiten enlaces internos (index.html#…, ./…, /…) o URLs
+        // Solo se permiten enlaces internos (/#…, ./…, /…) o URLs
         // http(s): se bloquean esquemas tipo javascript: (hardening V-2).
-        const destino = enlacePermitido(cfg.ctaUrl) ? cfg.ctaUrl : 'index.html#tienda';
+        const destino = enlacePermitido(cfg.ctaUrl) ? cfg.ctaUrl : '/#tienda';
         cta.href = destino;
     }
 
@@ -113,7 +113,7 @@
                 <h2 id="exit-intent-title">¿Te vas tan pronto?</h2>
                 <p class="exit-intent-desc">Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?</p>
                 <div class="exit-intent-actions">
-                    <a href="index.html#tienda" class="exit-intent__cta">Ver productos</a>
+                    <a href="/#tienda" class="exit-intent__cta">Ver productos</a>
                     <button type="button" class="exit-intent__secondary" data-exit-close>Seguir navegando</button>
                 </div>
             </div>

@@ -185,7 +185,7 @@ async function enviarPedidoWhatsApp(e) {
         sessionStorage.removeItem('appliedCoupon');
 
         // Redirigir a la página de agradecimiento con el token
-        window.location.href = `gracias.html?token=${token}`;
+        window.location.href = `/gracias?token=${token}`;
     } finally {
         if (btnSubmit) btnSubmit.classList.remove('loading');
     }
@@ -314,7 +314,7 @@ function mostrarFallbackWhatsApp(urlWhatsApp, token) {
     continuar.addEventListener('click', () => {
         localStorage.removeItem('cart');
         sessionStorage.removeItem('appliedCoupon');
-        window.location.href = `gracias.html?token=${token}`;
+        window.location.href = `/gracias?token=${token}`;
     });
 
     modal.innerHTML = `

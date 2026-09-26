@@ -285,7 +285,7 @@ function renderizarDetalleProducto(producto) {
                     <button class="btn-add-cart btn-border" id="btnAddCart" onclick="agregarAlCarritoDetalle(${producto.id})" ${producto.stock === 0 ? 'disabled' : ''}>
                         ${producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito'}
                     </button>
-                    <a href="carrito.html" class="btn-go-cart btn-border hidden" id="btnGoCart">
+                    <a href="/carrito" class="btn-go-cart btn-border hidden" id="btnGoCart">
                         Ir al Carrito →
                     </a>
                 </div>
@@ -313,13 +313,13 @@ function renderizarDetalleProducto(producto) {
                 
                 <div class="product-navigation">
                     ${prevProduct ? `
-                        <a href="producto.html?id=${prevProduct.id}" class="nav-product-btn btn-border prev">
+                        <a href="/producto?id=${prevProduct.id}" class="nav-product-btn btn-border prev">
                             ← ${escaparHtml(recortarTexto(prevProduct.nombre))}
                         </a>
                     ` : '<span></span>'}
                     
                     ${nextProduct ? `
-                        <a href="producto.html?id=${nextProduct.id}" class="nav-product-btn btn-border next">
+                        <a href="/producto?id=${nextProduct.id}" class="nav-product-btn btn-border next">
                             ${escaparHtml(recortarTexto(nextProduct.nombre))} →
                         </a>
                     ` : '<span></span>'}
@@ -806,7 +806,7 @@ function mostrarProductoNoEncontrado() {
         <div class="empty-cart">
             <h2>Producto no encontrado</h2>
             <p>El producto que buscas no existe o ha sido eliminado</p>
-            <a href="index.html" class="shop-btn btn-border">Volver a la tienda</a>
+            <a href="/" class="shop-btn btn-border">Volver a la tienda</a>
         </div>
     `;
 }

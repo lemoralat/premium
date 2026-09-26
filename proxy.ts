@@ -17,6 +17,17 @@
 // IMPORTANTE: si en el futuro se agrega una página pública nueva bajo /admin,
 // hay que whitelistearla acá (y sus imports), o quedará bloqueada por el guard.
 //
+// CLEAN URLS (vercel.json → "cleanUrls": true): Vercel responde 308 a
+// /admin/login.html redirigiendo a /admin/login. Si este guard comparara el
+// pathname CRUDO contra la whitelist, /admin/login no matchearía
+// → 307 a /admin/login.html → 308 a /admin/login → LOOP INFINITO: el login
+// y el recuperación de contraseña quedarían inalcanzables para siempre.
+// Por eso `esRutaPublica` normaliza quitando la extensión .html antes de
+// comparar, y el redirect de login apunta a la URL limpia (sin .html), que es
+// además la que queda como canónica. Los assets .js/.css NO les afecta
+// cleanUrls (sólo toca .html y funciones de /api), pero se normalizan igual
+// para que un futuro .html en esa lista no rompa nada.
+//
 // Se configura en vercel.json (proxy.entrypoint + proxy.matcher). La extensión
 // .ts está en el schema oficial de vercel.json (js|ts|py) y Vercel la transpila
 // como ESM sin importar el "type" de package.json — por eso NO usamos .mjs
@@ -33,10 +44,11 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://euvddavykjiixofivglt.s
 const ANON_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_DDq78TsFiLqDaq3sRS68Qw_ZxYWYYSF';
 const COOKIE_TOKEN = 'lemora_admin_token';
 
-// Páginas públicas del panel (no requieren sesión).
+// Páginas públicas del panel (no requieren sesión). Rutas SIN extensión: se
+// comparan contra el pathname normalizado (ver esRutaPublica).
 const RUTAS_PUBLICAS = new Set([
-    '/admin/login.html',
-    '/admin/recuperar.html'
+    '/admin/login',
+    '/admin/recuperar'
 ]);
 
 // Assets públicos: únicamente el grafo exacto que cargan esas páginas.
@@ -49,8 +61,15 @@ const ASSETS_PUBLICOS = new Set([
     '/admin/js/admin-supabase.js'
 ]);
 
+// Quita la extensión .html para que la whitelist cubra a la vez la URL con
+// y sin extensión. Sin esto, cleanUrls rompe el login (ver cabecera).
+function normalizar(pathname: string): string {
+    return pathname.replace(/\.html$/i, '');
+}
+
 function esRutaPublica(pathname: string): boolean {
-    return RUTAS_PUBLICAS.has(pathname) || ASSETS_PUBLICOS.has(pathname);
+    const limpio = normalizar(pathname);
+    return RUTAS_PUBLICAS.has(limpio) || ASSETS_PUBLICOS.has(limpio);
 }
 
 // Extrae el valor de la cookie espejo desde el header Cookie.
@@ -64,7 +83,7 @@ function leerToken(request: Request): string | null {
 }
 
 const redirigirALogin = (request: Request): Response =>
-    Response.redirect(new URL('/admin/login.html', request.url), 307);
+    Response.redirect(new URL('/admin/login', request.url), 307);
 
 export default async function middleware(request: Request): Promise<Response> {
     const { pathname } = new URL(request.url);

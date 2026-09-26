@@ -12,7 +12,7 @@ const DEFAULT_POPUP = {
     titulo: '¿Te vas tan pronto?',
     descripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
     cta: 'Ver productos',
-    ctaUrl: 'index.html#tienda',
+    ctaUrl: '/#tienda',
     activo: true
 };
 
@@ -122,7 +122,7 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Datos para la transferencia (gracias.html)</h2>
+            <h2>Datos para la transferencia (/gracias)</h2>
             <p class="card-sub">Se muestran al cliente después de confirmar el pedido.</p>
             <form class="admin-form" id="configFormTransferencia">
                 <div class="admin-form-grid">
@@ -142,7 +142,7 @@ export async function renderizar(contenedor) {
                     <div class="admin-field full">
                         <label for="cfgGraciasTitulo">Título del cuadro de próximos pasos</label>
                         <input type="text" id="cfgGraciasTitulo" value="${esc(s.gracias_titulo ?? '')}" placeholder="Próximos Pasos">
-                        <span class="hint">Título del cuadro informativo de gracias.html. Vacío = sin título.</span>
+                        <span class="hint">Título del cuadro informativo de /gracias. Vacío = sin título.</span>
                     </div>
                     <div class="admin-field full">
                         <label for="cfgGraciasTexto">Texto del cuadro de próximos pasos</label>
@@ -176,7 +176,7 @@ export async function renderizar(contenedor) {
                     <div class="admin-field full">
                         <label for="cfgPopupCtaUrl">Destino del botón</label>
                         <input type="text" id="cfgPopupCtaUrl" value="${esc(s.popup_cta_url && s.popup_cta_url !== DEFAULT_POPUP.ctaUrl ? s.popup_cta_url : '')}" placeholder="${esc(DEFAULT_POPUP.ctaUrl)}">
-                        <span class="hint">Página interna (ej. index.html#tienda) o URL externa completa.</span>
+                        <span class="hint">Página interna (ej. /#tienda) o URL externa completa.</span>
                     </div>
                     <div class="admin-field full">
                         <label class="admin-check">
@@ -193,7 +193,7 @@ export async function renderizar(contenedor) {
 
         <div class="admin-card">
             <h2>Preguntas frecuentes</h2>
-            <p class="card-sub">Preguntas y respuestas que se muestran en la página de ayuda (faq.html). Mientras no haya preguntas activas, la tienda mantiene el contenido estático actual.</p>
+            <p class="card-sub">Preguntas y respuestas que se muestran en la página de ayuda (/faq). Mientras no haya preguntas activas, la tienda mantiene el contenido estático actual.</p>
             <div id="gestorPreguntasFrecuentes"></div>
         </div>
 

@@ -19,7 +19,7 @@ function validarToken() {
     const storedToken = sessionStorage.getItem('order_token');
 
     if (!urlToken || !storedToken || urlToken !== storedToken) {
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 
