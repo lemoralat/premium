@@ -1,10 +1,12 @@
 // Preguntas frecuentes (página faq.html).
 // Carga dinámica desde Supabase (panel → Configuración → Preguntas frecuentes):
-//   - total = 0 (tabla vacía, admin aún sin cargar): HTML estático actual.
-//   - 0 activas pero total > 0 (todas ocultas): se oculta la sección.
 //   - datos no vacíos: reemplaza el contenido con los ítems del acordeón.
-//   - null (red/Supabase caída): se mantiene el HTML estático actual como
-//     fallback (misma estrategia que iconos-pie).
+//   - total = 0 (tabla vacía, admin aún sin cargar): estado vacío neutro.
+//   - 0 activas pero total > 0 (todas ocultas), o Supabase caída: se oculta.
+//
+// El HTML de faq.html llega sin contenido a propósito: la FAQ es contenido
+// administrado y no debe vivir en el repositorio (ver el comentario del
+// contenedor en faq.html).
 
 import { obtenerPreguntasFrecuentes } from './utils.js';
 
@@ -54,12 +56,23 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const res = await obtenerPreguntasFrecuentes();
 
-    // Supabase caído o sin configurar: se mantiene el HTML estático actual.
-    if (!res) return;
+    // Sin Supabase o sin configurar: se oculta la sección. No hay contenido
+    // de respaldo en el HTML (ver el comentario del contenedor en faq.html).
+    if (!res) {
+        contenedor.style.display = 'none';
+        return;
+    }
 
-    // Tabla vacía (el admin todavía no cargó preguntas): fallback al contenido
-    // estático de faq.html, tal como documenta la migración 0014.
-    if (res.total === 0) return;
+    // Tabla vacía (el admin todavía no cargó preguntas): se muestra un estado
+    // vacío neutro. Antes caía al FAQ estático de faq.html, que describía los
+    // medios de pago de la tienda original.
+    if (res.total === 0) {
+        contenedor.innerHTML = `
+            <div class="faq-vacio">
+                <p>Todavía no hay preguntas cargadas.</p>
+            </div>`;
+        return;
+    }
 
     // Hay preguntas pero todas inactivas: se oculta la sección completa.
     if (res.datos.length === 0) {

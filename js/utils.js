@@ -355,7 +355,7 @@ export async function obtenerIconosPie() {
 // Devuelve { datos, total } cuando hay Supabase, o null si está caído.
 //   - datos: preguntas activas (lo que se muestra).
 //   - total: filas totales (incluye ocultas) vía RPC. Con total = 0 la tabla
-//            está vacía y faq.html mantiene su contenido estático.
+//            está vacía y faq.html muestra un estado vacío neutro.
 export async function obtenerPreguntasFrecuentes() {
     const remoto = await cargarPreguntasFrecuentes();
     if (remoto.ok) {
@@ -364,8 +364,9 @@ export async function obtenerPreguntasFrecuentes() {
             total: remoto.total
         };
     }
-    // Sin fallback JSON a propósito: si Supabase está caído, faq.html mantiene
-    // el contenido estático actual.
+    // Sin contenido de respaldo en el HTML a propósito: la FAQ es contenido
+    // administrado y no debe vivir en el repositorio. Si Supabase está caído,
+    // preguntas-frecuentes.js oculta la sección.
     return null;
 }
 

@@ -1,25 +1,7 @@
 // Iconos del pie del home (sección iconos-pie).
-// Carga dinámica: Supabase primero y fallback a iconos Font Awesome.
+// Carga dinámica desde Supabase. Sin datos, la sección se oculta.
 
 import { obtenerIconosPie, imagenOptimizada } from './utils.js';
-
-const ICONOS_ESTATICOS = [
-    {
-        titulo: 'Muchas formas de pago',
-        descripcion: 'Trabajo con mercadopago, lo cuál se aceptan todos los medios de pagos de la villetera virtual número 1 de Argentina, para que compres con total confianza.',
-        icono: 'fa-solid fa-credit-card'
-    },
-    {
-        titulo: 'Envíos a toda Argentina',
-        descripcion: 'Envío a toda la Argentina de norte a sur, todos los pedidos salen desde Córdoba, Argentina y pueden variar dependiendo tu ubicación.',
-        icono: 'fa-solid fa-truck'
-    },
-    {
-        titulo: 'Stock siempre disponible',
-        descripcion: 'Toda la web opera bajo pedido, compra con total confianza, yo me comunicaré contigo personalmente para asegurar que llegue lo que pidas.',
-        icono: 'fa-solid fa-box'
-    }
-];
 
 function escapar(texto) {
     return String(texto ?? '')
@@ -55,17 +37,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     const seccion = document.querySelector('.iconos-pie');
     if (!contenedor) return;
 
-    // Cargar iconos (Supabase primero, fallback a JSON).
-    // - Array no vacío: iconos activos de la BD
-    // - null (red/cache caída): fallback estático
-    // - [] (sin iconos activos): ocultar la sección
+    // Cargar iconos (tabla iconos_pie).
+    // - Array no vacío: iconos activos de la BD.
+    // - [] (tabla vacía) o null (Supabase caído): ocultar la sección.
+    //
+    // OJO: antes, con Supabase caído, se caía a ICONOS_ESTATICOS: tres
+    // beneficios con texto de esta tienda concreta ("mercadopago", "villeter[a]
+    // virtual número 1 de Argentina", "los pedidos salen desde Córdoba"). En
+    // una plantilla que se reparte entre clientes, esos textos describen a la
+    // tienda que.originó el template, no a quien la compró. Ahora la sección
+    // desaparece si no hay datos, como el slider.
     const iconos = await obtenerIconosPie();
-    if (iconos && iconos.length === 0 && seccion) {
-        seccion.style.display = 'none';
+    if (!iconos || iconos.length === 0) {
+        if (seccion) seccion.style.display = 'none';
         return;
     }
 
-    const datos = (iconos || ICONOS_ESTATICOS).map((i) => ({
+    const datos = iconos.map((i) => ({
         titulo: i.titulo,
         descripcion: i.descripcion,
         imagen: imagenOptimizada(i.imagen) || '',

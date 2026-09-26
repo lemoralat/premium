@@ -44,7 +44,8 @@ function leerCache(clave) {
 //   - Al volver de otra página (pageshow con bfcache o back/forward).
 //   - Cada 30 s con la página visible (sesiones largas sin tocar la pestaña).
 // Solo re-renderiza si cambió la firma de datos (stock/precio/imágenes).
-// Si Supabase está caído, no hace nada (el fallback JSON sigue intacto).
+// Si Supabase está caído, no hace nada: siguen en pie los valores que ya
+// había en la UI. No hay copia local de los datos (Supabase es la única fuente).
 // ---------------------------------------------------------------------------
 const INTERVALO_REFRESCO_CATALOGO = 30_000;
 const suscriptoresCatalogo = new Set();
@@ -262,7 +263,12 @@ export async function cargarProductos() {
         cachear('productos', productos);
         return { ok: true, datos: podarFavoritosInvalidos(productos) };
     } catch (error) {
-        console.warn('⚠️ Supabase: no se pudieron cargar productos, usando fallback JSON.', error);
+        // OJO: este mensaje decía "usando fallback JSON", pero los js/*.json
+        // se borraron con la migración a Supabase (commit 260c29d). No hay
+        // fallback: obtenerProductos() avisa al visitante y devuelve catálogo
+        // vacío. Si estás depurando esto, el problema es Supabase: la URL o la
+        // anon key de js/env.generated.js, la CSP (connect-src), o la red.
+        console.warn('⚠️ Supabase: no se pudieron cargar los productos. Se avisa al visitante y el catálogo queda vacío.', error);
         return { ok: false, error };
     }
 }
@@ -312,7 +318,6 @@ function mapaProducto(p) {
         stock: Number(p.stock),
         caracteristicas: Array.isArray(p.caracteristicas) ? p.caracteristicas : [],
         destacado: Boolean(p.destacado),
-        carpetaImagenes: '', // ya no aplica: el Storage maneja las rutas
         imagen: imagenUrl || '',
         galeria: galeriaUrls.length > 0 ? galeriaUrls : (imagenUrl ? [imagenUrl] : [])
     };
@@ -340,7 +345,7 @@ export async function cargarCupones() {
         cachear('cupones', data || []);
         return { ok: true, datos: data || [] };
     } catch (error) {
-        console.warn('⚠️ Supabase: no se pudieron cargar cupones, usando fallback JSON.', error);
+        console.warn('⚠️ Supabase: no se pudieron cargar los cupones. Se conserva el valor previo de CONFIG_CUPONES (sin cupones en la primera carga).', error);
         return { ok: false, error };
     }
 }
@@ -376,7 +381,7 @@ export async function cargarResenas() {
         cachear('resenas', resenas);
         return { ok: true, datos: resenas };
     } catch (error) {
-        console.warn('⚠️ Supabase: no se pudieron cargar reseñas, usando fallback JSON.', error);
+        console.warn('⚠️ Supabase: no se pudieron cargar las reseñas. El carrusel se oculta.', error);
         return { ok: false, error };
     }
 }
@@ -395,7 +400,7 @@ export async function cargarSlider() {
         // `select('*')` en vez de columnas fijas: la columna `mostrar_en`
         // (migración 0019: mostrar slide en móvil/desktop/ambos) puede no
         // existir todavía; con una lista fija el query fallaría y toda la
-        // portada volvería al JSON local. Con '*' las columnas ausentes
+        // portada se quedaría sin slider. Con '*' las columnas ausentes
         // simplemente no llegan y `mostrarEn` queda en 'ambos'.
         const { data, error } = await sb
             .from('sliders')
@@ -417,7 +422,7 @@ export async function cargarSlider() {
         cachear('slider', slides);
         return { ok: true, datos: slides };
     } catch (error) {
-        console.warn('⚠️ Supabase: no se pudo cargar el slider, usando fallback JSON.', error);
+        console.warn('⚠️ Supabase: no se pudo cargar el slider. La sección del hero se oculta.', error);
         return { ok: false, error };
     }
 }
@@ -456,7 +461,7 @@ export async function cargarBanners() {
         cachear('banners', banners);
         return { ok: true, datos: banners };
     } catch (error) {
-        console.warn('⚠️ Supabase: no se pudieron cargar banners, usando fallback JSON.', error);
+        console.warn('⚠️ Supabase: no se pudieron cargar los banners. La portada queda sin banners.', error);
         return { ok: false, error };
     }
 }
@@ -490,7 +495,7 @@ export async function cargarIconosPie() {
         cachear('iconos-pie', iconos);
         return { ok: true, datos: iconos };
     } catch (error) {
-        console.warn('⚠️ Supabase: no se pudieron cargar los iconos del pie, usando fallback JSON.', error);
+        console.warn('⚠️ Supabase: no se pudieron cargar los iconos del pie. La sección se oculta.', error);
         return { ok: false, error };
     }
 }

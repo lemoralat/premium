@@ -22,93 +22,6 @@ const REDES = {
     'fa-whatsapp':  { etiqueta: 'WhatsApp' }
 };
 
-const TESTIMONIOS = [
-    {
-        nombre: 'María González',
-        avatar: 'https://i.pravatar.cc/150?img=45',
-        rating: 5,
-        fecha: '12/08/2026',
-        texto: 'Excelente atención y envío rapidísimo. El producto llegó perfectamente embalado y tal cual la descripción.'
-    },
-    {
-        nombre: 'Carlos Rodríguez',
-        avatar: 'https://i.pravatar.cc/150?img=12',
-        rating: 5,
-        fecha: '08/08/2026',
-        texto: 'Muy buena calidad. Hice el pedido un martes y el jueves ya lo tenía en casa. Recomiendo completamente.'
-    },
-    {
-        nombre: 'Lucía Fernández',
-        avatar: 'https://i.pravatar.cc/150?img=32',
-        rating: 5,
-        fecha: '03/08/2026',
-        texto: 'La atención por WhatsApp fue excelente, me ayudaron a elegir el producto correcto. ¡Volveré a comprar!'
-    },
-    {
-        nombre: 'Martín López',
-        avatar: 'https://i.pravatar.cc/150?img=68',
-        rating: 4,
-        fecha: '29/07/2026',
-        texto: 'Compré por primera vez y la experiencia fue genial. Precios justos y muy buena comunicación durante todo el proceso.'
-    },
-    {
-        nombre: 'Valentina García',
-        avatar: 'https://i.pravatar.cc/150?img=25',
-        rating: 5,
-        fecha: '24/07/2026',
-        texto: 'El producto superó mis expectativas. La entrega llegó en el horario prometido y en perfectas condiciones.'
-    },
-    {
-        nombre: 'Pablo Martínez',
-        avatar: 'https://i.pravatar.cc/150?img=53',
-        rating: 5,
-        fecha: '19/07/2026',
-        texto: 'Muy conforme con la compra. El packaging era impecable y el producto funciona de maravilla. 100% recomendable.'
-    },
-    {
-        nombre: 'Sofía Díaz',
-        avatar: 'https://i.pravatar.cc/150?img=47',
-        rating: 5,
-        fecha: '15/07/2026',
-        texto: 'Atención personalizada de principio a fin. Consulté varias dudas por WhatsApp y me respondieron al instante.'
-    },
-    {
-        nombre: 'Jorge Sánchez',
-        avatar: 'https://i.pravatar.cc/150?img=5',
-        rating: 4,
-        fecha: '10/07/2026',
-        texto: 'Segunda compra que hago y todo perfecto otra vez. Calidad garantizada y envíos muy puntuales.'
-    },
-    {
-        nombre: 'Camila Romero',
-        avatar: 'https://i.pravatar.cc/150?img=20',
-        rating: 5,
-        fecha: '06/07/2026',
-        texto: 'Gran experiencia de compra. La página es clara, el pago fue simple y el envío llegó en tiempo récord.'
-    },
-    {
-        nombre: 'Diego Torres',
-        avatar: 'https://i.pravatar.cc/150?img=59',
-        rating: 5,
-        fecha: '01/07/2026',
-        texto: 'Los productos son tal cual se muestran en la web. Muy buena relación precio-calidad. Estoy muy satisfecho.'
-    },
-    {
-        nombre: 'Florencia Álvarez',
-        avatar: 'https://i.pravatar.cc/150?img=38',
-        rating: 5,
-        fecha: '27/06/2026',
-        texto: 'Me encantó el detalle del seguimiento del pedido. Todo el proceso fue transparente y sin sorpresas.'
-    },
-    {
-        nombre: 'Nicolás Herrera',
-        avatar: 'https://i.pravatar.cc/150?img=15',
-        rating: 4,
-        fecha: '22/06/2026',
-        texto: 'Recomendada por un amigo y no me defraudó. Excelente servicio, atención amable y productos de calidad.'
-    }
-];
-
 function generarCard(testimonio) {
     const card = document.createElement('article');
     card.className = 'testimonio-card';
@@ -163,23 +76,28 @@ document.addEventListener('DOMContentLoaded', async function () {
     const track = document.querySelector('.testimonios-track');
     if (!track || !viewport) return;
 
-    // Cargar reseñas desde Supabase (tabla resenas).
-    // - Array no vacío: reseñas activas de la BD
-    // - null (red/cache caída): fallback estático
-    // - [] (sin reseñas activas): ocultar la sección
+    // Cargar reseñas desde Supabase (tabla reviews).
+    // - Array no vacío: reseñas activas de la BD.
+    // - [] (tabla vacía) o null (Supabase caído): ocultar la sección.
+    //
+    // OJO: antes, con Supabase caído, se caía a un array TESTIMONIOS con 8
+    // testimonios inventados (María González, Carlos Rodríguez, fechas de
+    // 2026). En una plantilla que se vende a clientes eso es lo peor que
+    // puede pasar: la tienda muestra reseñas falsas como si fueran reales.
+    // Ahora sigue el mismo patrón que el slider (hero-slider.js): si no hay
+    // datos, la sección desaparece. Sin datos de relleno en el repositorio.
     const resenas = await obtenerResenas();
-    if (resenas && resenas.length === 0) {
+    if (!resenas || resenas.length === 0) {
         viewport.closest('.testimonios-carousel').style.display = 'none';
         return;
     }
 
-    const datos = (resenas || TESTIMONIOS).map(r => ({
+    const datos = resenas.map(r => ({
         nombre: r.nombre,
         avatar: imagenOptimizada(r.imagen) || '',
         rating: r.valoracion ?? r.rating ?? 5,
         fecha: r.fecha,
         texto: r.resena || r.texto,
-        // Las reseñas estáticas de TESTIMONIOS no traen red: usan el default.
         red: r.red
     }));
 

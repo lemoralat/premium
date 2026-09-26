@@ -2949,6 +2949,15 @@ footer p {
     padding: 2rem;
 }
 
+/* Estado vacío: la tabla preguntas_frecuentes todavía no tiene filas.
+   El contenedor .faq-sections llega vacío desde faq.html (la FAQ se
+   administra desde el panel), así que sin esto la página queda en blanco. */
+.faq-vacio {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--secondary-color);
+}
+
 .faq-section {
     margin-bottom: 3rem;
 }
