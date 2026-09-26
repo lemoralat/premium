@@ -2104,6 +2104,10 @@ footer p {
 .info-box p {
     color: var(--text-color);
     line-height: 1.6;
+    /* El texto es administrado (Configuración → Datos para la transferencia) y
+       se escribe con textContent, así que los saltos de línea que tipea el admin
+       se respetan sin permitir HTML. pre-line colapsa los espacios sobrantes. */
+    white-space: pre-line;
 }
 
 .payment-section {

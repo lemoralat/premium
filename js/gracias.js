@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     await cargarConfiguracionGlobal();
     validarToken();
     mostrarMontoTotal();
+    renderizarInfoBox();
     cargarDatosTransferencia();
 });
 
@@ -45,9 +46,52 @@ function mostrarMontoTotal() {
     }
 }
 
+// Cuadro "Próximos Pasos": título y texto salen de settings (Configuración →
+// Datos para la transferencia), con lo que la página mostraba siempre como
+// default. Se escribe con textContent + white-space: pre-line, así que el
+// admin puede poner saltos de línea sin poder inyectar HTML.
+//
+// Vacíos (a propósito, para poder sacar el cuadro sin tocar código):
+//   - texto vacío  → se oculta el cuadro entero.
+//   - título vacío → se oculta solo el h2, queda el párrafo.
+function renderizarInfoBox() {
+    const box = document.getElementById('infoBox');
+    if (!box) return;
+
+    const titulo = document.getElementById('graciasTitulo');
+    const texto = document.getElementById('graciasTexto');
+
+    const t = (CONFIG_APP.graciasTexto || '').trim();
+    if (!t) {
+        box.hidden = true;
+        return;
+    }
+
+    if (titulo) {
+        const h = (CONFIG_APP.graciasTitulo || '').trim();
+        titulo.textContent = h;
+        titulo.hidden = !h;
+    }
+    if (texto) texto.textContent = t;
+}
+
 // Completar la tabla "Datos para Realizar la Transferencia" con la configuración
 // remota: el alias mostrado y el copiado salen de la misma fuente (settings).
+//
+// El bloque se oculta entero si no hay Alias CBU configurado: sin alias no hay
+// cuenta a la que transferir, y es la forma de cobrar por otro medio sin que
+// quede una tabla con una celda vacía. La entidad y el titular van sueltos en
+// la misma tarjeta, pero no alcanzan para mostrar el bloque — el alias es el
+// dato que el cliente necesita para transferir.
 function cargarDatosTransferencia() {
+    const aliasCbu = (CONFIG_APP.transferAlias || '').trim();
+
+    const seccion = document.getElementById('paymentSection');
+    if (seccion) {
+        seccion.hidden = !aliasCbu;
+        if (!aliasCbu) return; // no hay cuenta: no se completa la tabla
+    }
+
     const entidad = document.getElementById('transferEntity');
     if (entidad) entidad.textContent = CONFIG_APP.transferEntity || '';
 
@@ -55,7 +99,7 @@ function cargarDatosTransferencia() {
     if (titular) titular.textContent = CONFIG_APP.transferHolder || '';
 
     const alias = document.getElementById('transferAlias');
-    if (alias) alias.textContent = CONFIG_APP.transferAlias;
+    if (alias) alias.textContent = aliasCbu;
 }
 
 // Exponer a window para el onclick del HTML

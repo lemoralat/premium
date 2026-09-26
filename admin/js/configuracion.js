@@ -120,6 +120,17 @@ export async function renderizar(contenedor) {
                     <div class="admin-field full">
                         <label for="cfgTitular">Titular</label>
                         <input type="text" id="cfgTitular" value="${esc(s.transfer_holder || '')}" placeholder="Nombre y apellido del titular">
+                        <span class="hint">Si el Alias CBU queda vacío, la página de agradecimiento oculta el bloque de transferencia: sirve para cobrar por otro medio.</span>
+                    </div>
+                    <div class="admin-field full">
+                        <label for="cfgGraciasTitulo">Título del cuadro de próximos pasos</label>
+                        <input type="text" id="cfgGraciasTitulo" value="${esc(s.gracias_titulo ?? '')}" placeholder="Próximos Pasos">
+                        <span class="hint">Título del cuadro informativo de gracias.html. Vacío = sin título.</span>
+                    </div>
+                    <div class="admin-field full">
+                        <label for="cfgGraciasTexto">Texto del cuadro de próximos pasos</label>
+                        <textarea id="cfgGraciasTexto" rows="3" placeholder="Te confirmaremos por WhatsApp cuando recibamos tu transferencia bancaria.">${esc(s.gracias_texto ?? '')}</textarea>
+                        <span class="hint">Se admite sólo texto; los saltos de línea se respetan. Vacío = el cuadro no se muestra.</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -211,8 +222,29 @@ export async function renderizar(contenedor) {
     const camposTransferencia = () => ({
         transfer_alias: $('#cfgAlias').value.trim(),
         transfer_entity: $('#cfgEntidad').value.trim(),
-        transfer_holder: $('#cfgTitular').value.trim()
+        transfer_holder: $('#cfgTitular').value.trim(),
+        gracias_titulo: $('#cfgGraciasTitulo').value.trim(),
+        gracias_texto: $('#cfgGraciasTexto').value.trim()
     });
+
+    // Las columnas de la migración 0032 (gracias_titulo / gracias_texto) no
+    // existen hasta que se aplica, y un UPDATE con una columna inexistente
+    // revienta el guardado ENTERO: sin este filtro, guardar esta tarjeta antes
+    // de aplicar 0032 haría fallar hasta el Alias CBU, que sí funciona. Se
+    // detectan por la fila leída —si la columna no está, la clave no viene— y
+    // se filtran del payload. Mientras falten, gracias.html muestra el texto
+    // por defecto, así que la página sigue bien.
+    const columnasInfo = ['gracias_titulo', 'gracias_texto'];
+    const faltaMigracionInfo = columnasInfo.some((c) => s[c] === undefined);
+    const soloColumnasInfo = (payload) => {
+        if (!faltaMigracionInfo) return payload;
+        const limpio = { ...payload };
+        columnasInfo.forEach((c) => delete limpio[c]);
+        return limpio;
+    };
+    if (faltaMigracionInfo) {
+        toast('Falta aplicar la migración 0032: el cuadro de próximos pasos todavía no se puede guardar.', 'error');
+    }
 
     const camposPopup = () => ({
         popup_titulo: $('#cfgPopupTitulo').value.trim() || DEFAULT_POPUP.titulo,
@@ -238,7 +270,7 @@ export async function renderizar(contenedor) {
 
     vincular('#configFormGeneral', camposGenerales);
     vincular('#configFormRedes', camposRedes);
-    vincular('#configFormTransferencia', camposTransferencia);
+    vincular('#configFormTransferencia', () => soloColumnasInfo(camposTransferencia()));
     vincular('#configFormPopup', camposPopup);
 
     // Exportar datos (CSV): productos y pedidos, cada uno con su archivo.

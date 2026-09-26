@@ -55,15 +55,12 @@
                 Gracias por tu compra. Tu pedido ha sido tomado correctamente y hemos recibido toda la información.
             </p>
             
-            <div class="info-box">
-                <h2>Próximos Pasos</h2>
-                <p>
-                    Te confirmaremos por <strong>WhatsApp</strong> cuando recibamos tu transferencia bancaria. 
-                    Una vez confirmado el pago, procederemos con el envío de tu pedido.
-                </p>
+            <div class="info-box" id="infoBox">
+                <h2 id="graciasTitulo">Próximos Pasos</h2>
+                <p id="graciasTexto">Te confirmaremos por WhatsApp cuando recibamos tu transferencia bancaria. Una vez confirmado el pago, procederemos con el envío de tu pedido.</p>
             </div>
 
-            <div class="payment-section">
+            <div class="payment-section" id="paymentSection">
                 <h2>Datos para Realizar la Transferencia</h2>
                 <p class="payment-intro">Por favor, realiza la transferencia a la siguiente cuenta:</p>
                 
@@ -75,12 +72,12 @@
                         </tr>
                         <tr>
                             <td class="table-label">Titular:</td>
-                            <td class="table-value" id="transferHolder">Nombre completo</td>
+                            <td class="table-value" id="transferHolder"></td>
                         </tr>
                         <tr>
                             <td class="table-label">Alias:</td>
                             <td class="table-value">
-                                <strong class="alias-highlight" id="transferAlias">alias.o.cbu</strong>
+                                <strong class="alias-highlight" id="transferAlias"></strong>
 <button class="copy-btn btn-border" onclick="copiarAlias()" aria-label="Copiar alias">
     Copiar
 </button>

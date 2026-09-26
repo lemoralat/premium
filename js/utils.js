@@ -41,6 +41,12 @@ export const CONFIG_APP = {
     transferAlias: '',
     transferEntity: '',
     transferHolder: '',
+    // Cuadro "Próximos Pasos" de gracias.html (Configuración → Datos para la
+    // transferencia). Los defaults son el texto que la página mostraba siempre,
+    // así que sin la migración 0032 la página queda igual. Vacíos = sin título /
+    // cuadro oculto (ver gracias.js).
+    graciasTitulo: 'Próximos Pasos',
+    graciasTexto: 'Te confirmaremos por WhatsApp cuando recibamos tu transferencia bancaria. Una vez confirmado el pago, procederemos con el envío de tu pedido.',
     emailContact: '',
     address: '',
     socialInstagram: '',
@@ -101,6 +107,10 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.transferAlias = c.transfer_alias ?? CONFIG_APP.transferAlias;
             CONFIG_APP.transferEntity = c.transfer_entity ?? CONFIG_APP.transferEntity;
             CONFIG_APP.transferHolder = c.transfer_holder ?? CONFIG_APP.transferHolder;
+            // Cuadro de próximos pasos de gracias.html. Sin la migración 0032 la
+            // columna no viene y `??` deja los defaults de arriba.
+            CONFIG_APP.graciasTitulo = c.gracias_titulo ?? CONFIG_APP.graciasTitulo;
+            CONFIG_APP.graciasTexto = c.gracias_texto ?? CONFIG_APP.graciasTexto;
             CONFIG_APP.emailContact = c.email_contact || '';
             CONFIG_APP.address = c.address || '';
             CONFIG_APP.socialInstagram = c.social_instagram || '';

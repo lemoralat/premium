@@ -248,6 +248,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0029_resenas_red.sql` (columna `red` en `reviews`: la red de origen del testimonio — Google, Instagram, YouTube… — como clase de Font Awesome Brands, elegible desde el panel en Reseñas → Editar. Conjunto de valores cerrado con `check`)
    - `migrations/0030_banners_carrito.sql` (columna `banners.en_carrito`: el banner del carrito se elige explícitamente con un check en vez de deducirse de la posición — antes era "el último por `position`", regla que hacía que todo banner nuevo acapara el carrito)
    - `migrations/0031_stock_pedidos.sql` (**integridad del stock**: el stock pasa a seguir el estado del pedido, con triggers sobre `orders` — `trg_orders_stock_estado` (AFTER UPDATE OF estado) reintegra al cruzar a `Cancelado` y vuelve a descontar al reabrir, y `trg_orders_stock_borrado` (BEFORE DELETE) compensa el descuento original. Las funciones son `security definer` y se les revoca el EXECUTE a todos: **sin ese `revoke`, la anon key podría llamar `descontar_stock_por_pedido()` y vaciar el stock de cualquier producto**. Es idempotente y va en `begin`/`commit`)
+   - `migrations/0032_gracias_info_dinamico.sql` (cuadro "Próximos Pasos" de `gracias.html` editable desde Configuración → "Datos para la transferencia": `gracias_titulo` y `gracias_texto` en `settings`, con default = el texto que la página ya mostraba. También habilita la regla de la tarjeta: **si no hay Alias CBU, la página oculta el bloque de transferencia**. Es idempotente y va en `begin`/`commit`)
 
    > **Backfill de `0031` (paso único,manual):** los pedidos que YA estaban en `Cancelado` cuando corrió la migración no dispararon ningún trigger, así que su stock sigue descontado. Corré el **PASO 1** (es un `SELECT` de diagnóstico) que está al final de `0031_stock_pedidos.sql`. Si devuelve filas y nadie repuso stock a mano, descomentá y corré el **PASO 2** una sola vez. No lo repitas: no es idempotente entre ejecuciones.
 
@@ -261,7 +262,13 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    > select tgname from pg_trigger
    >  where tgname in ('trg_orders_stock_estado', 'trg_orders_stock_borrado');
    > -- 2 filas = 0031 aplicada. 0 filas = falta correrla.
+   >
+   > select column_name from information_schema.columns
+   >  where table_name = 'settings' and column_name like 'gracias%';
+   > -- 2 filas = 0032 aplicada. 0 filas = falta correrla.
    > ```
+   >
+   > `0032` tiene su propio aviso en el panel: si falta, la tarjeta "Datos para la transferencia" muestra un error al guardar y el cuadro de próximos pasos no se persiste. El resto de los campos de esa tarjeta (alias, entidad, titular) **siguen guardando** — el panel filtra las columnas inexistentes del `UPDATE` justamente para que la migración pendiente no rompa el guardado que ya funcionaba.
 
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
