@@ -1,6 +1,6 @@
 // iconos-pie.js — CRUD de los iconos de confianza del pie del home.
 // Cada icono se representa o bien con una imagen (archivo subido o URL) o bien
-// con un ícono de Font Awesome elegido de un catálogo curado con buscador.
+// con un ícono de Tabler elegido de un catálogo curado con buscador.
 
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
@@ -20,7 +20,7 @@ export async function renderizar(contenedor) {
         <div class="admin-toolbar">
             <p>Iconos que se muestran antes del footer en el inicio</p>
             <button type="button" class="btn btn-primary" id="btnNuevoIcono">
-                <i class="fa-solid fa-plus"></i> Nuevo icono
+                <i class="ti ti-plus"></i> Nuevo icono
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -69,8 +69,8 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(i.id)}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(i.id)}"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(i.id)}"><i class="ti ti-edit"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(i.id)}"><i class="ti ti-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -92,10 +92,10 @@ function abrirModalIcono(idExistente) {
                 <label>Tipo de visual</label>
                 <div class="admin-seg" id="icoSeg" role="group" aria-label="Tipo de visual del icono">
                     <button type="button" class="admin-seg-btn ${modoInicial === 'imagen' ? 'activo' : ''}" data-modo="imagen" aria-pressed="${modoInicial === 'imagen'}">
-                        <i class="fa-solid fa-image"></i> Imagen
+                        <i class="ti ti-photo"></i> Imagen
                     </button>
                     <button type="button" class="admin-seg-btn ${modoInicial === 'icono' ? 'activo' : ''}" data-modo="icono" aria-pressed="${modoInicial === 'icono'}">
-                        <i class="fa-solid fa-icons"></i> Ícono FontAwesome
+                        <i class="ti ti-icons"></i> Ícono Tabler
                     </button>
                 </div>
             </div>
@@ -109,7 +109,7 @@ function abrirModalIcono(idExistente) {
                             : placeholderImagen('', 'Sin imagen')}
                     </div>
                     <label class="btn btn-outline admin-file-btn">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
+                        <i class="ti ti-cloud-upload"></i> Elegir imagen
                         <input type="file" id="icoArchivo" accept="image/jpeg,image/png,image/webp">
                     </label>
                     <input type="url" id="icoUrl" class="admin-url-input" placeholder="…o pegá una URL de imagen"
@@ -118,7 +118,7 @@ function abrirModalIcono(idExistente) {
             </div>
 
             <div class="admin-field full" id="seccionIcono" ${modoInicial === 'icono' ? '' : 'hidden'}>
-                <label for="icoBuscar">Ícono FontAwesome</label>
+                <label for="icoBuscar">Ícono Tabler</label>
                 <input type="search" id="icoBuscar" class="admin-url-input" placeholder="Buscar ícono… (ej. camión, escudo, tarjeta)">
                 <div class="admin-iconos-grid" id="icoGrilla" role="listbox" aria-label="Catálogo de íconos"></div>
                 <p class="admin-icono-vacio" id="icoVacio" hidden>Sin resultados. Probá con otra palabra.</p>
@@ -154,7 +154,7 @@ function abrirModalIcono(idExistente) {
         </form>
     `);
 
-    // Modo de visual: Imagen ⇄ Ícono FontAwesome
+    // Modo de visual: Imagen ⇄ Ícono Tabler
     const setModo = (modo) => {
         $('#icoSeg').querySelectorAll('.admin-seg-btn').forEach((b) => {
             const activo = b.dataset.modo === modo;

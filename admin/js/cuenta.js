@@ -38,7 +38,7 @@ export async function renderizar(contenedor) {
                 </div>
                 <div class="admin-field" style="justify-content:flex-end;">
                     <button type="button" class="btn btn-primary" id="btnGuardarNombre">
-                        <i class="fa-solid fa-floppy-disk"></i> Guardar nombre
+                        <i class="ti ti-device-floppy"></i> Guardar nombre
                     </button>
                 </div>
             </div>
@@ -70,7 +70,7 @@ export async function renderizar(contenedor) {
             <h2 style="color:var(--danger);">Zona de riesgo</h2>
             <p class="card-sub">Cerrá tu sesión cuando termines de trabajar en el panel.</p>
             <button type="button" class="btn btn-danger" id="btnCerrarSesion">
-                <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+                <i class="ti ti-logout"></i> Cerrar sesión
             </button>
         </div>
     `;

@@ -57,7 +57,7 @@ function pintar(contenedor) {
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <button type="button" class="btn btn-primary" id="btnNuevoProducto">
-                <i class="fa-solid fa-plus"></i> Nuevo producto
+                <i class="ti ti-plus"></i> Nuevo producto
             </button>
         </div>
 
@@ -78,7 +78,7 @@ function pintar(contenedor) {
 
         ${filtrados.length === 0 ? `
         <div class="admin-card">
-            <div class="admin-empty"><i class="fa-solid fa-box-open"></i><h3>Sin productos</h3><p>No hay productos que coincidan con la búsqueda.</p></div>
+            <div class="admin-empty"><i class="ti ti-package"></i><h3>Sin productos</h3><p>No hay productos que coincidan con la búsqueda.</p></div>
         </div>` : `
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
@@ -156,8 +156,8 @@ function filaProducto(p) {
                 </label>
             </td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(p.id)}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(p.id)}"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(p.id)}"><i class="ti ti-edit"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(p.id)}"><i class="ti ti-trash"></i></button>
             </td>
         </tr>`;
 }
@@ -240,7 +240,7 @@ function abrirModalProducto(idExistente) {
                             `).join('')}
                         </select>
                         <button type="button" class="btn btn-sm btn-outline" id="btnCrearCategoria" title="Crear categoría nueva">
-                            <i class="fa-solid fa-plus"></i>
+                            <i class="ti ti-plus"></i>
                         </button>
                     </div>
                     <div id="nuevaCategoriaBox" hidden style="margin-top:0.6rem; gap:0.5rem; align-items:center;">
@@ -280,7 +280,7 @@ function abrirModalProducto(idExistente) {
                 <label>Características <span class="hint">(cada fila se muestra como un ítem, ej: Material: algodón · máx. ${MAX_CARACTERISTICAS})</span></label>
                 <div class="admin-repeater" id="caracteristicasRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarCaracteristica" style="align-self:flex-start; margin-top:0.5rem;">
-                    <i class="fa-solid fa-plus"></i> Agregar característica
+                    <i class="ti ti-plus"></i> Agregar característica
                 </button>
             </div>
 
@@ -288,7 +288,7 @@ function abrirModalProducto(idExistente) {
                 <label>Variantes <span class="hint">(opción + valores separados por coma; ej: Talles → 40, 41, 42, 43, 44 · máx. ${MAX_VARIANTES})</span></label>
                 <div class="admin-repeater" id="variantesRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarVariante" style="align-self:flex-start; margin-top:0.5rem;">
-                    <i class="fa-solid fa-plus"></i> Agregar variante
+                    <i class="ti ti-plus"></i> Agregar variante
                 </button>
             </div>
 
@@ -297,7 +297,7 @@ function abrirModalProducto(idExistente) {
                 <div class="admin-imagenes" id="imagenesEditor"></div>
                 <div class="admin-img-upload" style="margin-top:0.8rem;">
                     <label class="btn btn-outline admin-file-btn">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Subir imagen
+                        <i class="ti ti-cloud-upload"></i> Subir imagen
                         <input type="file" id="prdImagenArchivo" accept="image/jpeg,image/png,image/webp" multiple>
                     </label>
                     <input type="url" id="prdImagenUrl" class="admin-url-input" placeholder="…o pegá una URL de imagen (ej: de googleusercontent.com)">
@@ -556,7 +556,7 @@ function renderCaracteristicas() {
             <input type="text" data-campo="texto" placeholder="ej: Material: algodón 100%" value="${esc(c)}"
                    style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
             <button type="button" class="btn btn-sm btn-danger" data-quitar-caracteristica="${idx}" aria-label="Quitar característica">
-                <i class="fa-solid fa-xmark"></i>
+                <i class="ti ti-x"></i>
             </button>
         </div>
     `).join('');
@@ -590,7 +590,7 @@ function renderVariantes() {
             <input type="text" data-campo="valores" placeholder="Valores separados por coma (ej: 40, 41, 42)" value="${esc(v.valores)}"
                    style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
             <button type="button" class="btn btn-sm btn-danger" data-quitar-variante="${idx}" aria-label="Quitar variante">
-                <i class="fa-solid fa-xmark"></i>
+                <i class="ti ti-x"></i>
             </button>
         </div>
     `).join('');
@@ -655,7 +655,7 @@ function renderImagenes() {
                             Principal
                         </label>
                         <button type="button" class="borrar" data-quitar-imagen="${esc(i.idx)}" aria-label="Quitar imagen">
-                            <i class="fa-solid fa-trash"></i>
+                            <i class="ti ti-trash"></i>
                         </button>
                     </div>
                 </div>

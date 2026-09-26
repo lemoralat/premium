@@ -35,14 +35,14 @@ function renderHeader(activePage = '', categorias = []) {
     // Redes sociales del header: se muestran solo las que tienen URL configurada
     // (Configuración → Redes sociales del dashboard).
     const REDES_HEADER = [
-        { campo: 'socialInstagram', clase: 'fa-brands fa-instagram', label: 'Instagram' },
-        { campo: 'socialFacebook', clase: 'fa-brands fa-facebook-f', label: 'Facebook' },
-        { campo: 'socialTiktok', clase: 'fa-brands fa-tiktok', label: 'TikTok' },
-        { campo: 'socialYoutube', clase: 'fa-brands fa-youtube', label: 'YouTube' },
-        { campo: 'socialX', clase: 'fa-brands fa-x-twitter', label: 'X' },
-        { campo: 'socialPinterest', clase: 'fa-brands fa-pinterest-p', label: 'Pinterest' },
-        { campo: 'socialLinkedin', clase: 'fa-brands fa-linkedin-in', label: 'LinkedIn' },
-        { campo: 'socialOtra', clase: 'fa-solid fa-globe', label: 'Otra' }
+        { campo: 'socialInstagram', clase: 'ti ti-brand-instagram', label: 'Instagram' },
+        { campo: 'socialFacebook', clase: 'ti ti-brand-facebook', label: 'Facebook' },
+        { campo: 'socialTiktok', clase: 'ti ti-brand-tiktok', label: 'TikTok' },
+        { campo: 'socialYoutube', clase: 'ti ti-brand-youtube', label: 'YouTube' },
+        { campo: 'socialX', clase: 'ti ti-brand-x', label: 'X' },
+        { campo: 'socialPinterest', clase: 'ti ti-brand-pinterest', label: 'Pinterest' },
+        { campo: 'socialLinkedin', clase: 'ti ti-brand-linkedin', label: 'LinkedIn' },
+        { campo: 'socialOtra', clase: 'ti ti-world', label: 'Otra' }
     ];
     // V-3: urlSegura bloquea esquemas peligrosos en las URLs de redes sociales
     // administradas; si no es navegable, el ícono no se renderiza.
@@ -71,7 +71,7 @@ function renderHeader(activePage = '', categorias = []) {
                          (#searchPanel), el mismo que usa el móvil. Es un div y no un
                          form justamente para que Enter no dispare un submit inexistente. -->
                     <div class="header-search" id="headerSearch" role="search">
-                        <i class="fa-solid fa-magnifying-glass search-leading" aria-hidden="true"></i>
+                        <i class="ti ti-search search-leading" aria-hidden="true"></i>
                         <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
                             aria-label="¿Qué estás buscando?" autocomplete="off">
                     </div>
@@ -85,14 +85,14 @@ function renderHeader(activePage = '', categorias = []) {
                          antes de que el listener de document corra en la de
                          burbujeo, así que el panel se cerraba en el mismo toque. -->
                     <button type="button" class="header-icon" data-search-toggle onclick="toggleBusquedaMovil()" aria-label="Buscar productos">
-                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <i class="ti ti-search"></i>
                     </button>
                     <a href="favoritos.html" class="header-icon" aria-label="Mis favoritos">
-                        <i class="fa-solid fa-heart"></i>
+                        <i class="ti ti-heart"></i>
                         <span class="favorites-count">0</span>
                     </a>
                     <button type="button" class="header-icon" onclick="abrirCarritoSidemenu()" aria-label="Abrir carrito de compras">
-                        <i class="fa-solid fa-cart-shopping"></i>
+                        <i class="ti ti-shopping-cart"></i>
                         <span class="cart-count">0</span>
                     </button>
                 </div>
@@ -105,11 +105,11 @@ function renderHeader(activePage = '', categorias = []) {
                 
                 <div class="nav-menu">
                     <button type="button" class="nav-menu-close" aria-label="Cerrar menú">
-                        <i class="fa-solid fa-xmark"></i>
+                        <i class="ti ti-x"></i>
                     </button>
                     <a href="index.html" class="nav-link ${activePage === 'inicio' ? 'active' : ''}">Inicio</a>
                     <div class="nav-item-dropdown">
-                        <a href="index.html#tienda" class="nav-link ${activePage === 'productos' ? 'active' : ''}">Productos <i class="fa-solid fa-chevron-down"></i></a>
+                        <a href="index.html#tienda" class="nav-link ${activePage === 'productos' ? 'active' : ''}">Productos <i class="ti ti-chevron-down"></i></a>
                         ${submenuHTML}
                     </div>
                     <!-- <a href="nosotros.html" class="nav-link ${activePage === 'nosotros' ? 'active' : ''}">Nosotros</a> -->
@@ -117,12 +117,12 @@ function renderHeader(activePage = '', categorias = []) {
                     <!-- <a href="index.html#contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>-->
                     <a href="contacto.html" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a> 
                     <a href="favoritos.html" class="nav-link favorites-link ${activePage === 'favoritos' ? 'active' : ''}" aria-label="Mis Favoritos">
-                        <i class="fa-solid fa-heart"></i>
+                        <i class="ti ti-heart"></i>
                         <span class="nav-label">Favoritos</span>
                         <span class="favorites-count">0</span>
                     </a>
                     <button type="button" class="nav-link cart-link ${activePage === 'carrito' ? 'active' : ''}" aria-label="Abrir carrito de compras" onclick="abrirCarritoSidemenu()">
-                        <i class="fa-solid fa-cart-shopping"></i>
+                        <i class="ti ti-shopping-cart"></i>
                         <span class="nav-label">Carrito</span>
                         <span class="cart-count">0</span>
                     </button>
@@ -139,7 +139,7 @@ function renderHeader(activePage = '', categorias = []) {
                         <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
                             aria-label="¿Qué estás buscando?">
                         <button type="button" class="search-close" onclick="cerrarBusqueda()" aria-label="Cerrar búsqueda">
-                            <i class="fa-solid fa-xmark"></i>
+                            <i class="ti ti-x"></i>
                         </button>
                     </div>
                 </div>
@@ -156,7 +156,7 @@ function renderHeader(activePage = '', categorias = []) {
 function renderFooter() {
     const footer = document.createElement('footer');
     footer.innerHTML = `
-        <p>&copy; ${new Date().getFullYear()} ${escaparHtml(obtenerNombreSitio())}. Todos los derechos reservados. Hecho con <i class="fa-solid fa-heart footer-heart"></i> por <a href="https://lemora.lat" target="_blank" rel="noopener"><img src="img/lemora.svg" alt="Diseño y Desarrollo por Lemora" class="devBy"></a></p>
+        <p>&copy; ${new Date().getFullYear()} ${escaparHtml(obtenerNombreSitio())}. Todos los derechos reservados. Hecho con <i class="ti ti-heart footer-heart"></i> por <a href="https://lemora.lat" target="_blank" rel="noopener"><img src="img/lemora.svg" alt="Diseño y Desarrollo por Lemora" class="devBy"></a></p>
         `;
 
     return footer;
@@ -336,7 +336,7 @@ async function initTemplate(activePage = '') {
                target="_blank" 
                rel="noopener" 
                aria-label="Contactar por WhatsApp">
-                <i class="fa-brands fa-whatsapp"></i>
+                <i class="ti ti-brand-whatsapp"></i>
             </a>
         `;
         body.appendChild(whatsapp);
@@ -406,9 +406,9 @@ function crearEstructuraSidemenu() {
         <div class="cart-sidemenu-backdrop" data-cerrar-sidemenu></div>
         <aside class="cart-sidemenu-panel">
             <div class="cart-sidemenu-header">
-                <h2><i class="fa-solid fa-cart-shopping"></i> Tu Carrito</h2>
+                <h2><i class="ti ti-shopping-cart"></i> Tu Carrito</h2>
                 <button type="button" class="cart-sidemenu-close" data-cerrar-sidemenu aria-label="Cerrar carrito">
-                    <i class="fa-solid fa-xmark"></i>
+                    <i class="ti ti-x"></i>
                 </button>
             </div>
             <div class="cart-sidemenu-items" id="cartSidemenuItems"></div>
@@ -430,7 +430,7 @@ function renderSidemenuCarrito() {
     if (cart.length === 0) {
         contenedorItems.innerHTML = `
             <div class="side-cart-empty">
-                <i class="fa-solid fa-cart-shopping"></i>
+                <i class="ti ti-shopping-cart"></i>
                 <h3>Tu carrito está vacío</h3>
                 <p>Agregá productos para comenzar tu compra</p>
                 <a href="index.html" class="shop-btn btn-border">Ir a la tienda</a>
@@ -463,7 +463,7 @@ function renderSidemenuCarrito() {
                         <button type="button" class="qty-btn btn-border" onclick="sideCambiarCantidad(this.dataset.clave, 1)" data-clave="${claveEscapada}" aria-label="Aumentar cantidad" ${sinStock ? 'disabled' : ''}>+</button>
                     </div>
                     <button type="button" class="side-remove-btn" onclick="sideEliminarItem(this.dataset.clave)" data-clave="${claveEscapada}" aria-label="Eliminar ${escaparHtml(item.nombre)}">
-                        <i class="fa-solid fa-trash-can"></i>
+                        <i class="ti ti-trash"></i>
                     </button>
                 </div>
             </div>
@@ -491,7 +491,7 @@ function renderSidemenuCarrito() {
             <span>$${formatearPrecio(total)}</span>
         </div>
         <a href="carrito.html" class="side-cart-checkout">
-            Ir al carrito <i class="fa-solid fa-arrow-right"></i>
+            Ir al carrito <i class="ti ti-arrow-right"></i>
         </a>
         <button type="button" class="side-cart-continue" data-cerrar-sidemenu>Seguir comprando</button>
     `;

@@ -36,7 +36,7 @@ function renderizarFavoritos() {
         // Mostrar mensaje de carrito vacío si no hay favoritos
         favoritosContainer.innerHTML = `
             <div class="favoritos-empty">
-                <i class="fa-regular fa-heart"></i>
+                <i class="ti ti-heart"></i>
                 <h2>Aún no tienes productos favoritos</h2>
                 <p>Agrega los productos que más te gusten para verlos aquí.</p>
                 <a href="index.html" class="shop-btn btn-border">Explorar productos</a>
@@ -52,7 +52,7 @@ function renderizarFavoritos() {
         // Esto podría ocurrir si los productos favoritos ya no existen en el catálogo
         favoritosContainer.innerHTML = `
             <div class="favoritos-empty">
-                <i class="fa-regular fa-heart"></i>
+                <i class="ti ti-heart"></i>
                 <h2>No se encontraron tus productos favoritos</h2>
                 <p>Parece que los productos que marcaste como favoritos ya no están disponibles.</p>
                 <a href="index.html" class="shop-btn btn-border">Explorar productos</a>

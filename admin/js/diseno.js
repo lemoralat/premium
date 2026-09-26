@@ -265,10 +265,10 @@ function campoImagen(r, pathActual) {
                 </div>
                 <div class="diseno-preview-acciones">
                     <label class="btn btn-sm btn-outline admin-file-btn">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> ${url ? 'Reemplazar' : 'Subir'}
+                        <i class="ti ti-cloud-upload"></i> ${url ? 'Reemplazar' : 'Subir'}
                         <input type="file" accept="image/jpeg,image/png,image/webp" data-archivo>
                     </label>
-                    ${url ? '<button type="button" class="btn btn-sm btn-danger" data-quitar><i class="fa-solid fa-trash-can"></i> Quitar</button>' : ''}
+                    ${url ? '<button type="button" class="btn btn-sm btn-danger" data-quitar><i class="ti ti-trash"></i> Quitar</button>' : ''}
                 </div>
                 <span class="hint">${esc(r.hint)}</span>
             </div>
@@ -376,12 +376,12 @@ function prepararCampoImagen(r, pathActual) {
         if (!quitarBtn) return;
         if (est.quitar) {
             quitarBtn.dataset.pendiente = '1';
-            quitarBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Quitar (click para deshacer)';
+            quitarBtn.innerHTML = '<i class="ti ti-arrow-back-up"></i> Quitar (click para deshacer)';
             quitarBtn.classList.add('btn-outline');
             quitarBtn.classList.remove('btn-danger');
         } else {
             delete quitarBtn.dataset.pendiente;
-            quitarBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Quitar';
+            quitarBtn.innerHTML = '<i class="ti ti-trash"></i> Quitar';
             quitarBtn.classList.remove('btn-outline');
             quitarBtn.classList.add('btn-danger');
         }

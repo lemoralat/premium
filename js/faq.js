@@ -16,7 +16,7 @@ function toggleFaqItem(questionButton) {
 
     // El chevron lleva la clase .faq-chevron en los ítems dinámicos; en el HTML
     // estático el botón tiene un único <i> que ES el chevron. Al seleccionar el
-    // chevron explícitamente, el ícono FontAwesome de la pregunta (si existe) no
+    // chevron explícitamente, el ícono Tabler de la pregunta (si existe) no
     // se rota por error.
     const icon = questionButton.querySelector('.faq-chevron') || questionButton.querySelector('i');
     const isExpanded = questionButton.getAttribute('aria-expanded') === 'true';

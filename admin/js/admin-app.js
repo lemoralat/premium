@@ -84,7 +84,7 @@ async function navegar() {
 
     const contenedor = $('#adminView');
     if (contenedor) {
-        contenedor.innerHTML = '<p class="admin-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</p>';
+        contenedor.innerHTML = '<p class="admin-loading"><i class="ti ti-loader-2 ti-spin"></i> Cargando…</p>';
         try {
             await definicion.renderizar(contenedor);
         } catch (error) {
@@ -191,8 +191,8 @@ function pintarIconoTema() {
     if (!btn || !window.TemaPanel) return;
     const oscuro = window.TemaPanel.actual() === 'oscuro';
     btn.innerHTML = oscuro
-        ? '<i class="fa-solid fa-moon"></i>'
-        : '<i class="fa-solid fa-sun"></i>';
+        ? '<i class="ti ti-moon"></i>'
+        : '<i class="ti ti-sun"></i>';
     btn.title = oscuro
         ? 'Tema del panel: oscuro. Clic para claro.'
         : 'Tema del panel: claro. Clic para oscuro.';

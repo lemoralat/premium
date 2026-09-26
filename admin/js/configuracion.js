@@ -186,13 +186,13 @@ export async function renderizar(contenedor) {
             <div class="admin-form-grid">
                 <div class="admin-field">
                     <button type="button" class="btn btn-outline" id="btnExportarProductos">
-                        <i class="fa-solid fa-box"></i> Exportar productos (.csv)
+                        <i class="ti ti-box"></i> Exportar productos (.csv)
                     </button>
                     <span class="hint">Catálogo: precios, stock, categoría, destacado y estado.</span>
                 </div>
                 <div class="admin-field">
                     <button type="button" class="btn btn-outline" id="btnExportarPedidos">
-                        <i class="fa-solid fa-cart-shopping"></i> Exportar pedidos (.csv)
+                        <i class="ti ti-shopping-cart"></i> Exportar pedidos (.csv)
                     </button>
                     <span class="hint">Pedidos con datos del cliente, totales e ítems.</span>
                 </div>

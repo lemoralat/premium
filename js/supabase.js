@@ -307,7 +307,7 @@ export async function cargarResenas() {
             valoracion: Number(r.valoracion),
             resena: r.resena || '',
             imagen: urlImagen(r) || '',
-            red: r.red || 'fa-google'
+            red: r.red || 'ti-brand-google'
         }));
 
         cachear('resenas', resenas);

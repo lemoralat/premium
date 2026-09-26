@@ -17,7 +17,7 @@ export async function renderizar(contenedor) {
         <div class="admin-toolbar">
             <p>Marcá un banner como el del carrito. Los demás van al inicio (máximo 4).</p>
             <button type="button" class="btn btn-primary" id="btnNuevoBanner">
-                <i class="fa-solid fa-plus"></i> Nuevo banner
+                <i class="ti ti-plus"></i> Nuevo banner
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -63,8 +63,8 @@ function filas() {
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}
                 ${b.en_carrito ? '<br><span class="estado-badge estado-procesando" style="margin-top:0.3rem;">Carrito</span>' : ''}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(b.id)}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(b.id)}"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(b.id)}"><i class="ti ti-edit"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(b.id)}"><i class="ti ti-trash"></i></button>
             </td>
         </tr>`;
     }).join('');
@@ -91,7 +91,7 @@ function abrirModalBanner(idExistente) {
                          id="bnrImagenPreview" style="max-width:100%; height:150px; object-fit:cover; border-radius:10px; border:1px solid var(--border);">
                     <div class="admin-img-upload">
                         <label class="btn btn-outline admin-file-btn">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
+                            <i class="ti ti-cloud-upload"></i> Elegir imagen
                             <input type="file" id="bnrImagenArchivo" accept="image/jpeg,image/png,image/webp">
                         </label>
                         <input type="url" id="bnrImagenUrl" class="admin-url-input" placeholder="…o pegá una URL externa"
@@ -112,7 +112,7 @@ function abrirModalBanner(idExistente) {
                         </div>
                         <div class="admin-img-upload" style="flex:1; flex-direction:column; align-items:flex-start;">
                             <label class="btn btn-sm btn-outline admin-file-btn">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> Elegir logo
+                                <i class="ti ti-cloud-upload"></i> Elegir logo
                                 <input type="file" id="bnrLogoArchivo" accept="image/jpeg,image/png,image/webp">
                             </label>
                             <input type="url" id="bnrLogoUrl" placeholder="…o pegá una URL de logo"

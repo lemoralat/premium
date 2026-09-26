@@ -6,9 +6,9 @@ import { clienteAdmin } from './admin-supabase.js';
 let slides = [];
 
 const OPCIONES_MOSTRAR = [
-    { valor: 'ambos', nombre: 'Ambos', icono: 'fa-solid fa-mobile-screen' },
-    { valor: 'mobile', nombre: 'Móvil', icono: 'fa-solid fa-mobile-screen-button' },
-    { valor: 'desktop', nombre: 'Escritorio', icono: 'fa-solid fa-desktop' }
+    { valor: 'ambos', nombre: 'Ambos', icono: 'ti ti-device-mobile' },
+    { valor: 'mobile', nombre: 'Móvil', icono: 'ti ti-device-mobile' },
+    { valor: 'desktop', nombre: 'Escritorio', icono: 'ti ti-device-desktop' }
 ];
 
 export async function renderizar(contenedor) {
@@ -23,7 +23,7 @@ export async function renderizar(contenedor) {
         <div class="admin-toolbar">
             <p>Portada del inicio. Sin slides activos, la sección desaparece de la tienda.</p>
             <button type="button" class="btn btn-primary" id="btnNuevoSlide">
-                <i class="fa-solid fa-plus"></i> Nuevo slide
+                <i class="ti ti-plus"></i> Nuevo slide
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -69,9 +69,9 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(s.id)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm" data-duplicar="${esc(s.id)}" title="Duplicar" aria-label="Duplicar slide"><i class="fa-solid fa-copy"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(s.id)}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(s.id)}" title="Editar"><i class="ti ti-edit"></i></button>
+                <button type="button" class="btn btn-sm" data-duplicar="${esc(s.id)}" title="Duplicar" aria-label="Duplicar slide"><i class="ti ti-copy"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(s.id)}" title="Eliminar"><i class="ti ti-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -107,7 +107,7 @@ function abrirModalSlide(idExistente) {
                          style="max-width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border);">
                     <div class="admin-img-upload">
                         <label class="btn btn-outline admin-file-btn">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Elegir imagen
+                            <i class="ti ti-cloud-upload"></i> Elegir imagen
                             <input type="file" id="sldArchivo" accept="image/jpeg,image/png,image/webp">
                         </label>
                         <div class="admin-field admin-url-field">
@@ -295,7 +295,7 @@ async function duplicarSlide(id, contenedor, boton) {
     // el botón sin icono para siempre. Acá se restaura el innerHTML.
     const htmlOriginal = boton.innerHTML;
     boton.disabled = true;
-    boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    boton.innerHTML = '<i class="ti ti-loader-2 ti-spin"></i>';
 
     try {
         // 1) Desplazar los que van después, para que la copia caiga justo

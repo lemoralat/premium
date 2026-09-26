@@ -60,14 +60,14 @@ function pintar(contenedor) {
 
         ${conSeleccion ? `
         <div class="admin-bulkbar" role="status">
-            <span class="admin-bulkbar-info"><i class="fa-solid fa-square-check"></i> <strong>${seleccionados.size}</strong> pedido(s) seleccionado(s)</span>
+            <span class="admin-bulkbar-info"><i class="ti ti-checkbox"></i> <strong>${seleccionados.size}</strong> pedido(s) seleccionado(s)</span>
             <div class="admin-bulkbar-acciones">
                 <button type="button" class="btn btn-sm btn-outline" id="btnLimpiarSeleccion">Quitar selección</button>
-                <button type="button" class="btn btn-sm btn-danger" id="btnBorrarSeleccion"><i class="fa-solid fa-trash-can"></i> Borrar seleccionados</button>
+                <button type="button" class="btn btn-sm btn-danger" id="btnBorrarSeleccion"><i class="ti ti-trash"></i> Borrar seleccionados</button>
             </div>
         </div>` : ''}
 
-        ${filtrados.length === 0 ? '<div class="admin-card"><div class="admin-empty"><i class="fa-solid fa-receipt"></i><h3>Sin pedidos</h3><p>No se encontraron pedidos con estos filtros.</p></div></div>' : `
+        ${filtrados.length === 0 ? '<div class="admin-card"><div class="admin-empty"><i class="ti ti-receipt"></i><h3>Sin pedidos</h3><p>No se encontraron pedidos con estos filtros.</p></div></div>' : `
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -248,10 +248,10 @@ function filaPedido(o) {
             <td class="td-expandir">
                 <div class="pedido-acciones">
                     <button type="button" class="btn btn-sm btn-outline" data-expandir="${esc(o.id)}" aria-label="Ver detalle">
-                        <i class="fa-solid ${expandido ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                        <i class="ti ${expandido ? 'ti-chevron-up' : 'ti-chevron-down'}"></i>
                     </button>
                     <button type="button" class="btn btn-sm btn-danger" data-borrar-uno="${esc(o.id)}" aria-label="Eliminar pedido ${esc(o.numero)}">
-                        <i class="fa-solid fa-trash-can"></i>
+                        <i class="ti ti-trash"></i>
                     </button>
                 </div>
             </td>

@@ -29,7 +29,7 @@ function formarRespuesta(respuesta) {
 
 function generarFaqItem(item) {
     const pregunta = escapar(item.pregunta);
-    // Ícono FontAwesome opcional que acompaña al título (como pide el diseño actual).
+    // Ícono Tabler opcional que acompaña al título (como pide el diseño actual).
     const icono = item.icono
         ? `<i class="${escapar(item.icono)} faq-question-icon" aria-hidden="true"></i>`
         : '';
@@ -39,7 +39,7 @@ function generarFaqItem(item) {
             <button class="faq-question" aria-expanded="false">
                 ${icono}
                 <span>${pregunta}</span>
-                <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+                <i class="ti ti-chevron-down faq-chevron" aria-hidden="true"></i>
             </button>
             <div class="faq-answer">
                 ${formarRespuesta(item.respuesta)}

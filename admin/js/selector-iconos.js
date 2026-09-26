@@ -1,5 +1,5 @@
-// selector-iconos.js — Selector de íconos FontAwesome reutilizable.
-// Milita el buscador + grilla del catálogo curado (ICONOS_FONT_AWESOME) sobre
+// selector-iconos.js — Selector de íconos Tabler reutilizable.
+// Milita el buscador + grilla del catálogo curado (ICONOS_TABLER) sobre
 // tres elementos del modal que lo declare:
 //   - <input type="hidden"> con el valor seleccionado (clase FA completa)
 //   - <input type="search"> para filtrar
@@ -8,7 +8,7 @@
 // Usado por la sección "Iconos" (iconos-pie.js) y por "Preguntas frecuentes".
 
 import { $, esc } from './admin-ui.js';
-import { ICONOS_FONT_AWESOME } from './iconos-fa.js';
+import { ICONOS_TABLER } from './iconos-tabler.js';
 
 /**
  * Conecta el buscador y la grilla del catálogo con el input oculto.
@@ -32,9 +32,9 @@ export function montarSelectorIconos({ inputId, buscarId, grillaId, vacioId }) {
     const render = (filtro = '') => {
         const busca = filtro.toLowerCase().trim();
         const lista = busca
-            ? ICONOS_FONT_AWESOME.filter((i) =>
+            ? ICONOS_TABLER.filter((i) =>
                 i.clase.toLowerCase().includes(busca) || i.etiqueta.toLowerCase().includes(busca))
-            : ICONOS_FONT_AWESOME;
+            : ICONOS_TABLER;
         const seleccion = input.value;
         grilla.innerHTML = lista.map((i) => `
             <button type="button" role="option" class="admin-icono-opcion ${i.clase === seleccion ? 'seleccionado' : ''}"

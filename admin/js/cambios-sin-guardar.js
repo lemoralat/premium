@@ -226,14 +226,14 @@ export function confirmarSalida() {
             <div class="admin-modal-backdrop" data-cerrar-salida></div>
             <div class="admin-modal-panel admin-confirm-panel">
                 <button type="button" class="admin-modal-close" data-cerrar-salida aria-label="Cerrar">
-                    <i class="fa-solid fa-xmark"></i>
+                    <i class="ti ti-x"></i>
                 </button>
                 <h2>Cambios sin guardar</h2>
                 <p class="admin-confirm-mensaje">Modificaste campos en esta sección y todavía no los guardaste. Si continuás sin guardar, se perderán.</p>
                 <div class="admin-modal-acciones">
                     <button type="button" class="btn btn-danger" data-salida-descartar>Descartar cambios</button>
                     <button type="button" class="btn btn-primary" data-salida-guardar>
-                        <i class="fa-solid fa-floppy-disk"></i> Guardar y continuar
+                        <i class="ti ti-device-floppy"></i> Guardar y continuar
                     </button>
                 </div>
             </div>

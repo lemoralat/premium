@@ -17,7 +17,7 @@ export async function renderizar(contenedor) {
         <div class="admin-toolbar">
             <p>Organizá el catálogo por categorías</p>
             <button type="button" class="btn btn-primary" id="btnNuevaCategoria">
-                <i class="fa-solid fa-plus"></i> Nueva categoría
+                <i class="ti ti-plus"></i> Nueva categoría
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -52,8 +52,8 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activa</span>'
                 : '<span class="estado-badge estado-cancelado">Inactiva</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(c.id)}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(c.id)}"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(c.id)}"><i class="ti ti-edit"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(c.id)}"><i class="ti ti-trash"></i></button>
             </td>
         </tr>
     `).join('');

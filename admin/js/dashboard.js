@@ -139,7 +139,7 @@ function kpi(icono, valor, etiqueta, delta = null, clase = '') {
         : '';
     return `
         <div class="admin-stat ${esc(clase)}">
-            <i class="fa-solid ${esc(icono)}"></i>
+            <i class="ti ${esc(icono)}"></i>
             <div><div class="valor">${valor}${d}</div><div class="etiqueta">${esc(etiqueta)}</div></div>
         </div>`;
 }
@@ -284,10 +284,10 @@ export async function renderizar(contenedor) {
     // ---- Alertas accionables ----
     const alertas = [];
     if (agotadosN > 0) {
-        alertas.push({ clase: 'peligro', icono: 'fa-box-open', texto: `${agotadosN} producto${agotadosN === 1 ? '' : 's'} sin stock.`, enlace: '#/productos', enlaceTexto: 'Ir a productos' });
+        alertas.push({ clase: 'peligro', icono: 'ti-package', texto: `${agotadosN} producto${agotadosN === 1 ? '' : 's'} sin stock.`, enlace: '#/productos', enlaceTexto: 'Ir a productos' });
     }
     if (pedidosColgados > 0) {
-        alertas.push({ clase: 'advertencia', icono: 'fa-clock', texto: `${pedidosColgados} pedido${pedidosColgados === 1 ? '' : 's'} pendiente${pedidosColgados === 1 ? '' : 's'} hace más de 48 h.`, enlace: '#/pedidos', enlaceTexto: 'Ir a pedidos' });
+        alertas.push({ clase: 'advertencia', icono: 'ti-clock', texto: `${pedidosColgados} pedido${pedidosColgados === 1 ? '' : 's'} pendiente${pedidosColgados === 1 ? '' : 's'} hace más de 48 h.`, enlace: '#/pedidos', enlaceTexto: 'Ir a pedidos' });
     }
 
     const hayVentas30 = ventana30.length > 0 && ingresos30 > 0;
@@ -302,18 +302,18 @@ export async function renderizar(contenedor) {
         <div class="alertas-dashboard">
             ${alertas.map((a) => `
                 <div class="alerta-item ${esc(a.clase)}">
-                    <i class="fa-solid ${esc(a.icono)}"></i>
+                    <i class="ti ${esc(a.icono)}"></i>
                     <p>${esc(a.texto)} <a href="${esc(a.enlace)}">${esc(a.enlaceTexto)}</a></p>
                 </div>`).join('')}
         </div>` : ''}
 
         <div class="admin-grid">
-            ${kpi('fa-sack-dollar', `$${formatearPrecio(ingresos30)}`, 'Ingresos últimos 30 días', deltaIngresos)}
-            ${kpi('fa-cart-shopping', pedidos30, 'Pedidos últimos 30 días', deltaPedidos)}
-            ${kpi('fa-receipt', pedidos30 ? `$${formatearPrecio(ticketPromedio)}` : '—', 'Ticket promedio', deltaTicket)}
-            ${kpi('fa-box', activos, `Productos activos (${totales} totales)`)}
-            ${kpi('fa-clock', pendientes, 'Pedidos pendientes', null, 'warning')}
-            ${kpi('fa-star', reseñasActivas.length ? `★ ${valoracionPromedio.toFixed(1)}` : '—', `Valoración (${reseñasActivas.length} reseñas)`, null, 'success')}
+            ${kpi('ti-cash', `$${formatearPrecio(ingresos30)}`, 'Ingresos últimos 30 días', deltaIngresos)}
+            ${kpi('ti-shopping-cart', pedidos30, 'Pedidos últimos 30 días', deltaPedidos)}
+            ${kpi('ti-receipt', pedidos30 ? `$${formatearPrecio(ticketPromedio)}` : '—', 'Ticket promedio', deltaTicket)}
+            ${kpi('ti-box', activos, `Productos activos (${totales} totales)`)}
+            ${kpi('ti-clock', pendientes, 'Pedidos pendientes', null, 'warning')}
+            ${kpi('ti-star', reseñasActivas.length ? `★ ${valoracionPromedio.toFixed(1)}` : '—', `Valoración (${reseñasActivas.length} reseñas)`, null, 'success')}
         </div>
 
         <div class="admin-card">

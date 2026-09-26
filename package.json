@@ -5,6 +5,7 @@
   "description": "Tienda Lemora — frontend estático + Supabase (PostgreSQL + Auth + Storage)",
   "scripts": {
     "build:env": "node scripts/build-env.mjs",
+    "build:iconos": "node scripts/build-tabler-icons.mjs",
     "build": "npm run build:env",
     "dev": "vercel dev"
   },
@@ -14,5 +15,8 @@
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",
     "@vercel/functions": "^3.9.9"
+  },
+  "devDependencies": {
+    "subset-font": "2.4.0"
   }
 }

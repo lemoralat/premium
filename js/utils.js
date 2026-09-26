@@ -448,10 +448,10 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
             ${conAcciones ? `
             <div class="favorito-acciones">
                 <a href="producto.html?id=${producto.id}" class="favorito-ver-btn btn-border">
-                    <i class="fa-solid fa-eye"></i> Ver
+                    <i class="ti ti-eye"></i> Ver
                 </a>
                 <button class="favorito-eliminar-btn btn-border" onclick="eliminarDeFavoritos(${producto.id})">
-                    <i class="fa-solid fa-trash-can"></i> Eliminar
+                    <i class="ti ti-trash"></i> Eliminar
                 </button>
             </div>` : ''}
         </div>
@@ -475,7 +475,7 @@ export function generarHTMLTarjetaProducto(producto) {
                 ${producto.imagen
                     ? `<img src="${imagen}" alt="${nombre}" class="product-image" loading="lazy">`
                     : placeholderImagenPublica('product-image')}
-                <span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
+                <span class="quick-add-btn" aria-hidden="true"><i class="ti ti-plus"></i></span>
             </div>
             <div class="product-info">
                 <h3 class="product-title">${nombre}</h3>

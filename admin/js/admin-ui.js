@@ -22,7 +22,7 @@ export function esc(texto) {
 // Placeholder visual para previews del dashboard cuando todavía no hay imagen.
 export function placeholderImagen(variante = '', etiqueta = 'Sin imagen') {
     const clases = ['admin-image-placeholder', variante].filter(Boolean).join(' ');
-    return `<span class="${esc(clases)}" role="img" aria-label="${esc(etiqueta)}"><i class="fa-regular fa-image" aria-hidden="true"></i></span>`;
+    return `<span class="${esc(clases)}" role="img" aria-label="${esc(etiqueta)}"><i class="ti ti-photo" aria-hidden="true"></i></span>`;
 }
 
 // Reemplaza un placeholder por la imagen elegida por el usuario.
@@ -109,7 +109,7 @@ export function confirmarDialogo(opciones) {
             <div class="admin-modal-backdrop" data-cerrar-confirm></div>
             <div class="admin-modal-panel admin-confirm-panel">
                 <button type="button" class="admin-modal-close" data-cerrar-confirm aria-label="Cerrar">
-                    <i class="fa-solid fa-xmark"></i>
+                    <i class="ti ti-x"></i>
                 </button>
                 <h2>${esc(titulo)}</h2>
                 ${mensaje ? `<p class="admin-confirm-mensaje">${mensajeHtml ? mensaje : esc(mensaje)}</p>` : ''}
@@ -156,13 +156,13 @@ export function urlPublica(src) {
 
 // ---------- Estados de carga / vacíos ----------
 export function estadoCargando(contenedor, texto = 'Cargando…') {
-    contenedor.innerHTML = `<p class="admin-loading"><i class="fa-solid fa-spinner fa-spin"></i> ${esc(texto)}</p>`;
+    contenedor.innerHTML = `<p class="admin-loading"><i class="ti ti-loader-2 ti-spin"></i> ${esc(texto)}</p>`;
 }
 
 export function estadoVacio(contenedor, titulo, detalle = '') {
     contenedor.innerHTML = `
         <div class="admin-empty">
-            <i class="fa-solid fa-box-open"></i>
+            <i class="ti ti-package"></i>
             <h3>${esc(titulo)}</h3>
             ${detalle ? `<p>${esc(detalle)}</p>` : ''}
         </div>
@@ -174,7 +174,7 @@ export function conCarga(boton, promesa) {
     const textoOriginal = boton.dataset.textoOriginal || boton.textContent;
     boton.dataset.textoOriginal = textoOriginal;
     boton.disabled = true;
-    boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando…';
+    boton.innerHTML = '<i class="ti ti-loader-2 ti-spin"></i> Procesando…';
     return promesa
         .then((res) => {
             boton.disabled = false;
@@ -303,7 +303,7 @@ export function abrirModal(html) {
         <div class="admin-modal-backdrop" data-cerrar-modal></div>
         <div class="admin-modal-panel">
             <button type="button" class="admin-modal-close" data-cerrar-modal aria-label="Cerrar">
-                <i class="fa-solid fa-xmark"></i>
+                <i class="ti ti-x"></i>
             </button>
             ${html}
         </div>

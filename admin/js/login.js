@@ -51,7 +51,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
 
     submitBtn.disabled = true;
     const textoOriginal = submitBtn.textContent;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ingresando…';
+    submitBtn.innerHTML = '<i class="ti ti-loader-2 ti-spin"></i> Ingresando…';
 
     try {
         const sb = await clienteAdmin();

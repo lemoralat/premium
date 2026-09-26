@@ -70,7 +70,7 @@ export async function renderizar(contenedor) {
         <div class="admin-toolbar">
             <p>Códigos de descuento manuales</p>
             <button type="button" class="btn btn-primary" id="btnNuevoCupon">
-                <i class="fa-solid fa-plus"></i> Nuevo cupón
+                <i class="ti ti-plus"></i> Nuevo cupón
             </button>
         </div>
         <div class="admin-tabla-wrap">
@@ -147,8 +147,8 @@ function filas() {
                         : '<span class="estado-badge estado-entregado">Vigente</span>'}
             </td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(c.id)}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(c.id)}"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(c.id)}"><i class="ti ti-edit"></i></button>
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(c.id)}"><i class="ti ti-trash"></i></button>
             </td>
         </tr>`;
     }).join('');
