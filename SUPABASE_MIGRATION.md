@@ -78,7 +78,7 @@ Reglas de oro:
 | `banners` | Banners promocionales | `imagen_path`/`imagen_url`, `logo_path`/`logo_url`, `badge`, `titulo`, `boton`, `link`, `target` (`interno` default / `externo`), `position`, `activo` |
 | `reviews` | Testimonios | `nombre`, `valoracion` (1–5), `resena`, `fecha`, `storage_path`/`external_url`, `position`, `activo` |
 | `iconos_pie` | Iconos de confianza del pie del home | `titulo` (obligatorio), `descripcion`, `storage_path`/`external_url`, `position`, `activo` |
-| `preguntas_frecuentes` | Preguntas de la página faq.html (sección Configuración) | `icono` (clase FontAwesome, opcional), `pregunta`, `respuesta`, `position`, `activo` |
+| `preguntas_frecuentes` | Preguntas de la página faq.html (sección Configuración) | `icono` (clase Tabler, opcional), `pregunta`, `respuesta`, `position`, `activo` |
 | `marquee_items` | Mensajes de la barra marquee (sección Diseño) | `texto` (obligatorio), `position`, `activo`; sin filas activas la barra no se muestra |
 | `orders` | Pedidos | `numero` (generado `PED-####` por trigger), `cliente` (jsonb: nombre, email, teléfono, dirección, ciudad, provincia, CP, notas), `subtotal`, `descuento`, `porcentaje`, `cupon`, `total`, `estado` (Pendiente / Procesando / Enviado / Entregado / Cancelado), `token` (uuid), `created_at` |
 | `order_items` | Líneas de pedido | `product_id` (ON DELETE SET NULL: el pedido histórico sobrevive al borrado del producto), `nombre` (congelado al momento de la compra), `variante_texto`, `quantity`, `precio_unitario` |
@@ -109,7 +109,7 @@ Se migraron todos los datos reales actuales, respetando los ids originales del J
 - **48 imágenes** de producto apuntando a Google Drive (`external_url`) para que el catálogo se vea idéntico al momento de migrar. El admin puede re-subirlas a Storage desde el panel (se irán usando `storage_path`).
 - **3 cupones**: `sale10` (10%, **inactivo** por estar vencido), `black20` (20%, activo hasta 2026-12-31), `navidad` (25%, activo hasta 2026-12-31).
 - **6 slides** de hero, **5 banners**, **12 reseñas**, todos con orden y estado reales.
-- **3 iconos del pie** (`0004` + `0021`): pagos, envíos y stock. Los assets locales se retiraron; la migración `0021` los convierte a iconos Font Awesome configurables.
+- **3 iconos del pie** (`0004` + `0021`): pagos, envíos y stock. Los assets locales se retiraron; la migración `0021` los convierte a iconos configurables (Font Awesome en su momento; `0033` los pasa a Tabler).
 - **Configuración** con los valores que estaban hardcodeados en el código: umbral 100000 → 10%, y los datos propios de la tienda (WhatsApp, alias, entidad y titular de transferencia) llegan **vacíos** desde `0024_plantilla_sin_datos_lemora.sql` — el repo es una plantilla reutilizable, así que el número y los datos bancarios se completan en Configuración desde el panel, no en el seed.
 
 ---
@@ -207,7 +207,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
   - **pedidos** — filtros por estado, búsqueda, detalle del pedido (productos, descuentos, datos del cliente) y **cambio de estado** inline.
   - **cupones** — CRUD con vencimiento y vigencia.
   - **slider / banners / resenas / iconos-pie** — CRUD con preview y subida de imágenes.
-  - **configuracion** — WhatsApp, descuentos, transferencia, redes, **popup de salida** (título, descripción, CTA, destino y estado) y **preguntas frecuentes** (repetidor con pregunta, respuesta, orden y ícono FontAwesome opcional). Los cambios se reflejan en la tienda en ≤ 1 min por la caché.
+  - **configuracion** — WhatsApp, descuentos, transferencia, redes, **popup de salida** (título, descripción, CTA, destino y estado) y **preguntas frecuentes** (repetidor con pregunta, respuesta, orden y ícono Tabler opcional). Los cambios se reflejan en la tienda en ≤ 1 min por la caché.
   - **cuenta** — perfil, cambio de contraseña y cierre de sesión.
 - **Estilo**: `admin/css/admin.css` usa los tokens visuales de la tienda (primario `#2563eb`, éxito `#00a650`, peligro `#ef4444`).
 - **Seguridad**: la sesión se persiste con `persistSession`; escrita contra RLS de `authenticated`.
@@ -229,7 +229,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0009_diseno.sql` (sección Diseño: `logo_path`, `favicon_path`, `og_image_path`, `color_principal` negro, `estilo_bordes`)
    - `migrations/0010_color_principal_negro.sql` (default del color principal → negro)
    - `migrations/0011_redes_sociales.sql` (redes del header: YouTube, X, Pinterest, LinkedIn, WhatsApp y Otra sobre las 3 existentes)
-   - `migrations/0012_iconos_fontawesome.sql` (sección Iconos: columna `icono` FontAwesome en `iconos_pie`, con selector curado + buscador en el dashboard)
+   - `migrations/0012_iconos_fontawesome.sql` (sección Iconos: columna `icono` FontAwesome en `iconos_pie`, con selector curado + buscador en el dashboard. Los valores los normaliza `0033`)
    - `migrations/0013_popup_salida.sql` (Configuración → Popup de salida: `popup_titulo`, `popup_descripcion`, `popup_cta`, `popup_cta_url`, `popup_activo`)
    - `migrations/0014_preguntas_frecuentes.sql` (tabla `preguntas_frecuentes` + RLS; sin seed: la tienda mantiene el HTML estático de faq.html como fallback inicial)
    - `migrations/0015_preguntas_frecuentes_rpc.sql` (RPC `contar_preguntas_frecuentes()` para que la tienda distinga "tabla vacía" de "todas ocultas")
@@ -237,7 +237,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0018_logo_tamano.sql` (sección Diseño: `logo_tamano` en `settings` → tamaño del logotipo del encabezado: Small 40 px / Medium 60 px / Large 80 px)
    - `migrations/0019_slider_mostrar_en.sql` (sección Slider: `mostrar_en` en `sliders` → `ambos` | `mobile` | `desktop` con check)
    - `migrations/0020_compra_minima.sql` (menú Descuentos → Compra mínima: `compra_minima_modo` 'off'|'cantidad'|'monto' y `compra_minima_valor` en `settings`; refuerza la validación en el RPC `insertar_pedido`)
-   - `migrations/0021_imagenes_storage.sql` (pipeline de imágenes: incluye `iconos` en Storage y convierte los iconos del seed a Font Awesome)
+   - `migrations/0021_imagenes_storage.sql` (pipeline de imágenes: incluye `iconos` en Storage y convierte los iconos del seed a Font Awesome; `0033` los pasa a Tabler)
    - `migrations/0022_formato_cards.sql` (selector de formato de imágenes de cards: `1:1`, `3:2` o `4:5`)
    - `migrations/0023_compra_minima_dual.sql` (compra mínima **dual**: columnas `compra_minima_cantidad` y `compra_minima_monto` en `settings`, ambas acumulables; `insertar_pedido` validaba modo+valor, ahora recalcula contra las dos)
    - `migrations/0024_plantilla_sin_datos_lemora.sql` (plantilla reutilizable: DEFAULTS de `settings` sin datos de Lemora — `whatsapp_number`, `transfer_alias`, `transfer_entity`, `transfer_holder` → `''`; solo cambia DEFAULTS, no toca la fila existente)
@@ -245,10 +245,11 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    - `migrations/0026_cierre_rls_admin.sql` (**seguridad**: cierra el gap de RLS en las tablas creadas después de 0007 — `iconos_pie` (0004), `preguntas_frecuentes` (0014) y `marquee_items` (0017) seguían con `to authenticated using (true)`, o sea que cualquier usuario autenticado podía escribirlas; las pasa a exigir `public.es_admin()`)
    - `migrations/0027_admin_tema.sql` (tema del panel admin: columna `admin_tema` en `settings` — `claro` | `oscuro`, con check; la preferencia es global, no por navegador)
    - `migrations/0028_pedido_items_fiables.sql` (**integridad del pedido**: `insertar_pedido` devuelve además `items[]` con el snapshot real de `order_items` (nombre, variante, cantidad, precio unitario). El mensaje de WhatsApp pasó a armarse con esa respuesta en lugar del carrito del `localStorage`, que el cliente controla. También devuelve `items` en los caminos idempotentes. **Sin esta migración la tienda funciona igual**, pero el mensaje de WhatsApp vuelve a mostrar los ítems del cliente)
-   - `migrations/0029_resenas_red.sql` (columna `red` en `reviews`: la red de origen del testimonio — Google, Instagram, YouTube… — como clase de Font Awesome Brands, elegible desde el panel en Reseñas → Editar. Conjunto de valores cerrado con `check`)
+   - `migrations/0029_resenas_red.sql` (columna `red` en `reviews`: la red de origen del testimonio — Google, Instagram, YouTube… — como clase de Font Awesome Brands, elegible desde el panel en Reseñas → Editar. Conjunto de valores cerrado con `check`. El default y los datos existentes los pasa a `ti-brand-*` en `0033`)
    - `migrations/0030_banners_carrito.sql` (columna `banners.en_carrito`: el banner del carrito se elige explícitamente con un check en vez de deducirse de la posición — antes era "el último por `position`", regla que hacía que todo banner nuevo acapara el carrito)
    - `migrations/0031_stock_pedidos.sql` (**integridad del stock**: el stock pasa a seguir el estado del pedido, con triggers sobre `orders` — `trg_orders_stock_estado` (AFTER UPDATE OF estado) reintegra al cruzar a `Cancelado` y vuelve a descontar al reabrir, y `trg_orders_stock_borrado` (BEFORE DELETE) compensa el descuento original. Las funciones son `security definer` y se les revoca el EXECUTE a todos: **sin ese `revoke`, la anon key podría llamar `descontar_stock_por_pedido()` y vaciar el stock de cualquier producto**. Es idempotente y va en `begin`/`commit`)
    - `migrations/0032_gracias_info_dinamico.sql` (cuadro "Próximos Pasos" de `gracias.html` editable desde Configuración → "Datos para la transferencia": `gracias_titulo` y `gracias_texto` en `settings`, con default = el texto que la página ya mostraba. También habilita la regla de la tarjeta: **si no hay Alias CBU, la página oculta el bloque de transferencia**. Es idempotente y va en `begin`/`commit`)
+   - `migrations/0033_iconos_tabler.sql` (**Font Awesome → Tabler Icons**: convierte a clases `ti-*` los valores ya guardados en `iconos_pie.icono`, `preguntas_frecuentes.icono` y `resenas.red`, y cambia el default de `resenas.red` (venía de `0029` con `'fa-google'`) para que los inserts futuros no vuelvan a guardar una clase de FA. Usa una función temporal `fa_a_tabler()` que replicar las equivalencias de `scripts/tabler-mapping.mjs` y se elimina al final. Es idempotente: sólo toca valores que empiezan con `fa-`, así que correrla dos veces no cambia nada. **No modifiques `0012`/`0014`/`0021`/`0029`**: quedan como registro histórico, y en una instalación nueva `0033` normaliza lo que ellas escriben)
 
    > **Backfill de `0031` (paso único,manual):** los pedidos que YA estaban en `Cancelado` cuando corrió la migración no dispararon ningún trigger, así que su stock sigue descontado. Corré el **PASO 1** (es un `SELECT` de diagnóstico) que está al final de `0031_stock_pedidos.sql`. Si devuelve filas y nadie repuso stock a mano, descomentá y corré el **PASO 2** una sola vez. No lo repitas: no es idempotente entre ejecuciones.
 
@@ -266,9 +267,15 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
    > select column_name from information_schema.columns
    >  where table_name = 'settings' and column_name like 'gracias%';
    > -- 2 filas = 0032 aplicada. 0 filas = falta correrla.
+   >
+   > select count(*) from public.iconos_pie
+   >  where icono like 'fa-%';
+   > -- 0 filas = 0033 aplicada y no quedó ningún ícono de FA.
    > ```
    >
    > `0032` tiene su propio aviso en el panel: si falta, la tarjeta "Datos para la transferencia" muestra un error al guardar y el cuadro de próximos pasos no se persiste. El resto de los campos de esa tarjeta (alias, entidad, titular) **siguen guardando** — el panel filtra las columnas inexistentes del `UPDATE` justamente para que la migración pendiente no rompa el guardado que ya funcionaba.
+   >
+   > **Sin `0033` los íconos configurados se ven blanks**, no se rompen: el sitio carga `ti-*` desde `assets/tabler/` y la base sigue devolviendo `fa-solid fa-…`, que no existe en esa fuente. El catálogo del panel (Iconos) sigue ofreciendo íconos que sí dibujan, así que el síntoma es "algunos íconos guardados no se ven" y no un error visible. `0033` trae sus propias consultas de verificación al final (PASO 1 a PASO 4), fuera de la transacción.
 
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
@@ -318,9 +325,9 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 - **WhatsApp sin ícono en el header**: por pedido, la barra social del header dejó de mostrar el ícono de WhatsApp; el canal de contacto sigue vivo solo con el número (`whatsapp_number`) en el botón de WhatsApp y el checkout. En Configuración, las redes del header y el canal de WhatsApp (número + mensaje) se editan juntos en la ficha "Redes y WhatsApp"; el campo `social_whatsapp` quedó huérfano (no se edita ni se muestra, la columna se conserva).
 - **Descuentos agrupados**: el menú "Cupones" pasó a llamarse "Descuentos" y concentra el CRUD de cupones junto a la card "Descuentos automáticos" (mudada desde Configuración). Sin cambios de esquema: `discount_threshold`/`discount_percent` se guardan en `settings` y la tienda los lee igual.
 - **Compra mínima con refuerzo server-side**: card del menú Descuentos con **dos reglas acumulables** — cantidad mínima de productos y monto mínimo (migración 0023 sobre `settings`; cada una se activa con valor > 0, 0 = inactiva). El front la muestra en el carrito y bloquea el checkout, pero la validación real vive en `insertar_pedido` (RPC, junto al resto de la lógica de negocio): si se saltea el front, el pedido se rechaza y la transacción revierte el stock. Sin la migración 0023, la tienda no cambia (0 y 0 = desactivada).
-- **Placeholders del dashboard**: productos, logos de banners, fotos de reseñas e imágenes de iconos del pie muestran `<i class="fa-regular fa-image"></i>` sobre un fondo gris cuando todavía no tienen una imagen. No se guardan placeholders en Supabase.
+- **Placeholders del dashboard**: productos, logos de banners, fotos de reseñas e imágenes de iconos del pie muestran `<i class="ti ti-photo"></i>` sobre un fondo gris cuando todavía no tienen una imagen. No se guardan placeholders en Supabase.
 - **Pipeline de imágenes del dashboard**: cada archivo local se valida, redimensiona según el módulo y convierte a WebP antes de subirlo a Supabase Storage. Las URLs externas permanecen como `external_url` y no se descargan.
-- **Imágenes públicas sin archivo**: la tienda no depende de assets PNG/JPG locales eliminados; un producto, slide, banner o reseña sin imagen conserva su espacio con un bloque gris neutro. Los iconos configurados usan Font Awesome.
+- **Imágenes públicas sin archivo**: la tienda no depende de assets PNG/JPG locales eliminados; un producto, slide, banner o reseña sin imagen conserva su espacio con un bloque gris neutro. Los iconos configurados usan Tabler Icons.
 
 ---
 
