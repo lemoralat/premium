@@ -4290,6 +4290,29 @@ body.zoom-active {
     }
 }
 
+/* Un solo testimonio: card única, centrada y sin marquee.
+   testimonios.js agrega .testimonios-estatico al carrusel cuando hay una sola
+   reseña, porque el loop infinito necesita al menos dos. Va después de los
+   media queries a propósito: la especificidad de la regla igual ganaría, pero
+   el orden deja claro que esto pisa el ancho de card en cualquier breakpoint. */
+.testimonios-carousel.testimonios-estatico .testimonios-viewport {
+    cursor: default;
+}
+
+/* El track base es width:max-content, o sea que su ancho depende del contenido.
+   Un width:100% en la card se resolvería en círculo contra sí mismo: midió
+   640px fijos y la card se salía de la pantalla en móvil. Ancharlo a 100% del
+   viewport es contra lo que sí tiene sentido medir el porcentaje de la card. */
+.testimonios-carousel.testimonios-estatico .testimonios-track {
+    width: 100%;
+    justify-content: center;
+}
+
+.testimonios-carousel.testimonios-estatico .testimonio-card {
+    flex: 0 0 auto;
+    width: min(100%, 640px);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .marquee-bar {

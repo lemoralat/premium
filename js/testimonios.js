@@ -148,15 +148,54 @@ document.addEventListener('DOMContentLoaded', async function () {
         texto: r.resena || r.texto
     }));
 
-    // Dos copias del listado para el loop infinito sin saltos
-    const fragment = document.createDocumentFragment();
-    for (let copia = 0; copia < 2; copia++) {
-        datos.forEach(t => fragment.appendChild(generarCard(t)));
+    // Un solo testimonio no se anima: se muestra como una card estática y
+    // centrada. El marquee necesita al menos dos para que el loop signifique
+    // algo, y con uno la repetición que hace falta para cubrir el ancho se
+    // leía como contenido duplicado.
+    if (datos.length === 1) {
+        track.appendChild(generarCard(datos[0]));
+        viewport.closest('.testimonios-carousel')?.classList.add('testimonios-estatico');
+        return;
     }
-    track.appendChild(fragment);
 
     // ============ MOTOR DE ANIMACIÓN (JS) + DRAG/SWIPE ============
-    const CICLO_MS = 96000; // 96s por copia (una reseña nueva cada 8s)
+    //
+    // El track se repite hasta cubrir el viewport más una vuelta extra. La
+    // unidad del loop es el ancho de UNA vuelta de reseñas, así que al llegar
+    // al final siempre queda contenido llenando la pantalla y el wrap es
+    // invisible.
+    //
+    // Antes se clonaba una sola vez y el loop daba por media vuelta el ancho
+    // total del track, lo que sólo daba la vuelta completa si el listado ya
+    // entraba en una pantalla. Con 25vw por card hacen falta 4 reseñas en
+    // desktop (3 en tablet, 1 en móvil): con menos, la animación recorría
+    // sólo una parte del ancho y quedaba un hueco vacío al lado.
+    const MS_POR_RESENA = 8000; // una reseña nueva cada 8s
+
+    let copias = 2;
+    let anchoVuelta = 0;   // ancho de una vuelta = unidad del loop
+
+    function vueltasParaCubrir(ancho) {
+        return Math.max(2, Math.ceil(viewport.offsetWidth / ancho) + 1);
+    }
+
+    // Renderiza las reseñas y las repite las veces necesarias para que la
+    // animación recorra todo el ancho. Mide la primera vuelta antes de clonar,
+    // en vez de suponer el ancho a partir de la cantidad de cards.
+    function repoblar() {
+        track.innerHTML = '';
+        datos.forEach((t) => track.appendChild(generarCard(t)));
+        const ancho = track.offsetWidth;
+        if (ancho <= 0) return false;   // layout todavía no disponible
+        anchoVuelta = ancho;
+        const necesarias = vueltasParaCubrir(ancho);
+        for (let i = 1; i < necesarias; i++) {
+            datos.forEach((t) => track.appendChild(generarCard(t)));
+        }
+        copias = necesarias;
+        return true;
+    }
+
     const mediaReducida = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     let velocidad = 0;       // px por ms
@@ -169,8 +208,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     let raf = null;
 
     function actualizarVelocidad() {
-        const mitad = track.offsetWidth / 2;
-        velocidad = mitad / CICLO_MS;
+        // 8s por reseña y no por vuelta: el tiempo de una vuelta escala con la
+        // cantidad de reseñas, así la velocidad no depende de cuántas copias
+        // hubo que agregar para llenar la pantalla.
+        velocidad = anchoVuelta / (MS_POR_RESENA * datos.length);
     }
 
     function render() {
@@ -178,17 +219,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     function rebasear(now) {
-        const mitad = track.offsetWidth / 2;
-        // Mantener el offset dentro de [0, mitad) para el loop seamless
-        offset = ((offset % mitad) + mitad) % mitad;
+        // Mantener el offset dentro de [0, anchoVuelta) para el loop seamless
+        offset = ((offset % anchoVuelta) + anchoVuelta) % anchoVuelta;
         if (velocidad > 0) t0 = now - offset / velocidad;
     }
 
     function loop(now) {
         if (!arrastrando && !enReposo) {
             offset = (now - t0) * velocidad;
-            const mitad = track.offsetWidth / 2;
-            if (offset >= mitad) offset = ((offset % mitad) + mitad) % mitad;
+            if (offset >= anchoVuelta) offset = ((offset % anchoVuelta) + anchoVuelta) % anchoVuelta;
         }
         render();
         raf = requestAnimationFrame(loop);
@@ -227,6 +266,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     window.addEventListener('resize', function () {
+        // El ancho de las cards está en vw, así que las copias necesarias sólo
+        // cambian al cruzar un breakpoint. Si cambian, hay que repoblar; si no,
+        // alcanza con recalcular la velocidad.
+        const anchoActual = track.offsetWidth / copias;
+        if (anchoActual > 0 && vueltasParaCubrir(anchoActual) !== copias) {
+            const progreso = anchoVuelta > 0 ? offset / anchoVuelta : 0;   // no saltar de posición
+            repoblar();
+            offset = progreso * anchoVuelta;
+        }
         actualizarVelocidad();
         rebasear(performance.now());
         render();
@@ -236,6 +284,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         enReposo = true; // respetar prefers-reduced-motion: solo drag manual
     }
 
+    repoblar();
     actualizarVelocidad();
+    rebasear(performance.now());
     raf = requestAnimationFrame(loop);
 });
