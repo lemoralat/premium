@@ -234,6 +234,25 @@ function aplicarDisenoGlobal() {
         document.querySelector('meta[property="og:image"]')?.setAttribute('content', CONFIG_DISENO.ogImageUrl);
         document.querySelector('meta[name="twitter:image"]')?.setAttribute('content', CONFIG_DISENO.ogImageUrl);
     }
+
+    // Descripción del negocio (Configuración → Datos generales). Sólo se
+    // reemplazan las metas que se marcaron con data-desde-config en el HTML:
+    // las páginas con texto propio (404, favoritos) no lo llevan y quedan
+    // como están.
+    //
+    // OJO con el alcance de esto: el sitio es HTML estático, así que la meta
+    // llega al navegador recién con este JS. Google lo ejecuta y la indexa,
+    // pero los previews de WhatsApp, Facebook y Slack NO ejecutan JS: leen el
+    // og:description estático del HTML. Para esos hay que editar el HTML, o
+    // migrar a un render en servidor. La meta estática del HTML sigue siendo
+    // el valor por defecto y el fallback si el admin deja el campo vacío.
+    const descripcion = CONFIG_APP.siteDescription;
+    if (descripcion) {
+        document.querySelectorAll('meta[data-desde-config]').forEach((el) => {
+            el.setAttribute('content', descripcion);
+        });
+    }
+
     const nombreSitio = obtenerNombreSitio();
     // Reemplaza la marca en metas y título preservando los prefijos específicos
     // de página ("Contacto -", "Mis Favoritos -", "404 - ...").

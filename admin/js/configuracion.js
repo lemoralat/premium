@@ -44,6 +44,11 @@ export async function renderizar(contenedor) {
                         <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="Dirección como texto o URL de Google Maps">
                         <span class="hint">¿Tu negocio tiene una ubicación física? Indicá la dirección o agregá la URL de Google Maps.</span>
                     </div>
+                    <div class="admin-field full">
+                        <label for="cfgSiteDescription">Descripción del negocio</label>
+                        <textarea id="cfgSiteDescription" rows="3" maxlength="160" placeholder="Ej: Venta de productos por encargo, con envíos a todo el país.">${esc(s.site_description ?? '')}</textarea>
+                        <span class="hint">Es el meta description del sitio: el texto que muestran Google y los previews al compartir un link. Google corta alrededor de los 160 caracteres, así que conviene que la idea entre ahí. Vacío = se conserva el texto genérico.</span>
+                    </div>
                 </div>
                 <div class="admin-modal-acciones">
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -203,7 +208,8 @@ export async function renderizar(contenedor) {
     const camposGenerales = () => ({
         site_name: $('#cfgSiteName').value.trim(),
         email_contact: $('#cfgEmail').value.trim(),
-        address: $('#cfgAddress').value.trim()
+        address: $('#cfgAddress').value.trim(),
+        site_description: $('#cfgSiteDescription').value.trim()
     });
 
     const camposRedes = () => ({
@@ -227,24 +233,40 @@ export async function renderizar(contenedor) {
         gracias_texto: $('#cfgGraciasTexto').value.trim()
     });
 
-    // Las columnas de la migración 0032 (gracias_titulo / gracias_texto) no
-    // existen hasta que se aplica, y un UPDATE con una columna inexistente
-    // revienta el guardado ENTERO: sin este filtro, guardar esta tarjeta antes
-    // de aplicar 0032 haría fallar hasta el Alias CBU, que sí funciona. Se
-    // detectan por la fila leída —si la columna no está, la clave no viene— y
-    // se filtran del payload. Mientras falten, gracias.html muestra el texto
-    // por defecto, así que la página sigue bien.
-    const columnasInfo = ['gracias_titulo', 'gracias_texto'];
-    const faltaMigracionInfo = columnasInfo.some((c) => s[c] === undefined);
-    const soloColumnasInfo = (payload) => {
-        if (!faltaMigracionInfo) return payload;
+    // Columnas de migraciones que todavía pueden no estar aplicadas (0032 y
+    // 0033). Un UPDATE con una columna inexistente revienta el guardado ENTERO:
+    // sin este filtro, guardar "Datos generales" antes de aplicar 0033 haría
+    // fallar también el nombre y el correo, que sí funcionan.
+    //
+    // Se detectan por la fila leída —si la columna no está, la clave no viene—
+    // y se sacan del payload. Mientras falten, el sitio usa el texto por
+    // defecto, así que la página sigue bien.
+    const columnasOpcionales = [
+        {
+            columnas: ['gracias_titulo', 'gracias_texto'],
+            aviso: 'Falta aplicar la migración 0032: el cuadro de próximos pasos todavía no se puede guardar.'
+        },
+        {
+            columnas: ['site_description'],
+            aviso: 'Falta aplicar la migración 0033: la descripción del negocio todavía no se puede guardar.'
+        }
+    ].map(({ columnas, aviso }) => ({
+        aviso,
+        // Columnas cuya migración NO está aplicada: si la clave no viene en la
+        // fila leída, es que la columna todavía no existe en la base.
+        ausentes: columnas.filter((c) => s[c] === undefined)
+    }));
+
+    const sinColumnasAusentes = (payload) => {
+        const ausentes = columnasOpcionales.flatMap((c) => c.ausentes);
+        if (!ausentes.length) return payload;
         const limpio = { ...payload };
-        columnasInfo.forEach((c) => delete limpio[c]);
+        ausentes.forEach((c) => delete limpio[c]);
         return limpio;
     };
-    if (faltaMigracionInfo) {
-        toast('Falta aplicar la migración 0032: el cuadro de próximos pasos todavía no se puede guardar.', 'error');
-    }
+    columnasOpcionales.forEach((c) => {
+        if (c.ausentes.length) toast(c.aviso, 'error');
+    });
 
     const camposPopup = () => ({
         popup_titulo: $('#cfgPopupTitulo').value.trim() || DEFAULT_POPUP.titulo,
@@ -268,9 +290,9 @@ export async function renderizar(contenedor) {
         });
     };
 
-    vincular('#configFormGeneral', camposGenerales);
+    vincular('#configFormGeneral', () => sinColumnasAusentes(camposGenerales()));
     vincular('#configFormRedes', camposRedes);
-    vincular('#configFormTransferencia', () => soloColumnasInfo(camposTransferencia()));
+    vincular('#configFormTransferencia', () => sinColumnasAusentes(camposTransferencia()));
     vincular('#configFormPopup', camposPopup);
 
     // Exportar datos (CSV): productos y pedidos, cada uno con su archivo.

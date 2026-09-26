@@ -36,6 +36,10 @@ export const WHATSAPP_CONFIG = {
 // Se completa con la fila "settings" de Supabase cuando está disponible.
 export const CONFIG_APP = {
     siteName: 'Mi Tienda Online',
+    // Descripción del negocio (Configuración → Datos generales). El default es
+    // el texto genérico que las metas tenían hardcodeado, así que sin la
+    // migración 0033 el sitio queda igual. La aplica template.js → aplicarDisenoGlobal().
+    siteDescription: 'Tienda online con los mejores productos. Envíos a todo el país.',
     whatsappNumber: '',
     whatsappMessage: 'Hola, quería consultar ',
     transferAlias: '',
@@ -94,6 +98,7 @@ export async function cargarConfiguracionGlobal() {
         if (r.ok && r.datos) {
             const c = r.datos;
             CONFIG_APP.siteName = c.site_name ?? CONFIG_APP.siteName;
+            CONFIG_APP.siteDescription = c.site_description ?? CONFIG_APP.siteDescription;
             WHATSAPP_CONFIG.number = c.whatsapp_number ?? WHATSAPP_CONFIG.number;
             WHATSAPP_CONFIG.defaultMessage = c.whatsapp_default_message ?? WHATSAPP_CONFIG.defaultMessage;
             CONFIG_APP.whatsappNumber = WHATSAPP_CONFIG.number;
