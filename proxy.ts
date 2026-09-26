@@ -5,7 +5,7 @@
 //
 //   1. Lee la cookie `lemora_admin_token` (espejo del access_token que escribe
 //      admin-supabase.js en el navegador).
-//   2. Sin token → 307 a /admin/login.html (el shell admin jamás se sirve).
+//   2. Sin token → 307 a /admin/login (el shell admin jamás se sirve).
 //   3. Con token → valida contra el RPC es_admin de Supabase (=== true, la
 //      misma policy que usa el panel). No-admin o token inválido → 307 a login.
 //
