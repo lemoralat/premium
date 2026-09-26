@@ -608,16 +608,18 @@ function actualizarElementosWhatsApp() {
 document.addEventListener('DOMContentLoaded', async function () {
     // Detectar página activa desde el atributo data-page del body
     const activePage = document.body.getAttribute('data-page') || '';
-    await initTemplate(activePage);
-    
-    // Actualizar contador de favoritos
-    actualizarContadorFavoritosGlobal();
-    // Actualizar contador del carrito
-    actualizarContadorCarrito();
 
-    // Actualizar enlaces y textos de WhatsApp dinámicos
-    actualizarElementosWhatsApp();
-
+    // Exponer las funciones ANTES de insertar el header, no después.
+    //
+    // El header se inyecta dentro de initTemplate(), pero estas asignaciones
+    // estaban al final del listener, es decir después de `await initTemplate()`.
+    // Como initTemplate espera dos llamadas de red (cargarConfiguracionGlobal y
+    // obtenerProductos), había una ventana en la que los botones del header ya
+    // eran visibles y pulsables pero su onclick inline lanzaba ReferenceError
+    // ("toggleBusquedaMovil is not defined") sin abrir nada. Moverlas arriba
+    // cierra esa ventana para todos los handlers inline (búsqueda y sidemenu).
+    // No dependen del DOM: solo reasignan referencias a funciones declaradas.
+    //
     // Hacer que la función de actualizar favoritos sea accesible para otros módulos
     // sin tener que duplicar el código en cada archivo.
     window.actualizarContadorFavoritosGlobal = actualizarContadorFavoritosGlobal;
@@ -630,4 +632,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     window.sideEliminarItem = sideEliminarItem;
     window.toggleBusquedaMovil = toggleBusquedaMovil;
     window.cerrarBusqueda = cerrarBusqueda;
+
+    await initTemplate(activePage);
+    
+    // Actualizar contador de favoritos
+    actualizarContadorFavoritosGlobal();
+    // Actualizar contador del carrito
+    actualizarContadorCarrito();
+
+    // Actualizar enlaces y textos de WhatsApp dinámicos
+    actualizarElementosWhatsApp();
 });
