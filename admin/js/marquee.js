@@ -8,6 +8,12 @@
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
+// Tope de mensajes. La garantía real está en la BD (trigger
+// trg_marquee_items_max, migración 0035): esto es la parte amable, que evita
+// que el admin llegue al error. El trigger cuenta TODAS las filas, y acá
+// también: una fila inactiva sigue ocupando un lugar en la tabla.
+const MAX_MENSAJES = 6;
+
 let items = [];
 
 // Renderiza el gestor completo dentro de `contenedor` (el <div> de la card
@@ -21,13 +27,21 @@ export async function renderizarGestor(contenedor) {
     if (error) throw error;
     items = data || [];
 
+    // El botón se apaga al llegar al tope. `items` se relee en cada
+    // renderizado, así que el estado nunca queda desfasado tras un borrado.
+    const alTope = items.length >= MAX_MENSAJES;
+    const quedan = MAX_MENSAJES - items.length;
+
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <p>Se muestran en la barra animada sobre el encabezado de la tienda. Sin mensajes activos, la barra no aparece.</p>
-            <button type="button" class="btn btn-primary" id="btnNuevoMensaje">
+            <button type="button" class="btn btn-primary" id="btnNuevoMensaje" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo mensaje
             </button>
         </div>
+        <p class="hint">Máximo ${MAX_MENSAJES} mensajes. ${alTope
+            ? 'Límite alcanzado: borrá alguno para crear otro (desactivar no libera lugar).'
+            : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -38,7 +52,9 @@ export async function renderizarGestor(contenedor) {
         </div>
     `;
 
-    $('#btnNuevoMensaje').addEventListener('click', () => abrirModalMensaje(null, contenedor));
+    if (!alTope) {
+        $('#btnNuevoMensaje').addEventListener('click', () => abrirModalMensaje(null, contenedor));
+    }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalMensaje(Number(btn.dataset.editar), contenedor));
     });
@@ -107,6 +123,15 @@ function abrirModalMensaje(idExistente, contenedor) {
         const texto = $('#mqTexto').value.trim();
         if (!texto) {
             toast('El mensaje es obligatorio.', 'error');
+            return;
+        }
+
+        // `id` vacío = mensaje nuevo. El botón ya viene deshabilitado en el
+        // tope, pero si el panel está abierto en dos pestañas el `items` de
+        // esta quedó viejo: el trigger de 0035 lo rechaza igual, esto sólo
+        // evita que el error llegue como toast de servidor.
+        if (!idExistente && items.length >= MAX_MENSAJES) {
+            toast(`La barra marquee admite máximo ${MAX_MENSAJES} mensajes.`, 'error');
             return;
         }
 
