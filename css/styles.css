@@ -804,14 +804,32 @@ span {
         border-color: var(--primary-color);
     }
 
+    /* Lupa de entrada: ícono decorativo (aria-hidden) que ancla el campo como
+       buscador. Va en position:absolute contra el .header-search, igual que el
+       ×, y no como flex item — si fuera flex child competiría por el ancho con
+       el input. pointer-events:none para que el clic siempre vaya al input. */
+    .header-search .search-leading {
+        position: absolute;
+        left: 1.15rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--secondary-color);
+        font-size: 0.9375rem;
+        line-height: 1;
+        pointer-events: none;
+        z-index: 1;
+        transition: color 0.25s ease;
+    }
+
     .header-search .search-input {
         flex: 1;
         min-width: 0;
         border: none;
         background: transparent;
         outline: none;
-        /* padding derecho generoso para que el texto no pase por debajo del × */
-        padding: 0.7rem 2.75rem 0.7rem 1.25rem;
+        /* padding derecho generoso para que el texto no pase por debajo del ×;
+           padding izquierdo para dejarlo libre de la lupa. */
+        padding: 0.7rem 2.75rem 0.7rem 2.6rem;
         font-size: 0.9375rem;
         line-height: 1.4;
         color: var(--text-color);
@@ -838,6 +856,11 @@ span {
     }
 
     .header-search .search-close:hover {
+        color: var(--primary-color);
+    }
+
+    /* La lupa acompaña al foco del campo, como el borde de .header-search. */
+    .header-search:focus-within .search-leading {
         color: var(--primary-color);
     }
 }

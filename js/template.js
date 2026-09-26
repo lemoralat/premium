@@ -71,9 +71,10 @@ function renderHeader(activePage = '', categorias = []) {
                          (#searchPanel), el mismo que usa el móvil. Es un div y no un
                          form justamente para que Enter no dispare un submit inexistente. -->
                     <div class="header-search" id="headerSearch" role="search">
+                        <i class="fa-solid fa-magnifying-glass search-leading" aria-hidden="true"></i>
                         <input type="search" class="search-input" placeholder="¿Qué estás buscando?"
                             aria-label="¿Qué estás buscando?" autocomplete="off">
-                        <button type="button" class="search-close" onclick="cerrarBusqueda()" aria-label="Cerrar búsqueda">
+                        <button type="button" class="search-close" onclick="cerrarBusqueda()" aria-label="Limpiar búsqueda">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
