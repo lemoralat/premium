@@ -372,7 +372,7 @@ export async function cargarBanners() {
     try {
         const { data, error } = await sb
             .from('banners')
-            .select('id, imagen_path, imagen_url, logo_path, logo_url, badge, titulo, boton, link, target')
+            .select('id, imagen_path, imagen_url, logo_path, logo_url, badge, titulo, boton, link, target, en_carrito')
             .eq('activo', true)
             .order('position', { ascending: true });
 
@@ -385,7 +385,9 @@ export async function cargarBanners() {
             titulo: b.titulo || '',
             boton: b.boton || '',
             link: b.link || '',
-            target: b.target === 'externo' ? 'externo' : 'interno'
+            target: b.target === 'externo' ? 'externo' : 'interno',
+            // El del carrito se elige en el panel, no por posición (migración 0030).
+            en_carrito: b.en_carrito === true
         }));
 
         cachear('banners', banners);

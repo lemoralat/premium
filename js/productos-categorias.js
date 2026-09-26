@@ -56,10 +56,13 @@ function renderizarCategoriasAutomaticas(banners) {
     // conserva como red de seguridad ante datos que lleguen por otro camino.
     const categorias = [...new Set(restantes.map(p => p.categoria))].filter(Boolean);
 
-    // Todos menos el último (tope 4): el último banner de la hoja es el del carrito.
-    const bannersIndex = banners.slice(0, Math.min(4, banners.length - 1));
+    // Los que NO son el banner del carrito (tope 4). Antes era "todos menos el
+    // último", porque el del carrito se deducía de la posición; ahora se excluye
+    // el que tiene en_carrito, que es el que eligió el admin.
+    const bannersIndex = banners.filter((b) => !b.en_carrito).slice(0, 4);
 
-    // Intercalar banners dinámicos entre las categorías (máx 4 en el index; el último banner va al carrito).
+    // Intercalar banners dinámicos entre las categorías (máx 4 en el index; el
+    // banner del carrito no va al inicio).
     // Todos los banners usan el mismo estilo (banner 1, ancho completo);
     // los "solo imagen" se renderizan a ancho completo con cover.
     const bloques = bannersIndex.map(banner => ({

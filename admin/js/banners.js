@@ -15,7 +15,7 @@ export async function renderizar(contenedor) {
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
-            <p>El último banner activo es el que va en el carrito.</p>
+            <p>Marcá un banner como el del carrito. Los demás van al inicio (máximo 4).</p>
             <button type="button" class="btn btn-primary" id="btnNuevoBanner">
                 <i class="fa-solid fa-plus"></i> Nuevo banner
             </button>
@@ -60,7 +60,8 @@ function filas() {
             <td data-label="Orden">${esc(b.position)}</td>
             <td data-label="Estado">${b.activo
                 ? '<span class="estado-badge estado-entregado">Activo</span>'
-                : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
+                : '<span class="estado-badge estado-cancelado">Inactivo</span>'}
+                ${b.en_carrito ? '<br><span class="estado-badge estado-procesando" style="margin-top:0.3rem;">Carrito</span>' : ''}</td>
             <td class="td-acciones">
                 <button type="button" class="btn btn-sm" data-editar="${esc(b.id)}"><i class="fa-solid fa-pen"></i></button>
                 <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(b.id)}"><i class="fa-solid fa-trash"></i></button>
@@ -150,13 +151,21 @@ function abrirModalBanner(idExistente) {
                     <label for="bnrPosition">Orden</label>
                     <input type="number" id="bnrPosition" min="0" step="1" value="${esc(banner?.position ?? (banners.length + 1))}">
                 </div>
-                <div class="admin-field full" style="justify-content:flex-end;">
+                <div class="admin-field full" style="justify-content:flex-end; gap:1.5rem; display:flex; flex-wrap:wrap;">
                     <label class="admin-check">
                         <input type="checkbox" id="bnrActivo" ${banner?.activo === false ? '' : 'checked'}>
                         Banner activo
                     </label>
+                    <label class="admin-check">
+                        <input type="checkbox" id="bnrCarrito" ${banner?.en_carrito ? 'checked' : ''}>
+                        Banner del carrito
+                    </label>
                 </div>
             </div>
+            <p class="hint" style="margin-top:-0.6rem;">
+                Si lo marcás, este banner va en la página de carrito y deja de mostrarse en el
+                inicio. Al marcarlo se desmarca el que estuviera antes: sólo puede haber uno.
+            </p>
 
             <div class="admin-modal-acciones">
                 <button type="button" class="btn" onclick="document.querySelector('#adminModal [data-cerrar-modal]').click()">Cancelar</button>
@@ -197,7 +206,8 @@ function abrirModalBanner(idExistente) {
             link: $('#bnrLink').value.trim(),
             target: $('#bnrTarget').value,
             position: parseInt($('#bnrPosition').value) || 0,
-            activo: $('#bnrActivo').checked
+            activo: $('#bnrActivo').checked,
+            en_carrito: $('#bnrCarrito').checked
         };
 
         const imagenArchivo = imagenOptimizada;
@@ -221,6 +231,20 @@ function abrirModalBanner(idExistente) {
 async function guardarBanner(payload, id, { imagenArchivo, imagenUrl, logoArchivo, logoUrl }) {
     const sb = await clienteAdmin();
     const previo = id ? banners.find((b) => b.id === id) : null;
+
+    // La columna tiene un índice único parcial: no puede haber dos banners con
+    // en_carrito en true. Por eso se desmarcan los otros ANTES de guardar este,
+    // si no el guardado del nuevo choca contra el índice. Si el guardado falla
+    // después, el carrito queda sin banner, que es visible y se arregla desde el
+    // panel; dejar dos marcados en cambio no se puede ni ver ni corregir.
+    if (payload.en_carrito) {
+        const { error } = await sb
+            .from('banners')
+            .update({ en_carrito: false })
+            .eq('en_carrito', true)
+            .neq('id', id ?? 0);
+        if (error) throw new Error(error.message);
+    }
 
     let registroId = id;
     if (id) {

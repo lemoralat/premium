@@ -269,12 +269,15 @@ async function cargarProductosReferencia() {
     }
 }
 
-// Banner del carrito: el último banner de la hoja "Banners". Sin banners => el contenedor queda oculto.
+// Banner del carrito: el que tiene en_carrito, elegido en el panel
+// (Banners → Editar → "Banner del carrito"). Antes se deducía de la posición, y
+// eso hacía que cualquier banner nuevo se llevara el carrito porque el alta lo
+// deja último. Si nadie está marcado, no se muestra banner.
 function renderizarBannerCarrito(banners) {
     const contenedor = document.getElementById('banner-carrito');
     if (!contenedor) return;
 
-    const banner = Array.isArray(banners) && banners.length > 0 ? banners[banners.length - 1] : null; // último banner publicado
+    const banner = Array.isArray(banners) ? banners.find((b) => b.en_carrito) || null : null;
     if (!banner) return;
 
     // Banner "solo imagen": imagen a ancho completo como fondo con cover
