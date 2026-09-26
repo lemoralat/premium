@@ -5,6 +5,16 @@ import { clienteAdmin } from './admin-supabase.js';
 
 let slides = [];
 
+// Tope de slides. La garantía real está en la BD (trigger trg_sliders_max,
+// migración 0037): esto es la parte amable, que evita que el admin llegue al
+// error. El trigger cuenta TODAS las filas, y acá también: desactivar un
+// slide lo saca del carrusel pero no lo borra, y no libera lugar.
+//
+// Ojo con los DOS caminos que crean filas: el botón "Nuevo slide" y la acción
+// "Duplicar" de cada fila. Con el tope en la base los dos quedan cubiertos
+// igual; el guard de JS es sólo para que el error no llegue como toast.
+const MAX_SLIDES = 12;
+
 const OPCIONES_MOSTRAR = [
     { valor: 'ambos', nombre: 'Ambos', icono: 'fa-solid fa-mobile-screen' },
     { valor: 'mobile', nombre: 'Móvil', icono: 'fa-solid fa-mobile-screen-button' },
@@ -19,13 +29,21 @@ export async function renderizar(contenedor) {
     if (error) throw error;
     slides = data || [];
 
+    // El botón se apaga al llegar al tope. `slides` se relee en cada
+    // renderizado, así que el estado nunca queda desfasado tras un borrado.
+    const alTope = slides.length >= MAX_SLIDES;
+    const quedan = MAX_SLIDES - slides.length;
+
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <p>Portada del inicio. Sin slides activos, la sección desaparece de la tienda.</p>
-            <button type="button" class="btn btn-primary" id="btnNuevoSlide">
+            <button type="button" class="btn btn-primary" id="btnNuevoSlide" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo slide
             </button>
         </div>
+        <p class="hint">Máximo ${MAX_SLIDES} slides. ${alTope
+            ? 'Límite alcanzado: borrá alguno para crear o duplicar otro (desactivar no libera lugar).'
+            : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -36,7 +54,9 @@ export async function renderizar(contenedor) {
         </div>
     `;
 
-    $('#btnNuevoSlide').addEventListener('click', () => abrirModalSlide(null));
+    if (!alTope) {
+        $('#btnNuevoSlide').addEventListener('click', () => abrirModalSlide(null));
+    }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalSlide(Number(btn.dataset.editar)));
     });
@@ -52,6 +72,9 @@ function filas() {
     if (!slides.length) {
         return `<tr><td colspan="6"><div class="admin-empty"><p>No hay slides. Agregá el primero.</p></div></td></tr>`;
     }
+    // "Duplicar" crea una fila nueva, así que se apaga con el mismo tope que
+    // "Nuevo slide". Es el camino que más fácil se olvida en una revisión.
+    const dupDeshabilitado = slides.length >= MAX_SLIDES;
     return slides.map((s) => `
         <tr>
             <td class="td-principal">
@@ -70,7 +93,7 @@ function filas() {
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
                 <button type="button" class="btn btn-sm" data-editar="${esc(s.id)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm" data-duplicar="${esc(s.id)}" title="Duplicar" aria-label="Duplicar slide"><i class="fa-solid fa-copy"></i></button>
+                <button type="button" class="btn btn-sm" data-duplicar="${esc(s.id)}" title="${dupDeshabilitado ? 'Límite alcanzado' : 'Duplicar'}" aria-label="Duplicar slide" ${dupDeshabilitado ? 'disabled' : ''}><i class="fa-solid fa-copy"></i></button>
                 <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(s.id)}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
@@ -203,6 +226,15 @@ function abrirModalSlide(idExistente) {
         const archivo = archivoOptimizado;
         const urlExterna = $('#sldUrlExterna').value.trim();
 
+        // `idValor` vacío = slide nuevo. El botón ya viene deshabilitado en el
+        // tope, pero si el panel está abierto en dos pestañas el `slides` de
+        // esta quedó viejo: el trigger de 0037 lo rechaza igual, esto sólo
+        // evita que el error llegue como toast de servidor.
+        if (!idValor && slides.length >= MAX_SLIDES) {
+            toast(`La portada admite máximo ${MAX_SLIDES} slides.`, 'error');
+            return;
+        }
+
         if (archivo && urlExterna) {
             toast('Elegí una sola fuente de imagen: archivo o URL externa.', 'error');
             return;
@@ -287,6 +319,15 @@ async function duplicarSlide(id, contenedor, boton) {
     const original = slides.find((s) => s.id === id);
     if (!original) {
         toast('No se encontró el slide a duplicar.', 'error');
+        return;
+    }
+
+    // Duplicar inserta una fila, así que pasa por el mismo tope que el botón
+    // "Nuevo slide". El chequeo va acá y no sólo en el atributo `disabled` de
+    // `filas()`: con el panel en dos pestañas el `slides` de esta puede
+    // tener menos de los que ya hay.
+    if (slides.length >= MAX_SLIDES) {
+        toast(`La portada admite máximo ${MAX_SLIDES} slides. Borá alguno antes de duplicar.`, 'error');
         return;
     }
 
