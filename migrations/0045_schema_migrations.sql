@@ -4,6 +4,20 @@
 -- Última del lote de limpieza de residuos de la era Sheets/Drive.
 --
 -- ----------------------------------------------------------------------------
+-- ORDEN DE APLICACIÓN — LEER ANTES DE CORRER
+-- ----------------------------------------------------------------------------
+-- Esta migración tiene que ir la última del lote: 0042, 0043 y 0044 PRIMERO,
+-- en ese orden, y recién después 0045.
+--
+-- No es una cuestión de dependencias de esquema (0045 no necesita que las otras
+-- tres hayan corrido para poder ejecutarse), sino de que su backfill declara
+-- esas tres como aplicadas. Si corrés 0045 antes, la tabla queda diciendo que
+-- 0042, 0043 y 0044 están aplicadas cuando no lo están: el registro queda
+-- mintiendo justo de la forma que esta tabla existe para evitar. Y no es un
+-- error que se note, porque el síntoma de una migración faltante es silencioso
+-- (ver abajo) y la tabla, en cambio, va a decir que todo bien.
+--
+-- ----------------------------------------------------------------------------
 -- EL PROBLEMA QUE RESUELVE
 -- ----------------------------------------------------------------------------
 -- No hay runner de migraciones. Supabase lo que ofrece es un tablero donde se
@@ -21,23 +35,29 @@
 -- POR QUÉ NO SE PUEDE EMPEZAR DE CERO
 -- ----------------------------------------------------------------------------
 -- La tabla arranca con las 42 migraciones anteriores marcadas como aplicadas.
--- Es una afirmación, y hay que ser explícito sobre su shaky: para este proyecto
--- es verdad para este proyecto (la base de producción tiene el esquema de la
--- 0033, que fue la última que cambió settings), pero NO se pudo verificar una
--- por una: pg_catalog no es accesible con la anon key y esta migración se
--- escribe sin haber corrido un solo select contra la base. Si tu base no aplicó alguna de las listadas,
--- borrala de la lista ANTES de correr esta migración:
+-- Es una afirmación, y hay que ser explícito sobre lo frágil que es: para este
+-- proyecto es verdad —la base de producción tiene el esquema de la 0033, que
+-- fue la última que cambió settings—, pero NO se pudo verificar una por una,
+-- porque pg_catalog no es accesible con la anon key y este archivo se escribió
+-- sin haber corrido un solo select contra la base.
+--
+-- Si tu base no aplicó alguna de las listadas, borrala de la lista ANTES de
+-- correr esta migración:
 --
 --   delete from public.schema_migrations where nombre = '0031_stock_pedidos';
 --
 -- y después corré el archivo a mano. Es preferible un registro con un hueco
 -- conocido y anotado que uno completo y mentiroso.
 --
--- Para una instalación NUEVA de la plantilla el planteo es al revés: no
--- apliques el backfill. Apliques 0001 → 0045 en orden, y a partir de 0046 cada
--- migración se registra sola (ver la nota al pie de este archivo sobre cómo).
--- En una base nueva, correr este 0045 después de 0001..0044 con el backfill ya
--- aplicado no molesta: el `on conflict do nothing` no pisa lo que haya.
+-- Para una instalación NUEVA de la plantilla: aplicá 0001 → 0045 en orden, y
+-- corré el 0045 tal cual está, backfill incluido. Las 42 filas que inserta
+-- corresponden a migraciones que en una instalación nueva efectivamente se
+-- aplicaron, así que el registro es correcto y no hace falta editarlo. Lo que
+-- sí hay que evitar es aplicar sólo una parte del bloque del backfill.
+--
+-- Y a partir de la 0046 cada migración se registra sola al final (ver la nota al
+-- pie de este archivo sobre cómo). La 0045 es la excepción porque es la que
+-- crea la tabla: no puede registrarse antes de existir.
 --
 -- ----------------------------------------------------------------------------
 -- CÓMO SE USA
@@ -50,7 +70,8 @@
 --    group by nombre having count(*) > 1;
 --   -- Vacío siempre: nombre es primary key.
 --
---   -- ¿cuántas hay? Contra 42 si la base venía de este repo.
+--   -- ¿cuántas hay? Contra 43 si la base venía de este repo: las 42
+--   -- anteriores más esta.
 --   select count(*) from public.schema_migrations;
 --
 -- LO QUE ESTA TABLA NO PUEDE HACER
@@ -96,12 +117,20 @@ alter table public.schema_migrations enable row level security;
 -- ----------------------------------------------------------------------------
 -- Vista de ayuda: cuántas migraciones hay registradas y cuáles son las
 -- últimas. Pensada para pegar en el SQL Editor y ver el estado de un vistazo.
+--
+-- El desempate por nombre no es cosmetismo. Todas las filas del backfill
+-- comparten aplicada_en: dentro de una transacción now() devuelve siempre la
+-- hora de inicio, no la de cada sentencia. Ordenando sólo por aplicada_en, las
+-- 42 salen en un orden arbitrario y la vista no sirve para responder "¿cuál
+-- es la última?", que es justo para lo que existe. Con nombre como segundo
+-- criterio el orden sale bien porque los nombres llevan cero-padding de 4
+-- dígitos: '0009' ordena antes que '0010' en orden de texto.
 -- ----------------------------------------------------------------------------
 drop view if exists public.ultimas_migraciones;
 create view public.ultimas_migraciones as
 select nombre, aplicada_en, nota
   from public.schema_migrations
- order by aplicada_en desc
+ order by aplicada_en desc, nombre desc
  limit 10;
 
 -- ----------------------------------------------------------------------------
@@ -149,24 +178,34 @@ insert into public.schema_migrations (nombre) values
     ('0041_preguntas_frecuentes_max'),
     ('0042_descuento_cero_y_columna_huerfana'),
     ('0043_eliminar_external_url'),
-    ('0044_categoria_inactiva_esconde_productos'),on conflict (nombre) do nothing;
+    ('0044_categoria_inactiva_esconde_productos')
+on conflict (nombre) do nothing;
 
 commit;
+
+-- ----------------------------------------------------------------------------
+-- Esta migración se registra a sí misma
+-- ----------------------------------------------------------------------------
+-- Va fuera del begin/commit de arriba a propósito. Si el insert fuera parte de
+-- la transacción y algo fallara, el rollback se llevaría por delante también la
+-- creación de la tabla, y el archivo entero quedaría sin aplicar. Así, o
+-- quedan las 42 + esta, o no queda nada.
+insert into public.schema_migrations (nombre)
+values ('0045_schema_migrations')
+on conflict (nombre) do nothing;
 
 -- ============================================================================
 -- Verificación (correr por separado, después del commit).
 -- ============================================================================
 
--- PASO 1 — Que estén las 42.
+-- PASO 1 — Que estén las 43.
 -- select count(*) from public.schema_migrations;
--- -- Esperado: 42. Si da menos, el backfill se cortó (sin transaction implícita,
--- --   el on conflict no impide eso: revisar que se haya corrido el bloque
--- --   entero y no una parte).
---
--- Si devuelve 42, la 0045 no se registró a sí misma: eso es a propósito, para
--- que la fila se agregue con la 0046 y la convención sea "se registra la
--- siguiente, no la propia". Registrala a mano si preferís que figure:
---   insert into public.schema_migrations (nombre) values ('0045_schema_migrations');
+-- -- Esperado: 43 (las 42 anteriores + esta). Si da menos, el backfill se
+-- --   cortó: revisar que se haya corrido el bloque entero y no una parte.
+-- --
+-- Si devuelve 42, falta el insert de "esta migración se registra a sí misma",
+-- que está después del commit. No es grave: el archivo es idempotente y se
+-- puede volver a correr entero sin romper nada.
 
 -- PASO 2 — Que ni anon ni authenticated la puedan leer.
 -- Acá hay que cambiar la key por la del proyecto; con la anon key la consulta
@@ -178,13 +217,39 @@ commit;
 -- --   con policy de insert, escribir) el registro.
 
 -- PASO 3 — La vista.
--- select * from public.ultimas_migraciones;
--- -- Esperado: 10 filas, la primera siendo 0044.
+-- select nombre from public.ultimas_migraciones;
+-- -- Esperado: 10 filas, en este orden:
+-- --   0045_schema_migrations
+-- --   0044_categoria_inactiva_esconde_productos
+-- --   0043_eliminar_external_url
+-- --   0042_descuento_cero_y_columna_huerfana
+-- --   0041_preguntas_frecuentes_max
+-- --   0040_iconos_pie_max
+-- --   0039_resenas_max
+-- --   0038_banners_max
+-- --   0037_sliders_max
+-- --   0036_cupones_max
+-- -- La 0045 va sola arriba porque su insert corre después del commit y por
+-- -- eso tiene un aplicada_en posterior al del backfill. Si la primera fila no
+-- -- es 0045, el archivo se corrió a medias (falta el insert final).
 --
--- Ojo: la vista es security_invoker = false (por defecto en Postgres hasta 15),
--- o sea que consulta con los permisos del dueño, no los del que la llama. Por
--- eso el service_role la ve pero anon recibe el mismo error de la tabla: no
--- hay una vía para saltarse la RLS de abajo a través de la vista.
+-- Ojo con la vista: es security_invoker = false (por defecto hasta Postgres 15),
+-- o sea que consulta con los permisos del dueño de la tabla y NO con los del
+-- que la llama. Es decir: la RLS de schema_migrations no la frena, porque para
+-- la vista no existe. Lo único que decide si anon puede leerla es si tiene
+-- permiso (GRANT) sobre la vista.
+--
+-- Por eso el PASO 2 alcanza con mirar la tabla y no hace falta probar la vista:
+-- si anon no llega a la tabla, y la vista corre como el dueño, entonces el
+-- permiso que habría que mirar es el de la vista. Verificalo una vez con:
+--
+--   select has_table_privilege('anon', 'public.ultimas_migraciones', 'select');
+--   -- Esperado: false. Si da true, la vista es una ventana a la tabla y hay
+--   --   que revocarle el permiso a anon y a authenticated.
+--
+-- En el peor caso lo que se filtra son nombres de migración, que además están
+-- en el repositorio público. O sea que no es una fuga grave, pero es
+-- incoherente con el resto del esquema y no cuesta nada dejarla cerrada.
 -- ============================================================================
 --
 -- NOTA PARA LAS MIGRACIONES SIGUIENTES (0046 en adelante)
