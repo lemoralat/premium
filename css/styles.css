@@ -480,15 +480,7 @@ span {
     display: block;
     width: auto;
     height: 40px; /* Small (default). Modificadores: .logo--medium / .logo--large */
-    margin: 10px 0;
-}
-.logo--medium { height: 60px; }
-.logo--large { height: 80px; }
-
-@media (max-width: 768px) {
-    .logo {
-        margin: 0;
-    }
+    margin: 0;
 }
 
 .navbar {
@@ -497,6 +489,7 @@ span {
     position: sticky;
     top: 0;
     z-index: var(--z-nav);
+    padding: 0.4rem;
 }
 
 /* Comportamiento del sticky igual al móvil en todos los breakpoints:
@@ -866,7 +859,7 @@ span {
     color: var(--primary-color);
     text-decoration: none;
     line-height: 1.25;
-    margin: 10px 0; /* mismo ritmo vertical que la imagen (.logo) */
+    margin: 0; /* mismo ritmo vertical que la imagen (.logo) */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
