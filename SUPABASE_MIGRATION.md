@@ -167,24 +167,26 @@ Todas las tablas tienen **row level security habilitada**. El patrón final lo f
 | `SUPABASE_URL` | build de env, admin, API | Sí (es la URL del proyecto) |
 | `SUPABASE_PUBLISHABLE_KEY` (anon) | build de env → `js/env.generated.js`, admin | Sí |
 | `SUPABASE_SERVICE_ROLE_KEY` | **solo** `api/pedido.js` en Vercel | **No — nunca al frontend** |
+| `SITIO_URL` | build de env → reemplaza `TU-DOMINIO.com` en los 8 HTML, `robots.txt` y genera `sitemap.xml` | Sí (es el dominio público del cliente) |
+| `ALLOWED_ORIGINS` | `api/_lib/origenes.js` (CORS de la API) | — (config de Vercel) |
 
 ### 5.2 Archivos
 
 - `.env.example` — plantilla documentada.
 - `js/env.generated.js` — **commiteado como placeholder vacío** y sobrescrito por `npm run build:env`. Contiene solo la URL y la anon key (datos públicos).
-- `scripts/build-env.mjs` — genera `env.generated.js` desde `process.env`.
+- `scripts/build-env.mjs` — genera `env.generated.js` desde `process.env`, reemplaza `TU-DOMINIO.com` por `SITIO_URL` en los 8 HTML raíz y en `robots.txt`, y genera `sitemap.xml`.
 - `package.json` — dependencia `@supabase/supabase-js` (visible para Vercel) y scripts `build:env` / `build`.
 
 ### 5.3 Pasos
 
 **Local:**
 ```bash
-cp .env.example .env.local    # completar los tres valores
+cp .env.example .env.local    # completar valores (incluye SITIO_URL)
 npm install
-npm run build:env             # crea js/env.generated.js con la URL + anon key
+npm run build:env             # crea env.generated.js + reemplaza TU-DOMINIO.com + sitemap.xml
 ```
 
-**Vercel** (Project Settings → Environment Variables): definir `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SERVICE_ROLE_KEY` en Production/Preview/Development. El build de Vercel regenera `env.generated.js` de forma automática (el script `build` hace `build:env`).
+**Vercel** (Project Settings → Environment Variables): definir `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `SITIO_URL` en Production/Preview/Development. El build de Vercel regenera `env.generated.js`, reemplaza el dominio y genera `sitemap.xml` de forma automática (el script `build` hace `build:env`).
 
 ---
 
@@ -327,13 +329,7 @@ El cupón se valida dos veces (frontend para UX, backend para correctitud); lo q
 3. **Auth**: habilitar correo/contraseña (Authentication → Providers) y **crear una cuenta** exclusiva para el admin (Authentication → Users → Add user, o el formulario de registro). El `profiles` se crea solo por el trigger.
 4. **Configurar variables de entorno** (sección 5) en local y Vercel.
 5. **Desplegar en Vercel** el directorio `supabase/` (framework "Other"). `vercel.json` se mantiene tal cual: `cleanUrls: true` (rutas limpias nativas) + el guard `proxy.ts` de `/admin/*` + los headers de seguridad.
-6. **Reemplazar el dominio placeholder.** Los 8 HTML raíz tienen `https://TU-DOMINIO.com` en los `canonical` y en las metas `og:url` / `og:image` / `twitter:*`. Buscá y reemplazá:
-
-   ```bash
-   grep -rl "TU-DOMINIO.com" --include="*.html" .
-   ```
-
-   Son 5 líneas por archivo. **No se puede automatizar del todo**: los `og:image` los bajan los crawlers de redes (Facebook, X) sin ejecutar JavaScript, así que un valor incorrecto rompe la vista previa del link aunque el `canonical` lo resuelva por JS.
+6. **El dominio se reemplaza solo en el build.** Los 8 HTML raíz tienen `https://TU-DOMINIO.com` en los `canonical` y en las metas `og:url` / `og:image` / `twitter:*` (5 líneas por archivo, más `robots.txt`). **Ya no se reemplaza a mano**: `scripts/build-env.mjs` lo hace al desplegar, tomando la variable `SITIO_URL` (ver sección 5) y además genera `sitemap.xml`. Si un deploy queda con `TU-DOMINIO.com` a la vista, es señal de `SITIO_URL` mal configurada — chequealo en Project Settings → Environment Variables.
 7. **Probar** (sección 9) y después cargar contenido desde el panel: productos, banners, reseñas, iconos del pie, FAQ. La tienda arranca vacía y las secciones sin datos se ocultan solas.
 
 > **Nota — rutas limpias (`cleanUrls`) y el guard del panel.** `vercel.json` usa `cleanUrls: true`, la función nativa de Vercel: `/carrito.html` se sirve en `/carrito` y **quien entre a la URL con `.html` recibe un 308 a la limpia**. Por eso se **eliminaron las 7 rewrites manuales** que antes hacían ese trabajo: la doc de Vercel dice explícitamente que con `cleanUrls` los `rewrites` no deben llevar extensión en `source` ni en `destination` (con extensión, `/carrito` → `/carrito.html` → 308 → `/carrito` sería un loop).

@@ -38,10 +38,14 @@
 
 import { next } from '@vercel/functions';
 
-// Configuración pública (misma que js/env.generated.js). Se puede sobreescribir
-// con variables de entorno en Vercel; los literales son solo fallback.
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://euvddavykjiixofivglt.supabase.co';
-const ANON_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_DDq78TsFiLqDaq3sRS68Qw_ZxYWYYSF';
+// Configuración pública (misma que js/env.generated.js). Viene SIEMPRE de las
+// variables de entorno del proyecto Vercel: NO hay fallback a valores literales.
+// Un fallback apuntaría al proyecto de otra tienda (modelo multi-cliente) y el
+// guard validaría contra la base equivocada. Si falta la variable, `middleware`
+// responde 503 y lo avisa en los logs: fallar ruidosamente ante un error de
+// config es preferible a validar contra la tienda de otro cliente.
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const ANON_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || '';
 const COOKIE_TOKEN = 'lemora_admin_token';
 
 // Páginas públicas del panel (no requieren sesión). Rutas SIN extensión: se
@@ -91,6 +95,13 @@ export default async function middleware(request: Request): Promise<Response> {
     // Páginas y assets públicos pasan directo (siguen la cadena).
     if (esRutaPublica(pathname)) {
         return next();
+    }
+
+    // Configuración ausente → 503 visible (sin esta guarda, el `fetch` de abajo
+    // iría a una URL vacía y el admin quedaría inaccesible sin explicación).
+    if (!SUPABASE_URL || !ANON_KEY) {
+        console.error('[proxy.ts] Falta configurar SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY en el proyecto Vercel.');
+        return new Response('Panel temporalmente fuera de servicio: configurar las variables de entorno de Supabase en Vercel.', { status: 503 });
     }
 
     const token = leerToken(request);

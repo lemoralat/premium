@@ -10,6 +10,9 @@ node_modules/
 # Vercel
 .vercel/
 
+# Generado por scripts/build-env.mjs (SITIO_URL) — no se commitea
+sitemap.xml
+
 # Sistema
 .DS_Store
 Thumbs.db
