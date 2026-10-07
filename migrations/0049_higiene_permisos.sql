@@ -1,5 +1,5 @@
 -- ============================================================================
--- LEMORA — Migración 0049: higiene de permisos, search_path e índices
+-- LEMORA — Migración 0049: higiene de permisos, search_path e índices (aún no aplicado)
 --
 -- Migración correctiva de una sola vez (auditoría 2026-10-07). Cierra en la
 -- base los agujeros que dejó el patrón histórico "crear permisivo en 0001 y
