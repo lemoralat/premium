@@ -13,8 +13,14 @@
 -- y la URL pública se deriva a render-time con storage.getPublicUrl().
 --
 -- Corre todo dentro de una transacción: si algo falla, no quedan buckets ni
--- policies a medias. Re-ejecutable (todo es create ... if not exists / drop
--- policy if exists / on conflict do nothing).
+-- policies a medias. Idempotente para una INSTALACIÓN NUEVA (todo es create
+-- ... if not exists / drop policy if exists / on conflict do nothing).
+--
+-- ⚠️ SOBRE LA BASE VIVA: re-ejecutarla después de la 0021 reescribe las 4
+--    policies "Imágenes: *" con la lista original de 5 buckets y le saca el
+--    bucket `iconos` a la lectura pública y a la escritura de admin (los
+--    iconos del pie quedan ilegibles/subibles). Si se re-ejecuta, correr
+--    después 0021_storage_seis_buckets.sql.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------

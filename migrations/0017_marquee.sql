@@ -15,7 +15,11 @@
 -- RLS: lectura pública solo de los activos; administración autenticada
 -- (mismo patrón que preguntas_frecuentes, migración 0014).
 --
--- Idempotente: se puede reaplicar en SQL Editor sin error.
+-- Idempotente para una instalación nueva: se puede reaplicar sin error.
+-- ⚠️ SOBRE LA BASE VIVA re-aplicarla SÍ cambia el estado: recrea
+--    "Marquee: admin full" con `using (true)`, la versión que 0026 endureció
+--    a es_admin() (mismo nombre ⇒ la pisa). Si se re-ejecuta, correr después
+--    migrations/0026_cierre_rls_admin.sql.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------

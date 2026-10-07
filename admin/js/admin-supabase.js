@@ -58,7 +58,12 @@ async function sincronizarCookieSesion(event, session) {
     }
 }
 
-let cliente = null;
+export async function espejarCookieSesion() {
+    if (!cliente) return;
+    const { data } = await cliente.auth.getSession();
+    await sincronizarCookieSesion('SIGNED_IN', data.session || null);
+}
+
 let promesa = null;
 
 export function clienteAdmin() {
@@ -69,7 +74,13 @@ export function clienteAdmin() {
                 throw new Error('Supabase no configurado. Ejecutá `npm run build:env` con tus variables.');
             }
             const mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm');
-            cliente = mod.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
+            cliente = mod.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                }
+            });
             cliente.auth.onAuthStateChange(sincronizarCookieSesion);
             return cliente;
         })();

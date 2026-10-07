@@ -4,6 +4,23 @@
 --
 -- Modelo de infraestructura: UNA TIENDA = UN PROYECTO = UNA BASE DE DATOS.
 -- No hay tenant_id ni aislamiento multi-tienda (decisión arquitectónica).
+--
+-- ⚠️  NO RE-EJECUTAR ESTE ARCHIVO SOBRE UNA BASE EXISTENTE.
+--     Es la migración de instalación: sus `grant` y sus policies están
+--     escritos para una base vacía, y re-aplicarlos sobre la base viva
+--     REABRE agujeros que cerraron migraciones posteriores:
+--       · `grant execute on all functions in schema public to anon,
+--          authenticated, service_role` (y el alter default privileges del
+--          final) le devuelven a `anon` la invocación de RPC que 0007/0028/0031
+--          cerraron: borrar_pedidos(), insertar_pedido(),
+--          descontar_stock_por_pedido(), cantidades_por_producto()…
+--       · las policies con `using (true)` de profiles/orders y el
+--          `grant all on all tables` devuelven a `authenticated` el
+--          SELECT/DELETE amplio que 0007/0026 reemplazaron por es_admin().
+--     Si por lo que sea hay que re-correr esta — o cualquier migración vieja
+--     (0003, 0004, 0007, 0014, 0017…): correr DESPUÉS
+--     migrations/0049_higiene_permisos.sql, que cierra exactamente eso.
+--     El detalle de cada re-ejecución peligrosa está en SUPABASE_MIGRATION.md.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------

@@ -776,8 +776,8 @@ span {
         display: flex;
         align-items: center;
         flex: 1 1 auto;
-        max-width: 560px;
-        margin-right: 1.5rem;
+        max-width: 480px;
+        margin-right: 1.25rem;
         background: var(--bg-color);
         border: 1px solid var(--border-color);
         border-radius: 50px;
@@ -788,8 +788,22 @@ span {
        apriete ni desborde (Inicio | Productos | Preguntas | Contacto | …). */
     @media (max-width: 1199px) {
         .header-search {
-            max-width: 300px;
+            max-width: 320px;
             margin-right: 1rem;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .header-search {
+            max-width: 280px;
+            margin-right: 0.75rem;
+        }
+    }
+
+    @media (max-width: 960px) {
+        .header-search {
+            max-width: 240px;
+            margin-right: 0.5rem;
         }
     }
 
@@ -803,11 +817,11 @@ span {
        para que el clic siempre vaya al campo. */
     .header-search .search-leading {
         position: absolute;
-        left: 1.15rem;
+        left: 1.05rem;
         top: 50%;
         transform: translateY(-50%);
         color: var(--secondary-color);
-        font-size: 0.9375rem;
+        font-size: 0.875rem;
         line-height: 1;
         pointer-events: none;
         z-index: 1;
@@ -822,9 +836,9 @@ span {
         outline: none;
         /* padding izquierdo generoso para dejar libre la lupa; a la derecha no
            hace falta holgura porque la barra ya no lleva el × de limpiar. */
-        padding: 0.7rem 1.25rem 0.7rem 2.6rem;
-        font-size: 0.9375rem;
-        line-height: 1.4;
+        padding: 0.65rem 1rem 0.65rem 2.4rem;
+        font-size: 0.875rem;
+        line-height: 1.3;
         color: var(--text-color);
         font-family: inherit;
     }

@@ -23,9 +23,19 @@
 --      to sign up" (evita que cualquiera cree una cuenta; aunque la creen,
 --      ya NO tendría permisos de admin sin estar en `admins`).
 --
--- RE-EJECUTABLE: cada create policy dropea antes el mismo nombre y todo corre
--- dentro de una transacción (begin/commit): si algo falla, revierte completo y
--- no queda un estado parcial. Podés correrla tantas veces como necesites.
+-- RE-EJECUTABLE (casi): cada create policy dropea antes el mismo nombre y todo
+-- corre dentro de una transacción (begin/commit): si algo falla, revierte
+-- completo y no queda un estado parcial. PERO, sobre la base viva, re-aplicar
+-- el archivo SÍ produce regresiones:
+--
+-- ⚠️ NO re-ejecutar sobre la base viva sin correr después
+--    migrations/0048_insertar_pedido_canonico.sql, 0021_storage_seis_buckets.sql
+--    y 0049_higiene_permisos.sql:
+--      · el `create or replace` de la RPC (más abajo) instala el cuerpo de la
+--        0007 y pisa el canónico: se pierden compra mínima (0020/0023),
+--        snapshot items[] (0028) y el fix del 0 del descuento (0042);
+--      · recrea "Imágenes: subida/actualización/eliminación solo admin" con
+--        la lista original de 5 buckets y le saca `iconos` (0021 la extendió).
 -- ============================================================================
 
 begin;

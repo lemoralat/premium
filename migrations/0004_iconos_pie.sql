@@ -7,6 +7,14 @@
 --
 -- Incluye: tabla, RLS, seed idempotente con los valores reales del HTML y un
 -- bucket de Storage nuevo ("iconos") con sus políticas extendidas.
+--
+-- ⚠️ NO re-ejecutar sobre la base viva sin correr después
+--    migrations/0026_cierre_rls_admin.sql y 0021_storage_seis_buckets.sql:
+--      · recrea "Iconos: admin full" con `using (true)`, la versión que 0026
+--        endureció a es_admin() (mismo nombre ⇒ la pisa);
+--      · recrea "Imágenes: subida/actualización/eliminación autenticada",
+--        escritura de Storage para CUALQUIER usuario autenticado sobre los 6
+--        buckets — políticas que 0007 pasó a "solo admin" con es_admin().
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------

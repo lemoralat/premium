@@ -1,7 +1,7 @@
 // login.js — Inicio de sesión del panel (Supabase Auth, email + contraseña)
 // y envío de correo de recuperación de contraseña.
 
-import { clienteAdmin } from './admin-supabase.js';
+import { clienteAdmin, espejarCookieSesion } from './admin-supabase.js';
 
 const emailInput = document.getElementById('loginEmail');
 const passwordInput = document.getElementById('loginPassword');
@@ -17,7 +17,7 @@ function mostrarError(mensaje) {
 // panel está en actualización), el login explica por qué volvió acá.
 const params = new URLSearchParams(window.location.search);
 if (params.get('denegado') === '1') {
-    errorBox.className = '';
+    errorBox.className = 'admin-error-text';
     mostrarError('Tu usuario no tiene permisos de administrador. Verificá que esté en la tabla public.admins.');
 }
 
@@ -26,12 +26,26 @@ function limpiarError() {
     errorBox.textContent = '';
 }
 
-// Si ya hay una sesión activa, saltar directo al panel.
+// Si ya hay una sesión activa, validar el rol ANTES de mandar al panel para
+// evitar bucles con el guard de /admin (proxy.ts). Si la cookie está vencida,
+// la sincronizamos ANTES de redirigir.
 try {
     const sb = await clienteAdmin();
     const { data } = await sb.auth.getSession();
     if (data.session) {
-        window.location.replace('/admin/');
+        const { data: esAdmin, error } = await sb.rpc('es_admin');
+        if (error) {
+            console.error(error);
+            errorBox.className = 'admin-error-text';
+            mostrarError('No pudimos verificar tu acceso. Revisá tu conexión y recargá la página.');
+        } else if (esAdmin === true) {
+            await espejarCookieSesion();
+            window.location.replace('/admin/');
+        } else {
+            await sb.auth.signOut();
+            errorBox.className = 'admin-error-text';
+            mostrarError('Tu usuario no tiene permisos de administrador. Verificá que esté en la tabla public.admins.');
+        }
     }
 } catch (error) {
     console.error(error);
@@ -58,6 +72,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         document.getElementById('loginForm').reset();
+        await espejarCookieSesion();
         window.location.href = '/admin/';
     } catch (error) {
         mostrarError(mensajeLogin(error));
