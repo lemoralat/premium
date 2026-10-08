@@ -239,10 +239,13 @@ function actualizarTotales() {
         totalElement.textContent = `$${formatearPrecio(total)}`;
     }
 
-    // Habilitar/deshabilitar botón de checkout (vacío, sin stock o sin mínimo)
+    // Habilitar/deshabilitar el botón del paso final. En modo turnos solo se
+    // bloquea con el carrito vacío: la solicitud de turno no exige mínimos de
+    // compra ni stock disponible (se coordina después), a diferencia del checkout.
     const checkoutBtn = document.getElementById('checkoutBtn');
     if (checkoutBtn) {
-        checkoutBtn.disabled = cart.length === 0 || haySinStock || !min.cumple;
+        const enTurnos = esModoTurnos();
+        checkoutBtn.disabled = cart.length === 0 || (!enTurnos && (haySinStock || !min.cumple));
     }
 }
 
@@ -327,45 +330,58 @@ function renderizarBannerCarrito(banners) {
     contenedor.hidden = false;
 }
 
-// ============ MODO TURNOS: /carrito como solicitud de turno ============
-// En modo turnos (Configuración → Tipo de web) no hay carrito: la página es un
-// formulario de solicitud. Se oculta el bloque de compra y se muestra #turnoForm.
-function configurarPaginaTurnos() {
-    document.body.classList.add('modo-turnos');
-
-    const titulo = document.getElementById('carritoTitulo');
-    if (titulo) titulo.textContent = 'Solicitá tu turno';
-
-    // Ocultar el bloque de compra con la CLASE `.hidden` (display:none!important)
-    // y no con el atributo `hidden`: .cart-container declara display:grid en el
-    // CSS, que le gana al [hidden] del navegador, así que el atributo no ocultaría
-    // nada y el carrito/cupón/resumen seguirían visibles arriba del formulario.
-    const contenedorCarrito = document.querySelector('.cart-container');
-    if (contenedorCarrito) contenedorCarrito.classList.add('hidden');
-
-    // El checkout de venta no aplica en este modo.
-    const checkout = document.getElementById('checkoutForm');
-    if (checkout) checkout.classList.add('hidden');
-
-    // #turnoForm viene con la clase `hidden` en el HTML (carrito.html): hay que
-    // QUITAR la clase. Quitarle el atributo `hidden` no alcanzaría: la clase con
-    // !important sigue escondiendo el formulario, que nunca se mostraría.
+// ============ MODO TURNOS: el carrito se mantiene, cambia solo el paso final ============
+// En modo turnos (Configuración → Tipo de web) la tienda y el carrito
+// funcionan igual que en venta: ítems, cupón, resumen y totales. Lo único que
+// cambia es el formulario que se abre al tocar "Solicitar turno": en vez del
+// checkout de envío (#checkoutForm) se muestra la solicitud de turno
+// (#turnoForm), y el turno se registra con los ítems del carrito (insertar_turno,
+// migración 0053).
+function mostrarFormularioTurno() {
     const turnoForm = document.getElementById('turnoForm');
-    if (turnoForm) turnoForm.classList.remove('hidden');
+    const checkoutBtn = document.getElementById('checkoutBtn');
 
-    // Si la solicitud vino desde una ficha de producto (producto-detalle.js
-    // guardó turno_servicio), se muestra qué servicio se pidió.
-    const servicio = sessionStorage.getItem('turno_servicio');
-    const contServicio = document.getElementById('turnoServicio');
-    if (servicio && contServicio) {
-        try {
-            const s = JSON.parse(servicio);
-            contServicio.textContent = `Vas a solicitar turno para: ${s.nombre || ''}`;
-            contServicio.hidden = false;
-        } catch {
-            sessionStorage.removeItem('turno_servicio');
-        }
+    if (turnoForm && checkoutBtn) {
+        turnoForm.classList.remove('hidden');
+        checkoutBtn.style.display = 'none';
+
+        // Scroll al formulario de solicitud
+        turnoForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+}
+
+// Guía para quien pide el turno: los horarios disponibles (0053) de los
+// servicios que hay en el carrito, por servicio. El formulario sigue aceptando
+// cualquier fecha/hora: esto es solo informativo.
+function mostrarHorariosCarrito() {
+    const contenedor = document.getElementById('turnoHorarios');
+    if (!contenedor) return;
+
+    const cart = obtenerCarrito();
+    const lineas = cart
+        .map((item) => {
+            const ref = productosGlobales.find((p) => p.id === item.id);
+            if (!ref) return null;
+            const horarios = Array.isArray(ref.servicioHorarios) ? ref.servicioHorarios : [];
+            if (!horarios.length) return null;
+            const dias = [...new Set(horarios.map((h) => String(h?.dia || '').trim()).filter(Boolean))];
+            return dias.length ? { nombre: item.nombre, dias } : null;
+        })
+        .filter(Boolean);
+
+    if (!lineas.length) {
+        contenedor.hidden = true;
+        contenedor.innerHTML = '';
+        return;
+    }
+
+    contenedor.innerHTML = `
+        <strong>Horarios disponibles de tus servicios:</strong>
+        <ul>
+            ${lineas.map((l) => `<li>${escaparHtml(l.nombre)}: ${escaparHtml(l.dias.join(', '))}</li>`).join('')}
+        </ul>
+    `;
+    contenedor.hidden = false;
 }
 
 // Event listener para el botón de checkout
@@ -374,14 +390,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Se espera acá (aunque template.js ya lo carga) para decidir con seguridad.
     await cargarConfiguracionGlobal();
 
-    // Modo turnos: /carrito es un formulario de solicitud, no un checkout.
-    // No se renderiza el carrito ni el cupón/compra mínima (no existen).
-    if (esModoTurnos()) {
-        configurarPaginaTurnos();
-        renderizarBannerCarrito(await obtenerBanners());
-        return;
-    }
-
+    // El carrito se renderiza igual en ambos modos: en turnos solo cambia el
+    // formulario del paso final (ver mostrarFormularioTurno).
     await cargarProductosReferencia();
     await obtenerCupones();
     renderizarCarrito();
@@ -398,10 +408,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         mostrarNotificacion('⚠️ Algunos productos en tu carrito ya no tienen stock disponible.');
     }
 
+    const enTurnos = esModoTurnos();
+
     const checkoutBtn = document.getElementById('checkoutBtn');
     if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', mostrarFormularioCheckout);
+        checkoutBtn.addEventListener('click', enTurnos ? mostrarFormularioTurno : mostrarFormularioCheckout);
+        if (enTurnos) checkoutBtn.textContent = 'Solicitar turno';
     }
+
+    // Modo turnos: guía de horarios de los servicios del carrito (0053).
+    if (enTurnos) mostrarHorariosCarrito();
 
     // Validar cupón al presionar Enter en el input
     const couponInput = document.getElementById('couponInput');

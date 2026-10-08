@@ -150,8 +150,10 @@
              Las IDs son propias para no pisar al formulario de pedido. -->
         <div id="turnoForm" class="checkout-form container-sg hidden">
             <h2>Solicitá tu turno</h2>
-            <p class="card-sub" style="margin:0 0 1.2rem;">Completá tus datos y te confirmamos la cita por WhatsApp.</p>
-            <div id="turnoServicio" class="turno-servicio" hidden></div>
+            <p class="card-sub" style="margin:0 0 1.2rem;">Completá tus datos y te confirmamos la cita por WhatsApp. La solicitud incluye los servicios de tu carrito.</p>
+            <!-- Guía informativa (0053): horarios disponibles de los servicios del
+                 carrito. La llena js/carrito.js (mostrarHorariosCarrito). -->
+            <div id="turnoHorarios" class="turno-horarios" hidden></div>
             <form id="turnoFormulario" novalidate>
                 <div class="form-group">
                     <label for="turnoNombre">Nombre Completo *</label>

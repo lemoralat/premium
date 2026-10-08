@@ -5,11 +5,12 @@
 // Misma arquitectura que api/pedido.js:
 //   - Usa la SERVICE ROLE key SOLO del lado servidor (variable de entorno).
 //   - Delega toda la lógica a la RPC `insertar_turno` (transacción única:
-//     valida nombre/teléfono/email/fecha, genera el número TRN-#### e inserta).
+//     valida nombre/teléfono/email/fecha, normaliza los ítems del carrito,
+//     genera el número TRN-#### e inserta).
 //   - El frontend POSTea a /api/turno y espera { status: 'success' } o
 //     { status: 'error', message }. La respuesta trae `numero`/`fecha`/`hora`/
-//     `producto`: el frontend arma el mensaje de WhatsApp con eso (fuente de
-//     verdad de la base), no con el formulario del cliente.
+//     `items`/`total` (migración 0053): el frontend arma el mensaje de WhatsApp
+//     con eso (fuente de verdad de la base), no con el formulario del cliente.
 //   - Honeypot y límites de payload igual que pedido (anti-bot / anti-abuso).
 //
 // Variables de entorno requeridas en Vercel:
@@ -85,6 +86,34 @@ module.exports = async function handler(request, response) {
         }
     }
 
+    // Ítems del carrito (0053): la solicitud de turno se registra con los
+    // servicios que el cliente agregó al carrito. Se normalizan acá con el
+    // mismo contrato que insertar_turno (id + nombre obligatorios, el resto
+    // con límites); la RPC vuelve a validar y recalcula los totales.
+    let items = null;
+    if (body.items !== undefined && body.items !== null) {
+        if (!Array.isArray(body.items) || body.items.length > 100) {
+            return response.status(400).json({ status: 'error', message: 'Estructura de solicitud inválida.' });
+        }
+        items = body.items
+            .map((it) => {
+                if (!it || typeof it !== 'object') return null;
+                const id = typeof it.id === 'string' ? it.id : String(it.id ?? '');
+                const iNombre = typeof it.nombre === 'string' ? it.nombre.trim() : '';
+                if (!id || !iNombre) return null;
+                return {
+                    id: id.slice(0, 100),
+                    nombre: iNombre.slice(0, 200),
+                    variante_texto: (typeof it.variante_texto === 'string' ? it.variante_texto : '').slice(0, 250),
+                    cantidad: Number.isInteger(it.cantidad) && it.cantidad >= 1 ? Math.min(it.cantidad, 999) : 1,
+                    precio_unitario: typeof it.precio_unitario === 'number' && Number.isFinite(it.precio_unitario)
+                        ? Math.max(0, it.precio_unitario)
+                        : 0
+                };
+            })
+            .filter(Boolean);
+    }
+
     const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
 
     try {
@@ -93,6 +122,7 @@ module.exports = async function handler(request, response) {
             p_fecha: fecha,
             p_hora: hora,
             p_producto: producto,
+            p_items: items,
             p_notas: notas || null,
             p_token: (typeof body.token === 'string' && UUID_REGEX.test(body.token)) ? body.token : null
         };

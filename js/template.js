@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, esModoTurnos, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, slugificar, obtenerMarquee, placeholderImagenPublica } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, slugificar, obtenerMarquee, placeholderImagenPublica } from './utils.js';
 
 const CARD_ASPECT_RATIOS = Object.freeze({
     '1:1': '1 / 1',
@@ -13,11 +13,9 @@ function renderHeader(activePage = '', categorias = []) {
     const header = document.createElement('div');
     header.className = 'header-wrapper';
 
-    // Modo turnos (Configuración → Tipo de web): no hay carrito, así que el
-    // acceso de venta se reemplaza por un vínculo a la página de solicitud de
-    // turno (/carrito en modo turnos). Se decide acá porque initTemplate ya
-    // esperó por cargarConfiguracionGlobal() antes de renderizar el header.
-    const enTurnos = esModoTurnos();
+    // El carrito existe en ambos modos (venta y turnos): en turnos el paso
+    // final del checkout es la solicitud de turno, pero la tienda sigue
+    // vendiendo con carrito normal (ver carrito.js/formulario.js).
 
     // Generar HTML del submenú de categorías
     // V-2: el nombre de categoría es contenido administrado → escapar el texto
@@ -97,16 +95,10 @@ function renderHeader(activePage = '', categorias = []) {
                         <i class="fa-solid fa-heart"></i>
                         <span class="favorites-count">0</span>
                     </a>
-                    ${enTurnos ? `
-                    <a href="/carrito" class="header-icon" aria-label="Solicitar turno">
-                        <i class="fa-solid fa-calendar-check"></i>
-                    </a>
-                    ` : `
                     <button type="button" class="header-icon" onclick="abrirCarritoSidemenu()" aria-label="Abrir carrito de compras">
                         <i class="fa-solid fa-cart-shopping"></i>
                         <span class="cart-count">0</span>
                     </button>
-                    `}
                 </div>
 
                 <button class="menu-toggle" aria-label="Abrir menú de navegación">
@@ -133,18 +125,11 @@ function renderHeader(activePage = '', categorias = []) {
                         <span class="nav-label">Favoritos</span>
                         <span class="favorites-count">0</span>
                     </a>
-                    ${enTurnos ? `
-                    <a href="/carrito" class="nav-link cart-link ${activePage === 'carrito' ? 'active' : ''}" aria-label="Solicitar turno">
-                        <i class="fa-solid fa-calendar-check"></i>
-                        <span class="nav-label">Turnos</span>
-                    </a>
-                    ` : `
                     <button type="button" class="nav-link cart-link ${activePage === 'carrito' ? 'active' : ''}" aria-label="Abrir carrito de compras" onclick="abrirCarritoSidemenu()">
                         <i class="fa-solid fa-cart-shopping"></i>
                         <span class="nav-label">Carrito</span>
                         <span class="cart-count">0</span>
                     </button>
-                    `}
                 </div>
             </div>
 
@@ -380,28 +365,26 @@ async function initTemplate(activePage = '') {
         body.appendChild(whatsapp);
     }
 
-    // 3. Sidemenu del carrito: panel deslizante desde la derecha. En modo
-    // turnos no hay carrito, así que el panel no se crea (el vínculo del header
-    // apunta a /carrito, que en ese modo es la solicitud de turno).
-    if (!esModoTurnos()) {
-        body.appendChild(crearEstructuraSidemenu());
-        const sidemenu = document.getElementById('cartSidemenu');
-        if (sidemenu) {
-            sidemenu.addEventListener('click', function (e) {
-                if (e.target.closest('[data-cerrar-sidemenu]')) {
-                    cerrarCarritoSidemenu();
-                }
-            });
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && sidemenu.classList.contains('active')) {
-                    cerrarCarritoSidemenu();
-                }
-                const searchPanel = document.getElementById('searchPanel');
-                if (e.key === 'Escape' && searchPanel && searchPanel.classList.contains('open')) {
-                    cerrarBusqueda();
-                }
-            });
-        }
+    // 3. Sidemenu del carrito: panel deslizante desde la derecha. Existe en
+    // ambos modos: en turnos el carrito funciona igual, solo cambia el paso
+    // final del checkout.
+    body.appendChild(crearEstructuraSidemenu());
+    const sidemenu = document.getElementById('cartSidemenu');
+    if (sidemenu) {
+        sidemenu.addEventListener('click', function (e) {
+            if (e.target.closest('[data-cerrar-sidemenu]')) {
+                cerrarCarritoSidemenu();
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && sidemenu.classList.contains('active')) {
+                cerrarCarritoSidemenu();
+            }
+            const searchPanel = document.getElementById('searchPanel');
+            if (e.key === 'Escape' && searchPanel && searchPanel.classList.contains('open')) {
+                cerrarBusqueda();
+            }
+        });
     }
 }
 

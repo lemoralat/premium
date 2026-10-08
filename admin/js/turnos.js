@@ -1,8 +1,10 @@
 // turnos.js — Gestión de solicitudes de turno: listado, filtros, detalle,
 // cambio de estado y borrado. Espejo simplificado de pedidos.js: un turno no
-// tiene montos ni cupón, pero sí fecha/hora preferidas y un servicio opcional.
+// tiene cupón, pero sí fecha/hora preferidas y los servicios solicitados
+// (producto_ref para solicitudes viejas; items con el snapshot del carrito
+// desde la migración 0053).
 
-import { $, esc, toast, estadoCargando, confirmarBorrado, formatearFechaHora } from './admin-ui.js';
+import { $, esc, toast, estadoCargando, confirmarBorrado, formatearFechaHora, formatearPrecio } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
 const ESTADOS = ['Pendiente', 'Confirmado', 'Realizado', 'Cancelado'];
@@ -19,7 +21,7 @@ export async function renderizar(contenedor) {
 
     // El alta entra solo por RPC (insertar_turno); acá se lee y se administra.
     const { data, error } = await sb.from('turnos')
-        .select('id, numero, token, cliente, fecha, hora, producto_ref, notas, estado, created_at')
+        .select('id, numero, token, cliente, fecha, hora, producto_ref, notas, items, estado, created_at')
         .order('created_at', { ascending: false })
         .limit(300);
 
@@ -260,9 +262,11 @@ function filaTurno(t) {
                 ${esc(t.fecha || '—')}${t.hora ? ` <span style="color:var(--text-muted);">· ${esc(t.hora)}</span>` : ''}
             </td>
             <td data-label="Servicio">
-                ${servicioDe(t)
-                    ? `<span class="estado-badge estado-pendiente">${esc(servicioDe(t)?.nombre || '')}</span>`
-                    : '<span style="color:var(--text-muted);">—</span>'}
+                ${itemsDe(t).length
+                    ? `<span class="estado-badge estado-pendiente" title="${esc(itemsDe(t).map((i) => i.nombre).join(', '))}">${itemsDe(t).length} servicio${itemsDe(t).length === 1 ? '' : 's'}</span>`
+                    : servicioDe(t)
+                        ? `<span class="estado-badge estado-pendiente">${esc(servicioDe(t)?.nombre || '')}</span>`
+                        : '<span style="color:var(--text-muted);">—</span>'}
             </td>
             <td data-label="Estado">
                 <select class="admin-estado-select" data-estado-cambiar-turno="${esc(t.id)}" data-anterior="${esc(t.estado)}">
@@ -279,7 +283,23 @@ function filaTurno(t) {
                         <div style="display:flex; flex-direction:column; gap:0.3rem; font-size:0.85rem;">
                             <span>📅 Fecha preferida: <strong>${esc(t.fecha || '—')}</strong></span>
                             ${t.hora ? `<span>🕐 Hora preferida: <strong>${esc(t.hora)}</strong></span>` : ''}
-                            ${servicioDe(t) ? `<span>💼 Servicio: <strong>${esc(servicioDe(t).nombre || '')}</strong></span>` : ''}
+                            ${servicioDe(t) && !itemsDe(t).length ? `<span>💼 Servicio: <strong>${esc(servicioDe(t).nombre || '')}</strong></span>` : ''}
+                            ${itemsDe(t).length ? `
+                            <div style="margin-top:0.5rem;">
+                                <strong style="font-size:0.8rem;">Servicios solicitados (${itemsDe(t).length}):</strong>
+                                <ul style="margin:0.3rem 0 0 1rem; padding:0; list-style:disc;">
+                                    ${itemsDe(t).map((i) => {
+                                        const nombre = esc(String(i.nombre || '').trim());
+                                        const variante = i.variante_texto ? ` [${esc(String(i.variante_texto).trim())}]` : '';
+                                        const cantidad = Number(i.cantidad) > 1 ? ` × ${Number(i.cantidad)}` : '';
+                                        const precio = Number(i.precio_unitario) > 0
+                                            ? ` — $${formatearPrecio(Number(i.precio_unitario) * (Number(i.cantidad) || 1))}`
+                                            : '';
+                                        return `<li style="font-size:0.85rem;">${nombre}${variante}${cantidad}${precio}</li>`;
+                                    }).join('')}
+                                </ul>
+                                ${totalItems(t) > 0 ? `<span style="font-size:0.85rem; margin-top:0.2rem; display:inline-block;">💰 Total estimado: <strong>$${formatearPrecio(totalItems(t))}</strong></span>` : ''}
+                            </div>` : ''}
                             ${t.notas ? `<span style="white-space:pre-line;">📝 Notas: ${esc(t.notas)}</span>` : ''}
                         </div>
                     </div>
@@ -304,4 +324,19 @@ function servicioDe(t) {
         try { return JSON.parse(t.producto_ref); } catch { return null; }
     }
     return t.producto_ref;
+}
+
+// Ítems del turno (0053): snapshot del carrito en turnos.items.
+function itemsDe(t) {
+    if (!t.items) return [];
+    if (typeof t.items === 'string') {
+        try { t.items = JSON.parse(t.items); } catch { return []; }
+    }
+    return Array.isArray(t.items) ? t.items : [];
+}
+
+// Total estimado del turno en base a los ítems (snapshot guardado, no
+// recalculado): es la cifra que vio el cliente al solicitar.
+function totalItems(t) {
+    return itemsDe(t).reduce((sum, i) => sum + (Number(i.precio_unitario) || 0) * (Number(i.cantidad) || 0), 0);
 }

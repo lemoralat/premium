@@ -312,15 +312,25 @@ async function enviarSolicitudTurno(e) {
         return;
     }
 
-    // Servicio de origen: si la solicitud vino de una ficha de producto,
-    // producto-detalle.js guardó { id, nombre } en turno_servicio.
-    let producto = null;
-    try {
-        const rawServicio = sessionStorage.getItem('turno_servicio');
-        if (rawServicio) producto = JSON.parse(rawServicio);
-    } catch {
-        producto = null;
+    // Los servicios a registrar son los del carrito (migración 0053): el turno
+    // se pide con lo que el cliente eligió, igual que un pedido. Sin carrito no
+    // hay solicitud.
+    const carrito = JSON.parse(localStorage.getItem('cart')) || [];
+    if (carrito.length === 0) {
+        mostrarNotificacion('Tu carrito está vacío. Agregá los servicios que querés reservar.', 'error');
+        if (btnSubmit) btnSubmit.classList.remove('loading');
+        return;
     }
+
+    // Snapshot de cada línea del carrito. insertar_turno lo normaliza y valida
+    // del lado del servidor (id, nombre, variante_texto, cantidad, precio_unitario).
+    const items = carrito.map((item) => ({
+        id: item.id,
+        nombre: item.nombre,
+        variante_texto: item.varianteTexto || '',
+        cantidad: Number(item.quantity) || 1,
+        precio_unitario: Number(item.precio) || 0
+    }));
 
     // Token único para proteger la página de gracias (idempotencia del RPC).
     const token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -342,7 +352,7 @@ async function enviarSolicitudTurno(e) {
             },
             fecha: datosTurno.turnoFecha,
             hora: datosTurno.turnoHora,
-            producto: producto ? { id: producto.id, nombre: producto.nombre } : null,
+            items: items,
             notas: datosTurno.turnoNotas || 'Sin notas adicionales',
             token: token
         });
@@ -359,10 +369,14 @@ async function enviarSolicitudTurno(e) {
 
     try {
         // Datos para la confirmación de la página de gracias (modo turnos).
+        // `items` y `total` vienen normalizados de la respuesta de insertar_turno
+        // (fuente de verdad de la base, no del carrito local).
         localStorage.setItem('turnoInfo', JSON.stringify({
             numero: respuesta.numero,
             fecha: respuesta.fecha,
-            hora: respuesta.hora
+            hora: respuesta.hora,
+            items: Array.isArray(respuesta.items) ? respuesta.items : items,
+            total: Number(respuesta.total) || 0
         }));
 
         // Todo el mensaje sale de la respuesta del servidor (insertar_turno).
@@ -378,8 +392,10 @@ async function enviarSolicitudTurno(e) {
             ventanaWhatsApp.close();
         }
 
-        // Limpiar el servicio de origen y redirigir a la página de gracias.
-        sessionStorage.removeItem('turno_servicio');
+        // La solicitud ya quedó registrada con el snapshot de ítems: se vacía
+        // el carrito y se redirige a la página de gracias.
+        localStorage.removeItem('cart');
+        sessionStorage.removeItem('appliedCoupon');
         window.location.href = `/gracias?token=${token}&tipo=turno`;
     } finally {
         if (btnSubmit) btnSubmit.classList.remove('loading');
@@ -485,8 +501,14 @@ function construirUrlWhatsApp(datos, pedido, cart) {
 
 // ============ CONSTRUIR URL DE WHATSAPP DEL TURNO ============
 // `respuesta` es la respuesta de `insertar_turno`: el número, la fecha, la
-// hora y el servicio salen de la base, no del formulario del cliente.
+// hora, los ítems y el total salen de la base, no del formulario del cliente.
+// `respuesta.items` es el snapshot normalizado de los servicios solicitados
+// (id, nombre, variante_texto, cantidad, precio_unitario) y `respuesta.total`
+// el total recalculado del lado del servidor (migración 0053).
 function construirUrlWhatsAppTurno(datos, respuesta) {
+    const items = Array.isArray(respuesta.items) ? respuesta.items : [];
+    const total = Number(respuesta.total) || 0;
+
     let mensaje = `*NUEVA SOLICITUD DE TURNO*\n\n`;
     if (respuesta.numero) mensaje += `N° de solicitud: ${respuesta.numero}\n\n`;
     mensaje += `*Datos del Cliente:*\n`;
@@ -498,8 +520,25 @@ function construirUrlWhatsAppTurno(datos, respuesta) {
     mensaje += `Fecha: ${respuesta.fecha || datos.turnoFecha}\n`;
     mensaje += `Hora: ${respuesta.hora || (datos.turnoHora || 'A coordinar')}\n\n`;
 
-    const producto = respuesta.producto;
-    if (producto && producto.nombre) mensaje += `*Servicio:* ${producto.nombre}\n\n`;
+    if (items.length === 0) {
+        const producto = respuesta.producto;
+        if (producto && producto.nombre) mensaje += `*Servicio:* ${producto.nombre}\n\n`;
+    } else {
+        mensaje += `*Servicios (del carrito):*\n`;
+        items.forEach((item, index) => {
+            const nombre = String(item.nombre || '').replace(/[\r\n]+/g, ' ');
+            const variante = item.variante_texto ? ` [${String(item.variante_texto).replace(/[\r\n]+/g, ' ')}]` : '';
+            const cantidad = Number(item.cantidad) || 0;
+            const precio = Number(item.precio_unitario) || 0;
+            mensaje += `${index + 1}. ${nombre}${variante}\n`;
+            mensaje += `   Cantidad: ${cantidad}\n`;
+            if (precio > 0) {
+                mensaje += `   Precio unitario: $${formatearPrecio(precio)}\n`;
+                mensaje += `   Subtotal: $${formatearPrecio(precio * cantidad)}\n`;
+            }
+        });
+        if (total > 0) mensaje += `\n*Total estimado: $${formatearPrecio(total)}*\n\n`;
+    }
 
     mensaje += `*Notas:*\n${datos.turnoNotas}`;
 
@@ -533,7 +572,10 @@ function mostrarFallbackWhatsApp(urlWhatsApp, token, tipo = 'pedido') {
             sessionStorage.removeItem('appliedCoupon');
             window.location.href = `/gracias?token=${token}`;
         } else {
-            sessionStorage.removeItem('turno_servicio');
+            // El turno ya quedó registrado con el snapshot de ítems (ver
+            // enviarSolicitudTurno): se vacía el carrito antes de continuar.
+            localStorage.removeItem('cart');
+            sessionStorage.removeItem('appliedCoupon');
             window.location.href = `/gracias?token=${token}&tipo=turno`;
         }
     });

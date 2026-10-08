@@ -41,9 +41,11 @@ export const CONFIG_APP = {
     // migración 0033 el sitio queda igual. La aplica template.js → aplicarDisenoGlobal().
     siteDescription: 'Tienda online con los mejores productos. Envíos a todo el país.',
     // Tipo de web (Configuración → Tipo de web, migración 0051): 'venta'
-    // (tienda con carrito/checkout, comportamiento actual) o 'turnos' (agenda:
-    // /carrito es un formulario de solicitud y el sitio no muestra carrito,
-    // cantidades ni totales). Default 'venta': sin la migración, nada cambia.
+    // (tienda con carrito/checkout a través de WhatsApp) o 'turnos' (agenda:
+    // la tienda y el carrito funcionan igual, pero el paso final del checkout
+    // se reemplaza por el formulario de solicitud de turno, que registra los
+    // ítems del carrito en public.turnos). Default 'venta': sin la migración,
+    // nada cambia.
     modoWeb: 'venta',
     whatsappNumber: '',
     whatsappMessage: 'Hola, quería consultar ',
@@ -501,14 +503,15 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
 }
 
 // Generar el HTML de una tarjeta de producto (estándar para el catálogo y los
-// relacionados). Toda la tarjeta enlaza al detalle; sin botones internos.
+// relacionados). Toda la tarjeta enlaza al detalle.
+//
+// En modo turnos (Configuración → Tipo de web) la tarjeta es IGUAL que en
+// venta: precio, precio anterior y agregado rápido. El modo no cambia la
+// tienda — solo el paso final del carrito (ver carrito.js/formulario.js). Si el
+// servicio declara horarios (0053), se muestran como guía bajo el precio.
 export function generarHTMLTarjetaProducto(producto) {
-    // Modo turnos (Configuración → Tipo de web): la ficha de catálogo deja de
-    // vender. No se muestra stock ni el botón de agregado rápido, y el precio
-    // se reemplaza por una invitación a sacar turno (que en la página de
-    // detalle lleva al formulario de solicitud).
-    const enTurnos = esModoTurnos();
-    const esAgotado = !enTurnos && producto.stock === 0;
+    const esAgotado = producto.stock === 0;
+    const conHorarios = Array.isArray(producto.servicioHorarios) && producto.servicioHorarios.length > 0;
 
     // V-2: todo texto/URL administrado se escapa antes de interpolarse en HTML.
     const nombre = escaparHtml(recortarTexto(producto.nombre));
@@ -522,14 +525,13 @@ export function generarHTMLTarjetaProducto(producto) {
                 ${producto.imagen
                     ? `<img src="${imagen}" alt="${nombre}" class="product-image" loading="lazy">`
                     : placeholderImagenPublica('product-image')}
-                ${enTurnos ? '' : '<span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>'}
+                <span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
             </div>
             <div class="product-info">
                 <h3 class="product-title">${nombre}</h3>
                 <p class="product-description">${descripcion}</p>
-                ${enTurnos
-                    ? '<p class="product-price product-price-turno"><i class="fa-solid fa-calendar-check"></i> Solicitar turno</p>'
-                    : `<p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>`}
+                <p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
+                ${conHorarios ? '<p class="product-price product-schedule-hint"><i class="fa-solid fa-calendar-check"></i> Horarios disponibles</p>' : ''}
             </div>
         </a>
     `;

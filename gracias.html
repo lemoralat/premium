@@ -69,6 +69,13 @@
                 <p>N° de solicitud: <strong id="turnoNumero"></strong></p>
                 <p>Fecha: <strong id="turnoFechaConfirmada"></strong></p>
                 <p>Hora: <strong id="turnoHoraConfirmada"></strong></p>
+                <!-- Ítems solicitados (0053): los llena js/gracias.js con el
+                     snapshot de la respuesta de insertar_turno. -->
+                <div id="turnoItemsWrap" hidden>
+                    <p class="turno-items-title">Servicios solicitados:</p>
+                    <ul id="turnoItemsList"></ul>
+                </div>
+                <p id="turnoTotalLine" class="turno-total" hidden>Total estimado: <strong id="turnoTotalValue"></strong></p>
                 <p class="turno-aviso">La confirmación del turno se coordina por WhatsApp. No se necesita transferir ni abonar nada en esta página.</p>
             </div>
 

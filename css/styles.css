@@ -5271,3 +5271,85 @@ body.diseno-recto {
     --curva-lg: 0;
     --curva-surface: 0;
 }
+
+/* ============================================================================
+   Modo turnos — servicios con agenda (migración 0053)
+   La tienda funciona normal; estas piezas son solo las extras del modo.
+   ============================================================================ */
+
+/* Ficha del servicio: horarios disponibles por día + duración estimada. */
+.product-schedule {
+    margin: 1rem 0 0;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-alt);
+}
+
+.product-schedule h3 {
+    font-size: 0.95rem;
+    margin: 0 0 0.5rem;
+}
+
+.product-schedule ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.product-schedule li {
+    font-size: 0.9rem;
+}
+
+.product-schedule-duracion {
+    margin: 0.6rem 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Tarjeta del catálogo: aviso sutil de que el servicio tiene agenda. */
+.product-schedule-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+}
+
+/* Formulario de turno: guía informativa con los horarios de los servicios
+   del carrito (la llena js/carrito.js). */
+.turno-horarios {
+    margin: 0 0 1.2rem;
+    padding: 0.8rem 1rem;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    background: var(--surface-alt);
+    font-size: 0.85rem;
+}
+
+.turno-horarios strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.turno-horarios ul {
+    margin: 0.25rem 0 0;
+    padding-left: 1.1rem;
+}
+
+/* Página de gracias (turno): lista de servicios solicitados + total. */
+.turno-resumen .turno-items-title {
+    margin: 0.8rem 0 0.2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.turno-resumen ul {
+    margin: 0.3rem 0;
+    padding-left: 1.2rem;
+}
+
+.turno-resumen .turno-total {
+    margin-top: 0.4rem;
+}

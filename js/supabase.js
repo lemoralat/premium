@@ -255,6 +255,7 @@ export async function cargarProductos() {
             .select(`
                 id, nombre, descripcion, descripcion_detallada, precio, precio_anterior,
                 stock, caracteristicas, activo, destacado,
+                servicio_duracion_min, servicio_horarios,
                 categoria:categories(id, name),
                 opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
                 imagenes:product_images(id, storage_path, es_principal, position)
@@ -323,6 +324,10 @@ function mapaProducto(p) {
         stock: Number(p.stock),
         caracteristicas: Array.isArray(p.caracteristicas) ? p.caracteristicas : [],
         destacado: Boolean(p.destacado),
+        // Modo turnos (0053): duración estimada (min) y horarios por día de la
+        // semana (jsonb). Vacíos en una tienda de venta o sin agenda declarada.
+        servicioDuracionMin: Math.max(0, Math.floor(Number(p.servicio_duracion_min) || 0)),
+        servicioHorarios: Array.isArray(p.servicio_horarios) ? p.servicio_horarios : [],
         imagen: imagenUrl || '',
         galeria: galeriaUrls.length > 0 ? galeriaUrls : (imagenUrl ? [imagenUrl] : [])
     };

@@ -1,6 +1,6 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
@@ -8,12 +8,8 @@ let zoomActivo = false;
 let productos = []; // Se cargará dinámicamente
 
 document.addEventListener('DOMContentLoaded', function() {
-    cargarTodosLosProductos().then(async () => {
-        // cargarDetalleProducto espera la configuración remota (modo turnos vs
-        // venta) antes de renderizar la ficha. Se la espera acá para que los
-        // relacionados —que también usan generarHTMLTarjetaProducto según el
-        // modo— no se pinten con el modo por defecto en la primera carga.
-        await cargarDetalleProducto();
+    cargarTodosLosProductos().then(() => {
+        cargarDetalleProducto();
         cargarProductosRelacionados();
         // Refresco automático (opción A): stock/precio/galería al día sin recargar.
         suscribirRefrescoCatalogo(actualizarProductoEnPantalla);
@@ -107,11 +103,6 @@ async function cargarDetalleProducto() {
         return;
     }
 
-    // Modo turnos vs venta define qué CTAs se renderizan (botón de solicitud o
-    // compra). Se espera la configuración remota acá para no depender de la
-    // carrera de cargas con template.js: en cuanto llega, el modo es correcto.
-    await cargarConfiguracionGlobal();
-    
     // Actualizar título de la página
     document.title = `${recortarTexto(producto.nombre)} - ${obtenerNombreSitio()}`;
     
@@ -157,14 +148,43 @@ function inyectarDatosEstructurados(producto) {
     document.head.appendChild(script);
 }
 
+// Días de la semana en orden de agenda (etiquetas tal cual se guardan).
+const DIAS_AGENDA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+// Horarios disponibles del servicio (0053), agrupados por día y ordenados de
+// Lunes a Domingo: [{ dia, desde, hasta }] →
+//   '<li><strong>Lunes:</strong> 09:00–13:00 · 15:00–18:00</li>…'
+function agruparHorarios(horarios) {
+    const porDia = new Map();
+    for (const h of Array.isArray(horarios) ? horarios : []) {
+        const dia = String(h?.dia || '').trim();
+        if (!dia) continue;
+        const desde = String(h?.desde || '').trim();
+        const hasta = String(h?.hasta || '').trim();
+        const franja = desde || hasta ? `${desde}${desde && hasta ? '–' : ''}${hasta}` : '';
+        if (!franja) continue;
+        if (!porDia.has(dia)) porDia.set(dia, []);
+        porDia.get(dia).push(franja);
+    }
+
+    return [...porDia.entries()]
+        .sort((a, b) => {
+            const ia = DIAS_AGENDA.indexOf(a[0]);
+            const ib = DIAS_AGENDA.indexOf(b[0]);
+            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        })
+        .map(([dia, franjas]) => `<li><strong>${escaparHtml(dia)}:</strong> ${escaparHtml(franjas.join(' · '))}</li>`)
+        .join('');
+}
+
 // Renderizar el detalle completo del producto
 function renderizarDetalleProducto(producto) {
     const container = document.getElementById('productDetailContainer');
     if (!container) return;
 
-    // Modo turnos (Configuración → Tipo de web): la ficha deja de vender. Sin
-    // stock, sin precio, sin variantes ni cantidad: solo el botón de solicitud.
-    const enTurnos = esModoTurnos();
+    // Horarios disponibles (modo turnos, 0053): los muestra la ficha del
+    // servicio como guía. Vacío = tienda de venta o servicio sin agenda.
+    const horariosHTML = agruparHorarios(producto.servicioHorarios);
     
     // Determinar estado del stock
     let stockClass = '';
@@ -251,11 +271,9 @@ function renderizarDetalleProducto(producto) {
                     </button>
                 </div>
                 
-                ${enTurnos
-                    ? '<p class="product-stock turno">Solicitá tu turno y coordinamos fecha y horario.</p>'
-                    : `<p class="product-stock ${stockClass}">${stockText}</p>`}
+                <p class="product-stock ${stockClass}">${stockText}</p>
                 
-                ${enTurnos ? '' : `<p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>`}
+                <p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
                 
                 <p class="product-detail-description">${escaparHtml(recortarTexto(producto.descripcionDetallada))}</p>
                 
@@ -268,7 +286,14 @@ function renderizarDetalleProducto(producto) {
                     </ul>
                 </div>
                 
-                ${!enTurnos && tieneVariantes(producto) ? `
+                ${horariosHTML ? `
+                <div class="product-schedule">
+                    <h3>Horarios disponibles</h3>
+                    <ul>${horariosHTML}</ul>
+                    ${producto.servicioDuracionMin ? `<p class="product-schedule-duracion">Duración estimada: ${producto.servicioDuracionMin} minutos</p>` : ''}
+                </div>` : ''}
+
+                ${tieneVariantes(producto) ? `
                 <div class="variant-selector">
                     <h3>Elegí tu opción:</h3>
                     <div class="variant-grid">
@@ -287,13 +312,6 @@ function renderizarDetalleProducto(producto) {
                 </div>
                 ` : ''}
                 
-                ${enTurnos ? `
-                <div class="product-actions-detail">
-                    <button class="btn-add-cart btn-border" id="btnSolicitarTurno" onclick="solicitarTurno(${producto.id})">
-                        Solicitar turno
-                    </button>
-                </div>
-                ` : `
                 <div class="quantity-selector">
                     <label for="quantity">Cantidad:</label>
                     <div class="quantity-controls">
@@ -311,7 +329,6 @@ function renderizarDetalleProducto(producto) {
                         Ir al Carrito →
                     </a>
                 </div>
-                `}
                 
                 <div class="product-share">
                     <h3>Compartir este producto:</h3>
@@ -794,16 +811,6 @@ function agregarAlCarritoDetalle(id) {
     return true;
 }
 
-// Modo turnos: desde la ficha se salta directo al formulario de solicitud
-// (/carrito en modo turnos) cargando el servicio de origen en sessionStorage.
-// El formulario lo muestra y lo manda como producto_ref en insertar_turno.
-function solicitarTurno(id) {
-    const producto = productos.find(p => p.id === id);
-    if (!producto) return;
-    sessionStorage.setItem('turno_servicio', JSON.stringify({ id: producto.id, nombre: producto.nombre }));
-    window.location.href = '/carrito';
-}
-
 // Cargar productos relacionados
 function cargarProductosRelacionados() {
     const productoId = obtenerIdProducto();
@@ -913,4 +920,3 @@ window.seleccionarImagenZoom = seleccionarImagenZoom;
 window.toggleFavorito = toggleFavorito;
 window.cambiarCantidad = cambiarCantidad;
 window.agregarAlCarritoDetalle = agregarAlCarritoDetalle;
-window.solicitarTurno = solicitarTurno;

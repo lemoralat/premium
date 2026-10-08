@@ -78,7 +78,16 @@ async function navegar() {
     const definicion = secciones[nombre];
 
     const titulo = $('#adminTopbarTitle');
-    if (titulo) titulo.textContent = definicion.titulo;
+    if (titulo) {
+        // En modo turnos la sección de productos se llama Servicios (0053). La
+        // lectura de settings está cacheada; solo se fuerza la primera vez.
+        let tituloSeccion = definicion.titulo;
+        if (nombre === 'productos') {
+            if (modoWebPanel === null) await leerModoWebPanel();
+            if (modoWebPanel === 'turnos') tituloSeccion = 'Servicios';
+        }
+        titulo.textContent = tituloSeccion;
+    }
 
     document.querySelectorAll('#adminNav a').forEach((a) => {
         a.classList.toggle('active', a.dataset.seccion === nombre);
@@ -169,6 +178,31 @@ async function aplicarBrandingPanel() {
     });
 }
 
+// Tipo de web del panel (settings.modo_web, migración 0051), cacheado en
+// memoria para no repetir el query. En modo turnos los productos se gestionan
+// como servicios: el menú lateral y el título de la sección usan esa palabra.
+let modoWebPanel = null; // null = sin leer | 'venta' | 'turnos'
+async function leerModoWebPanel() {
+    try {
+        const sb = await clienteAdmin();
+        const { data } = await sb.from('settings').select('modo_web').eq('id', 1).single();
+        const mw = data?.modo_web === 'turnos' ? 'turnos' : 'venta';
+        if (modoWebPanel !== mw) {
+            modoWebPanel = mw;
+            // Actualiza la etiqueta del menú lateral (Productos → Servicios),
+            // conservando el icono (el texto vive en un text node propio).
+            const enlace = document.querySelector('#adminNav a[data-seccion="productos"]');
+            if (enlace && enlace.childNodes) {
+                [...enlace.childNodes]
+                    .filter((n) => n.nodeType === Node.TEXT_NODE)
+                    .forEach((n) => { n.nodeValue = mw === 'turnos' ? ' Servicios' : ' Productos'; });
+            }
+        }
+    } catch {
+        if (modoWebPanel === null) modoWebPanel = 'venta';
+    }
+}
+
 // Tema del panel (dark mode global): la fuente de verdad es settings.admin_tema
 // en la BD (migración 0027), no la preferencia del dispositivo. El boot de
 // admin/index.html ya restauró la caché local para no flashear; acá se lee la
@@ -245,6 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarMenuMovil();
 
     aplicarBrandingPanel(); // no bloquea el routing
+    leerModoWebPanel(); // etiqueta "Servicios" vs "Productos" (settings.modo_web)
     aplicarTemaPanelDesdeBD(); // dark mode global (settings.admin_tema), no bloquea
     configurarSwitchTema(); // switch sol/luna del topbar, persiste en la BD
 

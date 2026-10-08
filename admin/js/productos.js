@@ -9,14 +9,22 @@ let busqueda = '';
 let filtroCategoria = 'todas';
 let filtroActivo = 'todos';
 
+// Tipo de web (settings.modo_web, migración 0051): en modo turnos los
+// productos se gestionan como servicios (duración estimada + horarios por día
+// de la semana, migración 0053). El resto del CRUD es idéntico.
+let modoWeb = 'venta';
+
 // Estado del formulario abierto
 let variantesModal = [];
 let caracteristicasModal = [];
 let imagenesModal = [];
+let horariosModal = [];
 
 // Límites de cantidad por producto
 const MAX_VARIANTES = 4;
 const MAX_CARACTERISTICAS = 8;
+const MAX_HORARIOS = 21; // 7 días × hasta 3 franjas por día
+const DIAS_AGENDA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 let contenedorActual = null;
 
 export async function renderizar(contenedor) {
@@ -24,28 +32,33 @@ export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
 
-    const [productosR, categoriasR] = await Promise.all([
+    const [productosR, categoriasR, settingsR] = await Promise.all([
         sb.from('products').select(`
             id, nombre, descripcion, descripcion_detallada, precio, precio_anterior, stock,
             caracteristicas, activo, destacado,
+            servicio_duracion_min, servicio_horarios,
             category_id,
             categoria:categories(id, name),
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
             imagenes:product_images(id, storage_path, es_principal, position)
         `).order('id', { ascending: true }),
-        sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true })
+        sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true }),
+        sb.from('settings').select('modo_web').eq('id', 1).single()
     ]);
 
     if (productosR.error) throw productosR.error;
     if (categoriasR.error) throw categoriasR.error;
+    if (settingsR.error) throw settingsR.error;
 
     productos = productosR.data || [];
     categorias = categoriasR.data || [];
+    modoWeb = settingsR.data?.modo_web === 'turnos' ? 'turnos' : 'venta';
 
     pintar(contenedor);
 }
 
 function pintar(contenedor) {
+    const enServicios = modoWeb === 'turnos';
     const filtrados = productos.filter((p) => {
         const porCategoria = filtroCategoria === 'todas' || (filtroCategoria === 'sin' && !p.category_id) || String(p.category_id) === String(filtroCategoria);
         const porActivo = filtroActivo === 'todos' || (filtroActivo === 'activos' && p.activo) || (filtroActivo === 'inactivos' && !p.activo);
@@ -57,7 +70,7 @@ function pintar(contenedor) {
     contenedor.innerHTML = `
         <div class="admin-toolbar">
             <button type="button" class="btn btn-primary" id="btnNuevoProducto">
-                <i class="fa-solid fa-plus"></i> Nuevo producto
+                <i class="fa-solid fa-plus"></i> ${enServicios ? 'Nuevo servicio' : 'Nuevo producto'}
             </button>
         </div>
 
@@ -78,13 +91,13 @@ function pintar(contenedor) {
 
         ${filtrados.length === 0 ? `
         <div class="admin-card">
-            <div class="admin-empty"><i class="fa-solid fa-box-open"></i><h3>Sin productos</h3><p>No hay productos que coincidan con la búsqueda.</p></div>
+            <div class="admin-empty"><i class="fa-solid fa-box-open"></i><h3>${enServicios ? 'Sin servicios' : 'Sin productos'}</h3><p>No hay ${enServicios ? 'servicios' : 'productos'} que coincidan con la búsqueda.</p></div>
         </div>` : `
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
                     <tr>
-                        <th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Variantes</th><th>Visible</th><th></th>
+                        <th>${enServicios ? 'Servicio' : 'Producto'}</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Variantes</th><th>Visible</th><th></th>
                     </tr>
                 </thead>
                 <tbody>${filtrados.map((p) => filaProducto(p)).join('')}</tbody>
@@ -129,8 +142,10 @@ function imagenPrincipalDe(p) {
 }
 
 function filaProducto(p) {
+    const enServicios = modoWeb === 'turnos';
     const nroVariantes = Array.isArray(p.opciones) ? p.opciones.length : 0;
     const stockClase = p.stock === 0 ? 'admin-stock-bajo' : p.stock < 5 ? 'admin-stock-medio' : 'admin-stock-ok';
+    const tieneDuracion = enServicios && Number(p.servicio_duracion_min) > 0;
     return `
         <tr>
             <td class="td-principal">
@@ -139,6 +154,7 @@ function filaProducto(p) {
                     <div>
                         <strong>${esc(p.nombre)}</strong>
                         ${p.destacado ? ' <span class="estado-badge estado-procesando" style="margin-left:0.3rem;">⭐ Destacado</span>' : ''}
+                        ${tieneDuracion ? `<span class="estado-badge estado-entregado" style="margin-left:0.3rem;">⏱ ${Number(p.servicio_duracion_min)} min</span>` : ''}
                         ${p.precio_anterior != null && Number(p.precio_anterior) > Number(p.precio)
                             ? `<span style="color:var(--text-muted); font-size:0.75rem;"> antes $${formatearPrecio(p.precio_anterior)}</span>`
                             : ''}
@@ -169,7 +185,8 @@ async function toggleActivo(id, activo) {
         if (error) throw error;
         const p = productos.find((x) => x.id === id);
         if (p) p.activo = activo;
-        toast(activo ? 'Producto publicado en la tienda.' : 'Producto oculto de la tienda.');
+        const esServicio = modoWeb === 'turnos';
+        toast(activo ? `${esServicio ? 'Servicio' : 'Producto'} publicado en la tienda.` : `${esServicio ? 'Servicio' : 'Producto'} oculto de la tienda.`);
     } catch (error) {
         toast(`No se pudo cambiar el estado: ${error.message}`, 'error');
     }
@@ -209,15 +226,29 @@ function abrirModalProducto(idExistente) {
         : [];
     if (caracteristicasModal.length === 0) caracteristicasModal = [''];
 
+    // Estado inicial de horarios (solo en modo turnos, 0053): cada fila es
+    // { dia, desde, hasta }. Las filas sin día se descartan.
+    horariosModal = Array.isArray(producto?.servicio_horarios)
+        ? producto.servicio_horarios
+            .map((h) => ({
+                dia: String(h?.dia || '').trim(),
+                desde: String(h?.desde || '').trim(),
+                hasta: String(h?.hasta || '').trim()
+            }))
+            .filter((h) => h.dia)
+        : [];
+
+    const enServicios = modoWeb === 'turnos';
+
     abrirModal(`
-        <h2>${producto ? 'Editar producto' : 'Nuevo producto'}</h2>
-        <p class="modal-sub">${producto ? esc(producto.nombre) : 'Cargá un producto nuevo en el catálogo'}</p>
+        <h2>${producto ? (enServicios ? 'Editar servicio' : 'Editar producto') : (enServicios ? 'Nuevo servicio' : 'Nuevo producto')}</h2>
+        <p class="modal-sub">${producto ? esc(producto.nombre) : (enServicios ? 'Cargá un servicio nuevo en la agenda' : 'Cargá un producto nuevo en el catálogo')}</p>
         <form class="admin-form" id="productoForm">
             <input type="hidden" id="prdId" value="${producto ? producto.id : ''}">
 
             <div class="admin-field full">
                 <label for="prdNombre">Nombre *</label>
-                <input type="text" id="prdNombre" required value="${esc(producto?.nombre || '')}" placeholder="ej: Buzo canguro liso hombre">
+                <input type="text" id="prdNombre" required value="${esc(producto?.nombre || '')}" placeholder="${enServicios ? 'ej: Corte de pelo y barba' : 'ej: Buzo canguro liso hombre'}">
             </div>
             <div class="admin-field full">
                 <label for="prdDescripcion">Descripción corta</label>
@@ -264,16 +295,31 @@ function abrirModalProducto(idExistente) {
                 <div class="admin-field full">
                     <label class="admin-check">
                         <input type="checkbox" id="prdActivo" ${producto?.activo === false ? '' : 'checked'}>
-                        Producto activo (visible en la tienda)
+                        ${enServicios ? 'Servicio' : 'Producto'} activo (visible en la tienda)
                     </label>
                 </div>
                 <div class="admin-field full" style="margin-top:-0.75rem;">
                     <label class="admin-check">
                         <input type="checkbox" id="prdDestacado" ${producto?.destacado ? 'checked' : ''}>
-                        Producto destacado <span class="hint">(se muestra primero en el home, mezclando categorías)</span>
+                        ${enServicios ? 'Servicio' : 'Producto'} destacado <span class="hint">(se muestra primero en el home, mezclando categorías)</span>
                     </label>
                 </div>
             </div>
+
+            ${enServicios ? `
+            <div class="admin-form-grid">
+                <div class="admin-field">
+                    <label for="prdDuracion">Duración estimada (min) <span class="hint">(se muestra en la ficha del servicio)</span></label>
+                    <input type="number" id="prdDuracion" min="0" step="5" value="${esc(producto?.servicio_duracion_min ?? 0)}">
+                </div>
+                <div class="admin-field full">
+                    <label>Horarios disponibles por día <span class="hint">(se muestran en la ficha del servicio y como guía en la solicitud de turno; el cliente igual puede elegir otra fecha/hora · máx. ${MAX_HORARIOS})</span></label>
+                    <div class="admin-repeater" id="horariosRepeater"></div>
+                    <button type="button" class="btn btn-sm btn-outline" id="btnAgregarHorario" style="align-self:flex-start; margin-top:0.5rem;">
+                        <i class="fa-solid fa-plus"></i> Agregar horario
+                    </button>
+                </div>
+            </div>` : ''}
 
             <div class="admin-field full">
                 <label>Características <span class="hint">(cada fila se muestra como un ítem, ej: Material: algodón · máx. ${MAX_CARACTERISTICAS})</span></label>
@@ -304,7 +350,7 @@ function abrirModalProducto(idExistente) {
 
             <div class="admin-modal-acciones">
                 <button type="button" class="btn" onclick="document.querySelector('#adminModal [data-cerrar-modal]').click()">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar producto</button>
+                <button type="submit" class="btn btn-primary">Guardar ${enServicios ? 'servicio' : 'producto'}</button>
             </div>
         </form>
     `);
@@ -312,6 +358,7 @@ function abrirModalProducto(idExistente) {
     renderVariantes();
     renderCaracteristicas();
     renderImagenes();
+    if (enServicios) renderHorarios();
 
     // Crear categoría inline (sin anidar modales: el producto ya está en el
     // modal; un segundo modal lo reemplazaría y perdería los cambios).
@@ -351,6 +398,19 @@ function abrirModalProducto(idExistente) {
         renderCaracteristicas();
     });
 
+    const btnAgregarHorario = $('#btnAgregarHorario');
+    if (btnAgregarHorario) {
+        btnAgregarHorario.addEventListener('click', () => {
+            capturarHorarios();
+            if (horariosModal.length >= MAX_HORARIOS) {
+                toast(`Máximo ${MAX_HORARIOS} franjas por servicio.`, 'error');
+                return;
+            }
+            horariosModal.push({ dia: '', desde: '', hasta: '' });
+            renderHorarios();
+        });
+    }
+
     $('#prdImagenArchivo').addEventListener('change', async () => {
         const archivos = [...$('#prdImagenArchivo').files];
         if (!archivos.length) return;
@@ -388,6 +448,7 @@ function abrirModalProducto(idExistente) {
         capturarVariantes();
         capturarCaracteristicas();
         capturarImagenes();
+        if (enServicios) capturarHorarios();
 
         const idValor = $('#prdId').value;
         const precio = Number($('#prdPrecio').value);
@@ -428,8 +489,32 @@ function abrirModalProducto(idExistente) {
             category_id: categoriaValue ? Number(categoriaValue) : null
         };
 
+        // Campos de servicio (modo turnos, 0053): se guardan en la misma fila de
+        // products. En modo venta el formulario no los muestra y no se tocan.
+        if (enServicios) {
+            const duracion = Number($('#prdDuracion').value);
+            if (!Number.isInteger(duracion) || duracion < 0) {
+                toast('Ingresá una duración válida (en minutos).', 'error');
+                return;
+            }
+            const horarios = horariosModal
+                .map((h) => ({
+                    dia: (h.dia || '').trim(),
+                    desde: (h.desde || '').trim(),
+                    hasta: (h.hasta || '').trim()
+                }))
+                .filter((h) => h.dia);
+            const franjaInvalida = horarios.find((h) => h.desde && h.hasta && h.hasta <= h.desde);
+            if (franjaInvalida) {
+                toast(`El horario del ${franjaInvalida.dia} es inválido: el "hasta" debe ser posterior al "desde".`, 'error');
+                return;
+            }
+            payload.servicio_duracion_min = duracion;
+            payload.servicio_horarios = horarios;
+        }
+
         if (!payload.nombre) {
-            toast('El nombre del producto es obligatorio.', 'error');
+            toast(`${enServicios ? 'El nombre del servicio' : 'El nombre del producto'} es obligatorio.`, 'error');
             return;
         }
 
@@ -597,6 +682,57 @@ function renderVariantes() {
     // Deshabilitar "Agregar" al llegar al máximo
     const btnAgregarVar = $('#btnAgregarVariante');
     if (btnAgregarVar) btnAgregarVar.disabled = variantesModal.length >= MAX_VARIANTES;
+}
+
+// ---------- Horarios (solo en modo turnos, 0053) ----------
+
+function capturarHorarios() {
+    document.querySelectorAll('[data-horario-row]').forEach((fila) => {
+        const idx = Number(fila.dataset.horarioRow);
+        horariosModal[idx] = {
+            dia: fila.querySelector('[data-campo="dia"]').value,
+            desde: fila.querySelector('[data-campo="desde"]').value,
+            hasta: fila.querySelector('[data-campo="hasta"]').value
+        };
+    });
+}
+
+function renderHorarios() {
+    const repeater = $('#horariosRepeater');
+    if (!repeater) return;
+    repeater.innerHTML = horariosModal.map((h, idx) => `
+        <div class="admin-repeater-row" data-horario-row="${idx}">
+            <select data-campo="dia" aria-label="Día" style="min-width:140px; padding:0.5rem 0.6rem; border:1px solid var(--border); border-radius:8px;">
+                <option value="">Día…</option>
+                ${DIAS_AGENDA.map((d) => `<option value="${d}" ${h.dia === d ? 'selected' : ''}>${d}</option>`).join('')}
+            </select>
+            <input type="time" data-campo="desde" aria-label="Desde" value="${esc(h.desde)}"
+                   style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+            <input type="time" data-campo="hasta" aria-label="Hasta" value="${esc(h.hasta)}"
+                   style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+            <button type="button" class="btn btn-sm btn-danger" data-quitar-horario="${idx}" aria-label="Quitar horario">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `).join('');
+
+    repeater.querySelectorAll('[data-quitar-horario]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            capturarHorarios();
+            horariosModal.splice(Number(btn.dataset.quitarHorario), 1);
+            renderHorarios();
+        });
+    });
+
+    // Sincronizar el estado a medida que se edita (para el submit).
+    repeater.querySelectorAll('select, input').forEach((campo) => {
+        campo.addEventListener('input', () => capturarHorarios());
+        campo.addEventListener('change', () => capturarHorarios());
+    });
+
+    // Deshabilitar "Agregar" al llegar al máximo.
+    const btnAgregar = $('#btnAgregarHorario');
+    if (btnAgregar) btnAgregar.disabled = horariosModal.length >= MAX_HORARIOS;
 }
 
 function capturarImagenes() {

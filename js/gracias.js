@@ -2,7 +2,7 @@
 // Los datos de transferencia (entidad, titular, alias) salen de la configuración
 // de Supabase (tabla settings) con los valores actuales como respaldo.
 
-import { formatearPrecio, CONFIG_APP, cargarConfiguracionGlobal, mostrarNotificacion, esModoTurnos } from './utils.js';
+import { formatearPrecio, CONFIG_APP, cargarConfiguracionGlobal, mostrarNotificacion, esModoTurnos, escaparHtml } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     await cargarConfiguracionGlobal();
@@ -79,6 +79,34 @@ function configurarGraciasTurno() {
     if (elFecha) elFecha.textContent = datos.fecha || '—';
     const elHora = document.getElementById('turnoHoraConfirmada');
     if (elHora) elHora.textContent = datos.hora || 'A coordinar';
+
+    // Ítems solicitados (migración 0053): snapshot del carrito que venía en la
+    // respuesta de insertar_turno (fuente de verdad), guardado por
+    // formulario.js en turnoInfo.
+    const lista = document.getElementById('turnoItemsList');
+    const wrap = document.getElementById('turnoItemsWrap');
+    const items = Array.isArray(datos.items) ? datos.items : [];
+    if (wrap) wrap.hidden = items.length === 0;
+    if (lista && items.length) {
+        lista.innerHTML = items.map((item) => {
+            const nombre = escaparHtml(String(item.nombre || '').trim());
+            const variante = item.variante_texto
+                ? ` <span class="turno-item-variante">(${escaparHtml(String(item.variante_texto).trim())})</span>`
+                : '';
+            const cantidad = Number(item.cantidad) || 0;
+            const precio = Number(item.precio_unitario) || 0;
+            const subtotal = precio > 0 ? ` — <strong>$${formatearPrecio(precio * cantidad)}</strong>` : '';
+            const multiplicador = cantidad > 1 ? ` × ${cantidad}` : '';
+            return `<li>${nombre}${variante}${multiplicador}${subtotal}</li>`;
+        }).join('');
+    }
+
+    // Total estimado recalculado del lado del servidor (0 = no informado).
+    const total = Number(datos.total) || 0;
+    const lineaTotal = document.getElementById('turnoTotalLine');
+    if (lineaTotal) lineaTotal.hidden = !(total > 0);
+    const valorTotal = document.getElementById('turnoTotalValue');
+    if (valorTotal) valorTotal.textContent = `$${formatearPrecio(total)}`;
 
     resumen.hidden = false;
 }
