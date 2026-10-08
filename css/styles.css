@@ -483,6 +483,21 @@ span {
     margin: 0;
 }
 
+.logo--small {
+    height: 40px;
+    width: auto;
+}
+
+.logo--medium {
+    height: 60px;
+    width: auto;
+}
+
+.logo--large {
+    height: 80px;
+    width: auto;
+}
+
 .navbar {
     background: var(--surface);
     box-shadow: var(--shadow);

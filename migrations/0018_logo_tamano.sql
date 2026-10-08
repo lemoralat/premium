@@ -19,3 +19,4 @@ alter table public.settings
 
 comment on column public.settings.logo_tamano
     is 'Tamaño del logotipo en el encabezado de la tienda: small (40 px), medium (60 px) o large (80 px).';
+
