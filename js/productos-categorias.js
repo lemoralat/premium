@@ -1,11 +1,17 @@
 // Renderizar productos por categorías en el index
-import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, urlSegura, esBannerSoloImagen, recortarTexto, atributosEnlace, slugificar, placeholderImagenPublica } from './utils.js';
+import { obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, obtenerBanners, escaparHtml, urlSegura, esBannerSoloImagen, recortarTexto, atributosEnlace, slugificar, placeholderImagenPublica, cargarConfiguracionGlobal } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
 let banners = []; // dinámicos (hoja "Banners"); se refrescan junto con los productos
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // El modo (turnos vs venta) define qué se renderiza en cada tarjeta
+    // (generarHTMLTarjetaProducto, utils.js). Se espera la configuración remota
+    // antes de pintar para que una web en modo turnos no muestre precios ni
+    // carrito en la primera carga (carrera con template.js).
+    await cargarConfiguracionGlobal();
+
     // Cargar productos usando el sistema centralizado con caché
     productos = await obtenerProductos();
 

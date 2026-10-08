@@ -8,8 +8,12 @@ let zoomActivo = false;
 let productos = []; // Se cargará dinámicamente
 
 document.addEventListener('DOMContentLoaded', function() {
-    cargarTodosLosProductos().then(() => {
-        cargarDetalleProducto();
+    cargarTodosLosProductos().then(async () => {
+        // cargarDetalleProducto espera la configuración remota (modo turnos vs
+        // venta) antes de renderizar la ficha. Se la espera acá para que los
+        // relacionados —que también usan generarHTMLTarjetaProducto según el
+        // modo— no se pinten con el modo por defecto en la primera carga.
+        await cargarDetalleProducto();
         cargarProductosRelacionados();
         // Refresco automático (opción A): stock/precio/galería al día sin recargar.
         suscribirRefrescoCatalogo(actualizarProductoEnPantalla);

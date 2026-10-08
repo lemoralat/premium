@@ -336,15 +336,22 @@ function configurarPaginaTurnos() {
     const titulo = document.getElementById('carritoTitulo');
     if (titulo) titulo.textContent = 'Solicitá tu turno';
 
+    // Ocultar el bloque de compra con la CLASE `.hidden` (display:none!important)
+    // y no con el atributo `hidden`: .cart-container declara display:grid en el
+    // CSS, que le gana al [hidden] del navegador, así que el atributo no ocultaría
+    // nada y el carrito/cupón/resumen seguirían visibles arriba del formulario.
     const contenedorCarrito = document.querySelector('.cart-container');
-    if (contenedorCarrito) contenedorCarrito.hidden = true;
+    if (contenedorCarrito) contenedorCarrito.classList.add('hidden');
 
     // El checkout de venta no aplica en este modo.
     const checkout = document.getElementById('checkoutForm');
-    if (checkout) checkout.hidden = true;
+    if (checkout) checkout.classList.add('hidden');
 
+    // #turnoForm viene con la clase `hidden` en el HTML (carrito.html): hay que
+    // QUITAR la clase. Quitarle el atributo `hidden` no alcanzaría: la clase con
+    // !important sigue escondiendo el formulario, que nunca se mostraría.
     const turnoForm = document.getElementById('turnoForm');
-    if (turnoForm) turnoForm.hidden = false;
+    if (turnoForm) turnoForm.classList.remove('hidden');
 
     // Si la solicitud vino desde una ficha de producto (producto-detalle.js
     // guardó turno_servicio), se muestra qué servicio se pidió.
