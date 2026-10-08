@@ -30,7 +30,7 @@ function validarDatos(datos) {
         { campo: 'direccion', valido: v => v.length >= 2, mensaje: 'Ingresá tu dirección (mínimo 2 caracteres)' },
         { campo: 'ciudad', valido: v => v.length >= 2, mensaje: 'Ingresá tu ciudad (mínimo 2 caracteres)' },
         { campo: 'provincia', valido: v => v.length >= 2, mensaje: 'Ingresá tu provincia (mínimo 2 caracteres)' },
-        { campo: 'codigoPostal', valido: v => /^[A-Za-z0-9]{4,5}$/.test(v), mensaje: 'Ingresá un código postal válido (4 o 5 caracteres alfanuméricos)' },
+        { campo: 'codigoPostal', valido: v => /^[A-Za-z0-9]{1,10}$/.test(v), mensaje: 'Ingresá un código postal válido (letras y números)' },
     ];
 
     let errores = 0;

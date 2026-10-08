@@ -15,9 +15,29 @@
 -- Idempotente para una instalación nueva: se puede reaplicar sin error.
 -- ⚠️ SOBRE LA BASE VIVA re-aplicarla SÍ cambia el estado: recrea
 --    "Preguntas frecuentes: admin full" con `using (true)`, la versión que
---    0026 endureció a es_admin() (mismo nombre ⇒ la pisa). Si se re-ejecuta,
---    correr después migrations/0026_cierre_rls_admin.sql.
+--    0026 endureció a es_admin() (mismo nombre ⇒ la pisa). Desde la auditoría
+--    2026-10-08 este archivo tiene una GUARDA AL INICIO que aborta si ya está
+--    registrado en schema_migrations; si lo forzás igual, corré después
+--    migrations/0050_rls_endurecida.sql.
 -- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- GUARDA ANTI-DEGRADACIÓN (Error 3 — auditoría 2026-10-08)
+--
+-- Re-ejecutar este archivo sobre una base viva REABRE la RLS que 0026 endureció
+-- con es_admin(). Si la base ya tiene la tabla de registro (0045) con esta
+-- migración anotada, abortamos antes de ejecutar nada. Para forzarla (no
+-- recomendado): delete from public.schema_migrations
+-- where nombre = '0014_preguntas_frecuentes';
+-- ----------------------------------------------------------------------------
+do $$
+begin
+    if to_regclass('public.schema_migrations') is not null
+       and exists (select 1 from public.schema_migrations where nombre = '0014_preguntas_frecuentes') then
+        raise exception
+            '0014_preguntas_frecuentes.sql ya está registrada en schema_migrations: re-ejecutarla degradaría la RLS (Error 3). Abortada a propósito. Si de verdad necesitás re-aplicarla, borrá antes su fila de schema_migrations.';
+    end if;
+end $$;
 
 -- ----------------------------------------------------------------------------
 -- TABLA preguntas_frecuentes

@@ -17,11 +17,32 @@
 --       · las policies con `using (true)` de profiles/orders y el
 --          `grant all on all tables` devuelven a `authenticated` el
 --          SELECT/DELETE amplio que 0007/0026 reemplazaron por es_admin().
---     Si por lo que sea hay que re-correr esta — o cualquier migración vieja
---     (0003, 0004, 0007, 0014, 0017…): correr DESPUÉS
---     migrations/0049_higiene_permisos.sql, que cierra exactamente eso.
+--     Desde la auditoría 2026-10-08 este archivo tiene una GUARDA AL INICIO:
+--     si ya está registrado en schema_migrations (0045), aborta antes de
+--     ejecutar nada. Para re-correrlo igual (no recomendado), borrá su fila de
+--     schema_migrations; y si lo hacés, corré DESPUÉS
+--     migrations/0050_rls_endurecida.sql y 0049_higiene_permisos.sql.
 --     El detalle de cada re-ejecución peligrosa está en SUPABASE_MIGRATION.md.
 -- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- GUARDA ANTI-DEGRADACIÓN (Error 3 — auditoría 2026-10-08)
+--
+-- Re-ejecutar este archivo sobre una base viva recrea sus policies
+-- `using (true)` y REABRE la RLS que 0007/0026 endurecieron con es_admin()
+-- (además de re-otorgar EXECUTE a anon/authenticated). Si la base ya tiene la
+-- tabla de registro (0045) con esta migración anotada, abortamos antes de
+-- ejecutar nada (es la primera sentencia del archivo). Para forzarla (no
+-- recomendado): delete from public.schema_migrations where nombre = '0001_schema';
+-- ----------------------------------------------------------------------------
+do $$
+begin
+    if to_regclass('public.schema_migrations') is not null
+       and exists (select 1 from public.schema_migrations where nombre = '0001_schema') then
+        raise exception
+            '0001_schema.sql ya está registrada en schema_migrations: re-ejecutarla degradaría la RLS y los permisos (Error 3). Abortada a propósito. Si de verdad necesitás re-aplicarla, borrá antes su fila de schema_migrations.';
+    end if;
+end $$;
 
 -- ----------------------------------------------------------------------------
 -- Extensiones

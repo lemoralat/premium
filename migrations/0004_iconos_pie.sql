@@ -8,14 +8,31 @@
 -- Incluye: tabla, RLS, seed idempotente con los valores reales del HTML y un
 -- bucket de Storage nuevo ("iconos") con sus políticas extendidas.
 --
--- ⚠️ NO re-ejecutar sobre la base viva sin correr después
---    migrations/0026_cierre_rls_admin.sql y 0021_storage_seis_buckets.sql:
---      · recrea "Iconos: admin full" con `using (true)`, la versión que 0026
---        endureció a es_admin() (mismo nombre ⇒ la pisa);
---      · recrea "Imágenes: subida/actualización/eliminación autenticada",
---        escritura de Storage para CUALQUIER usuario autenticado sobre los 6
---        buckets — políticas que 0007 pasó a "solo admin" con es_admin().
+-- ⚠️ NO re-ejecutar sobre la base viva: recrea "Iconos: admin full" con
+--    `using (true)` (pisa la versión es_admin() de 0026) y las policies de
+--    escritura de Storage "… autenticada" sobre los 6 buckets (que 0007/0021
+--    pasaron a "solo admin"). Desde la auditoría 2026-10-08 este archivo tiene
+--    una GUARDA AL INICIO que aborta si ya está registrado en schema_migrations;
+--    si lo forzás igual, corré después migrations/0050_rls_endurecida.sql.
 -- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- GUARDA ANTI-DEGRADACIÓN (Error 3 — auditoría 2026-10-08)
+--
+-- Re-ejecutar este archivo sobre una base viva REABRE la RLS que 0007/0026
+-- endurecieron con es_admin(). Si la base ya tiene la tabla de registro (0045)
+-- con esta migración anotada, abortamos antes de ejecutar nada (es la primera
+-- sentencia del archivo). Para forzarla (no recomendado): delete from
+-- public.schema_migrations where nombre = '0004_iconos_pie';
+-- ----------------------------------------------------------------------------
+do $$
+begin
+    if to_regclass('public.schema_migrations') is not null
+       and exists (select 1 from public.schema_migrations where nombre = '0004_iconos_pie') then
+        raise exception
+            '0004_iconos_pie.sql ya está registrada en schema_migrations: re-ejecutarla degradaría la RLS (Error 3). Abortada a propósito. Si de verdad necesitás re-aplicarla, borrá antes su fila de schema_migrations.';
+    end if;
+end $$;
 
 -- ----------------------------------------------------------------------------
 -- TABLA iconos_pie

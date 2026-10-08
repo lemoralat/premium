@@ -238,7 +238,10 @@ export async function renderizar(contenedor) {
     // Su propia ficha, aparte de las redes sociales: el número de WhatsApp es
     // el canal de contacto y de checkout de la tienda, no una red más.
     const camposWhatsapp = () => ({
-        whatsapp_number: $('#cfgWhatsapp').value.trim(),
+        // Solo dígitos: un número de WhatsApp no lleva espacios, "+" ni símbolos.
+        // Además de normalizar la entrada, evita que un valor con comillas o "<"
+        // rompa el markup de la tienda donde se interpola.
+        whatsapp_number: $('#cfgWhatsapp').value.replace(/\D/g, ''),
         whatsapp_default_message: $('#cfgWhatsappMsg').value.trim()
     });
 

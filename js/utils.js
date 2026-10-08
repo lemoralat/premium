@@ -118,7 +118,12 @@ export async function cargarConfiguracionGlobal() {
             const c = r.datos;
             CONFIG_APP.siteName = c.site_name ?? CONFIG_APP.siteName;
             CONFIG_APP.siteDescription = c.site_description ?? CONFIG_APP.siteDescription;
-            WHATSAPP_CONFIG.number = c.whatsapp_number ?? WHATSAPP_CONFIG.number;
+            // El número de WhatsApp es SOLO dígitos: se sanitiza al cargar para
+            // que ningún valor guardado con caracteres raros (comillas, <, &) pueda
+            // romper el markup donde se interpola (template.js) ni la URL de wa.me.
+            // La escritura en `settings` ya es admin-only; esto es defensa en
+            // profundidad y neutraliza también valores ya contaminados en la base.
+            WHATSAPP_CONFIG.number = String(c.whatsapp_number ?? WHATSAPP_CONFIG.number).replace(/\D/g, '');
             WHATSAPP_CONFIG.defaultMessage = c.whatsapp_default_message ?? WHATSAPP_CONFIG.defaultMessage;
             CONFIG_APP.whatsappNumber = WHATSAPP_CONFIG.number;
             CONFIG_APP.whatsappMessage = WHATSAPP_CONFIG.defaultMessage;

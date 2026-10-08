@@ -351,7 +351,7 @@ async function initTemplate(activePage = '') {
         const whatsapp = document.createElement('div');
         whatsapp.className = 'whatsapp';
         whatsapp.innerHTML = `
-            <a href="https://wa.me/${WHATSAPP_CONFIG.number}?text=${encodeURIComponent(WHATSAPP_CONFIG.defaultMessage)}" 
+            <a href="https://wa.me/${escaparHtml(WHATSAPP_CONFIG.number)}?text=${encodeURIComponent(WHATSAPP_CONFIG.defaultMessage)}" 
                target="_blank" 
                rel="noopener" 
                aria-label="Contactar por WhatsApp">
