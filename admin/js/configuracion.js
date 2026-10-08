@@ -57,6 +57,26 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
+            <h2>Tipo de web</h2>
+            <p class="card-sub">Elegí cómo funciona tu sitio: como tienda con carrito y pedidos, o como agenda de turnos.</p>
+            <form class="admin-form" id="configFormTipoWeb">
+                <div class="admin-form-grid">
+                    <div class="admin-field full">
+                        <label for="cfgModoWeb">Modelo del sitio</label>
+                        <select id="cfgModoWeb">
+                            <option value="venta" ${s.modo_web !== 'turnos' ? 'selected' : ''}>Venta de productos (carrito y checkout)</option>
+                            <option value="turnos" ${s.modo_web === 'turnos' ? 'selected' : ''}>Solicitud de turnos (agenda)</option>
+                        </select>
+                        <span class="hint">Venta: /carrito es un checkout con cupón, compra mínima y datos de envío; la tienda muestra precios y cantidades. Turnos: /carrito pasa a ser un formulario de solicitud de turno (sin carrito, ni totales), cada solicitud se registra y se gestiona en la sección "Turnos", y la página de gracias deja de mostrar datos de transferencia.</span>
+                    </div>
+                </div>
+                <div class="admin-modal-acciones">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="admin-card">
             <h2>WhatsApp</h2>
             <p class="card-sub">Canal de contacto y de checkout. El número es el destinatario de todos los enlaces de WhatsApp de la tienda; sin número no se muestra ninguno.</p>
             <form class="admin-form" id="configFormWhatsapp">
@@ -224,6 +244,10 @@ export async function renderizar(contenedor) {
         site_description: $('#cfgSiteDescription').value.trim()
     });
 
+    const camposTipoWeb = () => ({
+        modo_web: $('#cfgModoWeb').value === 'turnos' ? 'turnos' : 'venta'
+    });
+
     const camposRedes = () => ({
         social_instagram: $('#cfgInstagram').value.trim(),
         social_facebook: $('#cfgFacebook').value.trim(),
@@ -269,6 +293,10 @@ export async function renderizar(contenedor) {
         {
             columnas: ['site_description'],
             aviso: 'Falta aplicar la migración 0033: la descripción del negocio todavía no se puede guardar.'
+        },
+        {
+            columnas: ['modo_web'],
+            aviso: 'Falta aplicar la migración 0051: el tipo de web todavía no se puede guardar.'
         }
     ].map(({ columnas, aviso }) => ({
         aviso,
@@ -311,6 +339,7 @@ export async function renderizar(contenedor) {
     };
 
     vincular('#configFormGeneral', () => sinColumnasAusentes(camposGenerales()));
+    vincular('#configFormTipoWeb', () => sinColumnasAusentes(camposTipoWeb()));
     vincular('#configFormRedes', camposRedes);
     vincular('#configFormWhatsapp', camposWhatsapp);
     vincular('#configFormTransferencia', () => sinColumnasAusentes(camposTransferencia()));

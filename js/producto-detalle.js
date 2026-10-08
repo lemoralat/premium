@@ -1,6 +1,6 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
@@ -94,7 +94,7 @@ function obtenerIdProducto() {
 }
 
 // Cargar detalle del producto
-function cargarDetalleProducto() {
+async function cargarDetalleProducto() {
     const productoId = obtenerIdProducto();
     const producto = productos.find(p => p.id === productoId);
     
@@ -102,6 +102,11 @@ function cargarDetalleProducto() {
         mostrarProductoNoEncontrado();
         return;
     }
+
+    // Modo turnos vs venta define qué CTAs se renderizan (botón de solicitud o
+    // compra). Se espera la configuración remota acá para no depender de la
+    // carrera de cargas con template.js: en cuanto llega, el modo es correcto.
+    await cargarConfiguracionGlobal();
     
     // Actualizar título de la página
     document.title = `${recortarTexto(producto.nombre)} - ${obtenerNombreSitio()}`;
@@ -152,6 +157,10 @@ function inyectarDatosEstructurados(producto) {
 function renderizarDetalleProducto(producto) {
     const container = document.getElementById('productDetailContainer');
     if (!container) return;
+
+    // Modo turnos (Configuración → Tipo de web): la ficha deja de vender. Sin
+    // stock, sin precio, sin variantes ni cantidad: solo el botón de solicitud.
+    const enTurnos = esModoTurnos();
     
     // Determinar estado del stock
     let stockClass = '';
@@ -238,9 +247,11 @@ function renderizarDetalleProducto(producto) {
                     </button>
                 </div>
                 
-                <p class="product-stock ${stockClass}">${stockText}</p>
+                ${enTurnos
+                    ? '<p class="product-stock turno">Solicitá tu turno y coordinamos fecha y horario.</p>'
+                    : `<p class="product-stock ${stockClass}">${stockText}</p>`}
                 
-                <p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
+                ${enTurnos ? '' : `<p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>`}
                 
                 <p class="product-detail-description">${escaparHtml(recortarTexto(producto.descripcionDetallada))}</p>
                 
@@ -253,7 +264,7 @@ function renderizarDetalleProducto(producto) {
                     </ul>
                 </div>
                 
-                ${tieneVariantes(producto) ? `
+                ${!enTurnos && tieneVariantes(producto) ? `
                 <div class="variant-selector">
                     <h3>Elegí tu opción:</h3>
                     <div class="variant-grid">
@@ -272,6 +283,13 @@ function renderizarDetalleProducto(producto) {
                 </div>
                 ` : ''}
                 
+                ${enTurnos ? `
+                <div class="product-actions-detail">
+                    <button class="btn-add-cart btn-border" id="btnSolicitarTurno" onclick="solicitarTurno(${producto.id})">
+                        Solicitar turno
+                    </button>
+                </div>
+                ` : `
                 <div class="quantity-selector">
                     <label for="quantity">Cantidad:</label>
                     <div class="quantity-controls">
@@ -289,6 +307,7 @@ function renderizarDetalleProducto(producto) {
                         Ir al Carrito →
                     </a>
                 </div>
+                `}
                 
                 <div class="product-share">
                     <h3>Compartir este producto:</h3>
@@ -771,6 +790,16 @@ function agregarAlCarritoDetalle(id) {
     return true;
 }
 
+// Modo turnos: desde la ficha se salta directo al formulario de solicitud
+// (/carrito en modo turnos) cargando el servicio de origen en sessionStorage.
+// El formulario lo muestra y lo manda como producto_ref en insertar_turno.
+function solicitarTurno(id) {
+    const producto = productos.find(p => p.id === id);
+    if (!producto) return;
+    sessionStorage.setItem('turno_servicio', JSON.stringify({ id: producto.id, nombre: producto.nombre }));
+    window.location.href = '/carrito';
+}
+
 // Cargar productos relacionados
 function cargarProductosRelacionados() {
     const productoId = obtenerIdProducto();
@@ -880,3 +909,4 @@ window.seleccionarImagenZoom = seleccionarImagenZoom;
 window.toggleFavorito = toggleFavorito;
 window.cambiarCantidad = cambiarCantidad;
 window.agregarAlCarritoDetalle = agregarAlCarritoDetalle;
+window.solicitarTurno = solicitarTurno;

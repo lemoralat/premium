@@ -14,6 +14,7 @@ import * as diseno from './diseno.js';
 import * as productos from './productos.js';
 import * as categorias from './categorias.js';
 import * as pedidos from './pedidos.js';
+import * as turnos from './turnos.js';
 import * as cupones from './cupones.js';
 import * as slider from './slider.js';
 import * as banners from './banners.js';
@@ -28,6 +29,7 @@ const secciones = {
     productos:     { ...productos,     titulo: 'Productos' },
     categorias:    { ...categorias,    titulo: 'Categorías' },
     pedidos:       { ...pedidos,       titulo: 'Pedidos' },
+    turnos:        { ...turnos,        titulo: 'Turnos' },
     cupones:       { ...cupones,       titulo: 'Descuentos' },
     slider:        { ...slider,        titulo: 'Slider' },
     banners:       { ...banners,       titulo: 'Banners' },

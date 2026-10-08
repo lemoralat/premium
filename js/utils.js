@@ -40,6 +40,11 @@ export const CONFIG_APP = {
     // el texto genérico que las metas tenían hardcodeado, así que sin la
     // migración 0033 el sitio queda igual. La aplica template.js → aplicarDisenoGlobal().
     siteDescription: 'Tienda online con los mejores productos. Envíos a todo el país.',
+    // Tipo de web (Configuración → Tipo de web, migración 0051): 'venta'
+    // (tienda con carrito/checkout, comportamiento actual) o 'turnos' (agenda:
+    // /carrito es un formulario de solicitud y el sitio no muestra carrito,
+    // cantidades ni totales). Default 'venta': sin la migración, nada cambia.
+    modoWeb: 'venta',
     whatsappNumber: '',
     whatsappMessage: 'Hola, quería consultar ',
     transferAlias: '',
@@ -76,6 +81,12 @@ export const CONFIG_APP = {
 };
 
 export let configuracionCargada = false;
+
+// ¿El sitio está en modo turnos? (Configuración → Tipo de web). La usan las
+// páginas del catálogo, el carrito, el formulario y la página de gracias.
+export function esModoTurnos() {
+    return CONFIG_APP.modoWeb === 'turnos';
+}
 
 // Configuración de diseño (sección "Diseño" del panel): branding aplicado en
 // template.js al cargar cada página. Si no hay configurado un recurso, la
@@ -118,6 +129,7 @@ export async function cargarConfiguracionGlobal() {
             const c = r.datos;
             CONFIG_APP.siteName = c.site_name ?? CONFIG_APP.siteName;
             CONFIG_APP.siteDescription = c.site_description ?? CONFIG_APP.siteDescription;
+            CONFIG_APP.modoWeb = c.modo_web === 'turnos' ? 'turnos' : 'venta';
             // El número de WhatsApp es SOLO dígitos: se sanitiza al cargar para
             // que ningún valor guardado con caracteres raros (comillas, <, &) pueda
             // romper el markup donde se interpola (template.js) ni la URL de wa.me.
@@ -491,7 +503,12 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
 // Generar el HTML de una tarjeta de producto (estándar para el catálogo y los
 // relacionados). Toda la tarjeta enlaza al detalle; sin botones internos.
 export function generarHTMLTarjetaProducto(producto) {
-    const esAgotado = producto.stock === 0;
+    // Modo turnos (Configuración → Tipo de web): la ficha de catálogo deja de
+    // vender. No se muestra stock ni el botón de agregado rápido, y el precio
+    // se reemplaza por una invitación a sacar turno (que en la página de
+    // detalle lleva al formulario de solicitud).
+    const enTurnos = esModoTurnos();
+    const esAgotado = !enTurnos && producto.stock === 0;
 
     // V-2: todo texto/URL administrado se escapa antes de interpolarse en HTML.
     const nombre = escaparHtml(recortarTexto(producto.nombre));
@@ -505,12 +522,14 @@ export function generarHTMLTarjetaProducto(producto) {
                 ${producto.imagen
                     ? `<img src="${imagen}" alt="${nombre}" class="product-image" loading="lazy">`
                     : placeholderImagenPublica('product-image')}
-                <span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
+                ${enTurnos ? '' : '<span class="quick-add-btn" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>'}
             </div>
             <div class="product-info">
                 <h3 class="product-title">${nombre}</h3>
                 <p class="product-description">${descripcion}</p>
-                <p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
+                ${enTurnos
+                    ? '<p class="product-price product-price-turno"><i class="fa-solid fa-calendar-check"></i> Solicitar turno</p>'
+                    : `<p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>`}
             </div>
         </a>
     `;

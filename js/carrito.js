@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, atributosEnlace, placeholderImagenPublica } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, atributosEnlace, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
 
 let productosGlobales = [];
 
@@ -327,8 +327,54 @@ function renderizarBannerCarrito(banners) {
     contenedor.hidden = false;
 }
 
+// ============ MODO TURNOS: /carrito como solicitud de turno ============
+// En modo turnos (Configuración → Tipo de web) no hay carrito: la página es un
+// formulario de solicitud. Se oculta el bloque de compra y se muestra #turnoForm.
+function configurarPaginaTurnos() {
+    document.body.classList.add('modo-turnos');
+
+    const titulo = document.getElementById('carritoTitulo');
+    if (titulo) titulo.textContent = 'Solicitá tu turno';
+
+    const contenedorCarrito = document.querySelector('.cart-container');
+    if (contenedorCarrito) contenedorCarrito.hidden = true;
+
+    // El checkout de venta no aplica en este modo.
+    const checkout = document.getElementById('checkoutForm');
+    if (checkout) checkout.hidden = true;
+
+    const turnoForm = document.getElementById('turnoForm');
+    if (turnoForm) turnoForm.hidden = false;
+
+    // Si la solicitud vino desde una ficha de producto (producto-detalle.js
+    // guardó turno_servicio), se muestra qué servicio se pidió.
+    const servicio = sessionStorage.getItem('turno_servicio');
+    const contServicio = document.getElementById('turnoServicio');
+    if (servicio && contServicio) {
+        try {
+            const s = JSON.parse(servicio);
+            contServicio.textContent = `Vas a solicitar turno para: ${s.nombre || ''}`;
+            contServicio.hidden = false;
+        } catch {
+            sessionStorage.removeItem('turno_servicio');
+        }
+    }
+}
+
 // Event listener para el botón de checkout
 document.addEventListener('DOMContentLoaded', async function() {
+    // El modo de la web se lee de settings (Configuración → Tipo de web).
+    // Se espera acá (aunque template.js ya lo carga) para decidir con seguridad.
+    await cargarConfiguracionGlobal();
+
+    // Modo turnos: /carrito es un formulario de solicitud, no un checkout.
+    // No se renderiza el carrito ni el cupón/compra mínima (no existen).
+    if (esModoTurnos()) {
+        configurarPaginaTurnos();
+        renderizarBannerCarrito(await obtenerBanners());
+        return;
+    }
+
     await cargarProductosReferencia();
     await obtenerCupones();
     renderizarCarrito();

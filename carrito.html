@@ -45,7 +45,7 @@
         <!-- Banner dinámico: el que tiene en_carrito, elegido en el panel; js/carrito.js lo muestra si existe -->
         <section id="banner-carrito" hidden></section>
 
-        <h1 class="titulo">Tu Carrito de Compras</h1>
+        <h1 class="titulo" id="carritoTitulo">Tu Carrito de Compras</h1>
 
         <div class="cart-container">
 
@@ -141,6 +141,62 @@
 
                 <p class="seguro">
                     <i class="fa-solid fa-lock"></i> Tus datos están seguros y solo se usan para procesar tu pedido.
+                </p>
+            </form>
+        </div>
+
+        <!-- Formulario de solicitud de turno (modo turnos, Configuración → Tipo
+             de web). Oculto por defecto; js/carrito.js lo muestra según el modo.
+             Las IDs son propias para no pisar al formulario de pedido. -->
+        <div id="turnoForm" class="checkout-form container-sg hidden">
+            <h2>Solicitá tu turno</h2>
+            <p class="card-sub" style="margin:0 0 1.2rem;">Completá tus datos y te confirmamos la cita por WhatsApp.</p>
+            <div id="turnoServicio" class="turno-servicio" hidden></div>
+            <form id="turnoFormulario" novalidate>
+                <div class="form-group">
+                    <label for="turnoNombre">Nombre Completo *</label>
+                    <input type="text" id="turnoNombre" name="nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="turnoTelefono">Teléfono *</label>
+                    <input type="tel" id="turnoTelefono" name="telefono" required>
+                    <span class="cp-hint">Te confirmamos el turno a este número.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="turnoEmail">Email</label>
+                    <input type="email" id="turnoEmail" name="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="turnoFecha">Fecha preferida *</label>
+                    <input type="date" id="turnoFecha" name="fecha" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="turnoHora">Hora preferida</label>
+                    <input type="time" id="turnoHora" name="hora">
+                </div>
+
+                <div class="form-group">
+                    <label for="turnoNotas">Notas / motivo de la consulta</label>
+                    <textarea id="turnoNotas" name="notas" rows="3"></textarea>
+                </div>
+
+                <!-- Honeypot anti-bots: mismo criterio que el formulario de
+                     pedido (invisible, fuera del orden de tabulación). -->
+                <div class="form-group" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+                    <label for="turnoWebsite">Sitio web</label>
+                    <input type="text" id="turnoWebsite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+                </div>
+
+                <button type="submit" class="submit-btn btn-border">
+                    <span>Enviar solicitud de turno</span>
+                </button>
+
+                <p class="seguro">
+                    <i class="fa-solid fa-lock"></i> Tus datos están seguros y solo se usan para coordinar tu turno.
                 </p>
             </form>
         </div>

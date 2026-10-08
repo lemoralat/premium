@@ -49,15 +49,27 @@
                 </svg>
             </div>
             
-            <h1>¡Pedido Recibido con Éxito!</h1>
+            <h1 id="graciasTituloPrincipal">¡Pedido Recibido con Éxito!</h1>
             
-            <p class="success-message">
+            <p class="success-message" id="graciasMensajePrincipal">
                 Gracias por tu compra. Tu pedido ha sido tomado correctamente y hemos recibido toda la información.
             </p>
             
             <div class="info-box" id="infoBox">
                 <h2 id="graciasTitulo">Próximos Pasos</h2>
                 <p id="graciasTexto">Te confirmaremos por WhatsApp cuando recibamos tu transferencia bancaria. Una vez confirmado el pago, procederemos con el envío de tu pedido.</p>
+            </div>
+
+            <!-- Resumen de la solicitud de turno (modo turnos, Configuración →
+                 Tipo de web). Oculto por defecto: solo se muestra cuando la
+                 página vino de una solicitud de turno y reemplaza a la info de
+                 pago (no hay montos ni transferencia en este modo). -->
+            <div class="info-box turno-resumen" id="turnoResumen" hidden>
+                <h2>Tu solicitud de turno</h2>
+                <p>N° de solicitud: <strong id="turnoNumero"></strong></p>
+                <p>Fecha: <strong id="turnoFechaConfirmada"></strong></p>
+                <p>Hora: <strong id="turnoHoraConfirmada"></strong></p>
+                <p class="turno-aviso">La confirmación del turno se coordina por WhatsApp. No se necesita transferir ni abonar nada en esta página.</p>
             </div>
 
             <div class="payment-section" id="paymentSection">

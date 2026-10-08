@@ -2,28 +2,85 @@
 // Los datos de transferencia (entidad, titular, alias) salen de la configuración
 // de Supabase (tabla settings) con los valores actuales como respaldo.
 
-import { formatearPrecio, CONFIG_APP, cargarConfiguracionGlobal, mostrarNotificacion } from './utils.js';
+import { formatearPrecio, CONFIG_APP, cargarConfiguracionGlobal, mostrarNotificacion, esModoTurnos } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     await cargarConfiguracionGlobal();
-    validarToken();
-    mostrarMontoTotal();
-    renderizarInfoBox();
-    cargarDatosTransferencia();
+
+    // `validarToken` devuelve true si la página vino de una solicitud de turno
+    // (?tipo=turno). En ese caso (o si el sitio está en modo turnos) la página
+    // se adapta: sin montos, sin transferencia y con el resumen de la solicitud.
+    const esTurno = validarToken();
+    if (esTurno || esModoTurnos()) {
+        configurarGraciasTurno();
+    } else {
+        mostrarMontoTotal();
+        renderizarInfoBox();
+        cargarDatosTransferencia();
+    }
 });
 
-// Validar que el acceso sea legítimo (vía token desde formulario.js)
+// Validar que el acceso sea legítimo (vía token desde formulario.js).
+// En el flujo de turnos el token se guarda aparte (turno_token) y la URL
+// llega con ?tipo=turno.
 function validarToken() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlToken = urlParams.get('token');
-    const storedToken = sessionStorage.getItem('order_token');
+    const esTurno = urlParams.get('tipo') === 'turno';
+    const storedToken = sessionStorage.getItem(esTurno ? 'turno_token' : 'order_token');
 
     if (!urlToken || !storedToken || urlToken !== storedToken) {
         window.location.href = '/';
+        return false;
+    }
+
+    sessionStorage.removeItem(esTurno ? 'turno_token' : 'order_token');
+    return esTurno;
+}
+
+// Adaptar la página de gracias al modo turnos: sin montos ni transferencia;
+// el título y el mensaje cambian y se muestra el resumen de la solicitud
+// (número TRN-####, fecha y hora preferidas) guardado por formulario.js.
+function configurarGraciasTurno() {
+    const h1 = document.getElementById('graciasTituloPrincipal');
+    if (h1) h1.textContent = '¡Solicitud Recibida con Éxito!';
+
+    const msg = document.getElementById('graciasMensajePrincipal');
+    if (msg) msg.textContent = 'Gracias por tu solicitud. Te confirmaremos tu turno por WhatsApp.';
+
+    // Las secciones de venta no aplican en este flujo.
+    const infoBox = document.getElementById('infoBox');
+    if (infoBox) infoBox.hidden = true;
+    const paymentSection = document.getElementById('paymentSection');
+    if (paymentSection) paymentSection.hidden = true;
+    const amountBox = document.getElementById('amountBox');
+    if (amountBox) amountBox.hidden = true;
+
+    // Resumen de la solicitud: lo que guardó formulario.js (desde la respuesta
+    // de insertar_turno, no del formulario del cliente).
+    const resumen = document.getElementById('turnoResumen');
+    if (!resumen) return;
+
+    let datos = null;
+    try {
+        datos = JSON.parse(localStorage.getItem('turnoInfo') || 'null');
+    } catch {
+        datos = null;
+    }
+
+    if (!datos) {
+        resumen.hidden = true;
         return;
     }
 
-    sessionStorage.removeItem('order_token');
+    const elNumero = document.getElementById('turnoNumero');
+    if (elNumero) elNumero.textContent = datos.numero || '—';
+    const elFecha = document.getElementById('turnoFechaConfirmada');
+    if (elFecha) elFecha.textContent = datos.fecha || '—';
+    const elHora = document.getElementById('turnoHoraConfirmada');
+    if (elHora) elHora.textContent = datos.hora || 'A coordinar';
+
+    resumen.hidden = false;
 }
 
 // Mostrar el monto total del pedido
