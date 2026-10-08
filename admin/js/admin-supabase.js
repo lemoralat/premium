@@ -8,6 +8,8 @@
 
 import { SUPABASE_CONFIG } from '../../js/env.generated.js';
 
+let cliente = null;
+
 // ----------------------------------------------------------------------------
 // Sesión admin → cookie para el middleware de Vercel (middleware.js).
 //
