@@ -48,8 +48,7 @@ function nombreDeUrl(url) {
 }
 
 // Extrae coordenadas (y, si hay, el nombre del lugar) del texto de una URL.
-// Puede devolver { lat: null, lng: null, nombre } cuando la URL solo trae un
-// nombre de lugar sin coordenadas.
+// Puede devolver { lat, lng, nombre } cuando la URL contiene coordenadas.
 function extraerDeUrl(url) {
     let m;
 
@@ -65,17 +64,19 @@ function extraerDeUrl(url) {
     m = url.match(/!2d(-?\d+\.?\d*)!3d(-?\d+\.?\d*)/);
     if (m) return { lat: Number(m[2]), lng: Number(m[1]), nombre: nombreDeUrl(url) };
 
-    // 4) ?q=lat,lng
-    m = url.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    // 4) ?q=lat,lng o ?query=lat,lng
+    m = url.match(/[?&](?:q|query)=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
     if (m) return { lat: Number(m[1]), lng: Number(m[2]), nombre: nombreDeUrl(url) };
 
-    // 5) Búsqueda de Google Maps sin coords: /maps/search/QUERY
-    m = url.match(/\/maps\/search\/([^/?@]+)/);
-    if (m) return { lat: null, lng: null, nombre: decod(m[1]).replace(/\+/g, ' ').trim() };
+    // 5) Apple Maps: ll=lat,lng
+    m = url.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (m) return { lat: Number(m[1]), lng: Number(m[2]), nombre: nombreDeUrl(url) };
 
-    // 6) Nombre de lugar sin coords: /maps/place/Nombre
-    const nombre = nombreDeUrl(url);
-    return nombre ? { lat: null, lng: null, nombre } : null;
+    // 6) Búsqueda de Google Maps con coords explícitas en search
+    m = url.match(/\/maps\/search\/.*?(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (m) return { lat: Number(m[1]), lng: Number(m[2]), nombre: nombreDeUrl(url) };
+
+    return null;
 }
 
 // Sigue la cadena de redirecciones de un link corto (máx. 5 saltos) leyendo el
