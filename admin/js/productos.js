@@ -164,8 +164,12 @@ function filaProducto(p) {
             </td>
             <td data-label="Categoría">${esc(p.categoria?.name || '—')}</td>
             <td data-label="Precio"><strong>$${formatearPrecio(p.precio)}</strong></td>
-            <td data-label="Stock"><span class="${stockClase}">${esc(p.stock)}</span></td>
-            <td data-label="Variantes">${nroVariantes > 0 ? esc(nroVariantes) : '<span style="color:var(--text-muted);">—</span>'}</td>
+            <td data-label="Stock">${enServicios
+                ? '<span style="color:var(--text-muted);">—</span>'
+                : `<span class="${stockClase}">${esc(p.stock)}</span>`}</td>
+            <td data-label="Variantes">${enServicios
+                ? '<span style="color:var(--text-muted);">—</span>'
+                : (nroVariantes > 0 ? esc(nroVariantes) : '<span style="color:var(--text-muted);">—</span>')}</td>
             <td data-label="Visible">
                 <label class="admin-check">
                     <input type="checkbox" data-toggle-activo="${esc(p.id)}" ${p.activo ? 'checked' : ''} aria-label="Activar/desactivar ${esc(p.nombre)}">
@@ -280,10 +284,11 @@ function abrirModalProducto(idExistente) {
                     </div>
                     <span class="hint">Si la categoría ya existe, quedará seleccionada sin duplicarla.</span>
                 </div>
+                ${enServicios ? '' : `
                 <div class="admin-field">
                     <label for="prdStock">Stock (unidades) *</label>
                     <input type="number" id="prdStock" required min="0" step="1" value="${esc(producto?.stock ?? 0)}">
-                </div>
+                </div>`}
                 <div class="admin-field">
                     <label for="prdPrecio">Precio ($) *</label>
                     <input type="number" id="prdPrecio" required min="0" step="1" value="${esc(producto?.precio ?? '')}" placeholder="ej: 54000">
@@ -329,13 +334,14 @@ function abrirModalProducto(idExistente) {
                 </button>
             </div>
 
+            ${enServicios ? '' : `
             <div class="admin-field full">
                 <label>Variantes <span class="hint">(opción + valores separados por coma; ej: Talles → 40, 41, 42, 43, 44 · máx. ${MAX_VARIANTES})</span></label>
                 <div class="admin-repeater" id="variantesRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarVariante" style="align-self:flex-start; margin-top:0.5rem;">
                     <i class="fa-solid fa-plus"></i> Agregar variante
                 </button>
-            </div>
+            </div>`}
 
             <div class="admin-field full">
                 <label>Imágenes <span class="hint">(una principal + galería; JPG, PNG o WebP hasta 8 MB, se optimizan solas)</span></label>
@@ -453,7 +459,9 @@ function abrirModalProducto(idExistente) {
         const idValor = $('#prdId').value;
         const precio = Number($('#prdPrecio').value);
         const precioAnteriorValor = $('#prdPrecioAnterior').value;
-        const stock = Number($('#prdStock').value);
+        // En modo turnos los servicios no manejan stock (0053+): el campo no se
+        // muestra y siempre se guarda 0.
+        const stock = enServicios ? 0 : Number($('#prdStock').value);
 
         if (!Number.isFinite(precio) || precio < 0) {
             toast('Ingresá un precio válido.', 'error');
@@ -464,13 +472,17 @@ function abrirModalProducto(idExistente) {
             return;
         }
 
-        // Eliminar variantes vacías
-        const variantes = variantesModal
-            .map((v) => ({
-                opcion: (v.opcion || '').trim(),
-                valores: (v.valores || '').split(',').map((x) => x.trim()).filter(Boolean)
-            }))
-            .filter((v) => v.opcion && v.valores.length > 0);
+        // Eliminar variantes vacías. En modo turnos los servicios no tienen variantes:
+        // se guarda sin opciones (al actualizar se borran las históricas que
+        // hubiera traído del modo venta).
+        const variantes = enServicios
+            ? []
+            : variantesModal
+                .map((v) => ({
+                    opcion: (v.opcion || '').trim(),
+                    valores: (v.valores || '').split(',').map((x) => x.trim()).filter(Boolean)
+                }))
+                .filter((v) => v.opcion && v.valores.length > 0);
 
         const categoriaValue = $('#prdCategoria').value;
 

@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, slugificar, obtenerMarquee, placeholderImagenPublica } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, slugificar, obtenerMarquee, placeholderImagenPublica, esModoTurnos } from './utils.js';
 
 const CARD_ASPECT_RATIOS = Object.freeze({
     '1:1': '1 / 1',
@@ -467,7 +467,8 @@ function renderSidemenuCarrito() {
 
     const itemHTML = cart.map(item => {
         const ref = productosRef.find(p => p.id === item.id);
-        const sinStock = ref && ref.stock === 0;
+        // En modo turnos los servicios no manejan stock: nunca se marcan agotados.
+        const sinStock = !esModoTurnos() && ref && ref.stock === 0;
         const clave = claveItemCarrito(item.id, item.varianteTexto);
         const claveEscapada = escaparHtml(clave);
 
@@ -527,7 +528,7 @@ function sideCambiarCantidad(clave, cambio) {
     const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto) === clave);
     if (!item) return;
 
-    if (cambio > 0) {
+    if (cambio > 0 && !esModoTurnos()) {
         const ref = productosRef.find(p => p.id === item.id);
         if (ref) {
             const enCarrito = cart

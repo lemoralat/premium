@@ -35,9 +35,12 @@ function renderizarCarrito() {
     }
 
     cartItemsContainer.innerHTML = cart.map(item => {
+        const enTurnos = esModoTurnos();
         const productoRef = productosGlobales.find(p => p.id === item.id);
-        const sinStock = productoRef && productoRef.stock === 0;
-        const stockBajo = productoRef && productoRef.stock > 0 && productoRef.stock < 5;
+        // En modo turnos los servicios no manejan stock: nunca se marcan como
+        // agotados ni de última unidad y no bloquean la cantidad.
+        const sinStock = !enTurnos && productoRef && productoRef.stock === 0;
+        const stockBajo = !enTurnos && productoRef && productoRef.stock > 0 && productoRef.stock < 5;
         const clave = claveItemCarrito(item.id, item.varianteTexto);
 
         // V-2: el nombre del producto (contenido administrado) viaja en el
@@ -80,8 +83,10 @@ function actualizarCantidad(clave, cambio) {
     const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto) === clave);
 
     if (item) {
-        // Validar stock si se intenta aumentar la cantidad (sumado entre líneas del mismo producto)
-        if (cambio > 0) {
+        // Validar stock solo si se intenta aumentar la cantidad (sumado entre
+        // líneas del mismo producto). En modo turnos no aplica: los servicios
+        // no manejan stock.
+        if (cambio > 0 && !esModoTurnos()) {
             const productoRef = productosGlobales.find(p => p.id === item.id);
             if (productoRef) {
                 const enCarrito = cart
@@ -397,9 +402,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     renderizarCarrito();
     renderizarBannerCarrito(await obtenerBanners());
     
-    // Alerta inicial si hay productos que se quedaron sin stock
+    // Alerta inicial si hay productos que se quedaron sin stock (no aplica en
+    // modo turnos: los servicios no manejan stock).
     const cart = obtenerCarrito();
-    const tieneSinStock = cart.some(item => {
+    const tieneSinStock = !esModoTurnos() && cart.some(item => {
         const ref = productosGlobales.find(p => p.id === item.id);
         return ref && ref.stock === 0;
     });

@@ -447,7 +447,10 @@ export function renderPrecioAnterior(producto) {
 }
 
 // ¿El producto tiene variantes seleccionables? (opción + al menos un valor)
+// En modo turnos nunca: los productos se gestionan como servicios sin variantes
+// (migración 0053+), aunque algún producto histórico conserve opciones en la BD.
 export function tieneVariantes(producto) {
+    if (esModoTurnos()) return false;
     return Array.isArray(producto.variantes)
         && producto.variantes.some(v => v && v.opcion && Array.isArray(v.valores) && v.valores.length > 0);
 }
@@ -472,7 +475,8 @@ export function placeholderImagenPublica(clase = 'product-image') {
 //   - busqueda.js   → { conBadge: true }     (el badge de Sin Stock)
 export function generarHTMLFavoritoItem(producto, opciones = {}) {
     const { conAcciones = false, conBadge = false } = opciones;
-    const esAgotado = producto.stock === 0;
+    // En modo turnos los servicios no manejan stock: nunca muestran "Sin Stock".
+    const esAgotado = !esModoTurnos() && producto.stock === 0;
     const nombre = escaparHtml(recortarTexto(producto.nombre));
     const imagen = escaparHtml(producto.imagen);
 
@@ -507,10 +511,11 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
 //
 // En modo turnos (Configuración → Tipo de web) la tarjeta es IGUAL que en
 // venta: precio, precio anterior y agregado rápido. El modo no cambia la
-// tienda — solo el paso final del carrito (ver carrito.js/formulario.js). Si el
-// servicio declara horarios (0053), se muestran como guía bajo el precio.
+// tienda — solo el paso final del carrito (ver carrito.js/formulario.js). Los
+// servicios no manejan stock ni variantes: nunca se tacha con "Sin Stock". Si
+// el servicio declara horarios (0053), se muestran como guía bajo el precio.
 export function generarHTMLTarjetaProducto(producto) {
-    const esAgotado = producto.stock === 0;
+    const esAgotado = !esModoTurnos() && producto.stock === 0;
     const conHorarios = Array.isArray(producto.servicioHorarios) && producto.servicioHorarios.length > 0;
 
     // V-2: todo texto/URL administrado se escapa antes de interpolarse en HTML.

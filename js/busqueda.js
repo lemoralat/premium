@@ -2,13 +2,16 @@
 // El input es el de la barra del header en desktop y el del panel desplegable en
 // móvil (donde la barra está oculta); ambos escriben en el mismo panel de
 // resultados (#searchPanel), que se abre debajo del navbar.
-import { obtenerProductos, generarHTMLFavoritoItem, normalizarTexto } from './utils.js';
+import { obtenerProductos, generarHTMLFavoritoItem, normalizarTexto, cargarConfiguracionGlobal } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let productos = [];
 let debounceTimer;
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Los resultados marcan "Sin Stock" según el modo (venta/turnos): esperar
+    // la configuración para que el modo llegue antes de renderizar.
+    await cargarConfiguracionGlobal();
     // Cargar productos usando el sistema centralizado
     productos = await obtenerProductos();
 

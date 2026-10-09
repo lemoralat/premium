@@ -1,19 +1,23 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
 let zoomActivo = false;
 let productos = []; // Se cargará dinámicamente
 
-document.addEventListener('DOMContentLoaded', function() {
-    cargarTodosLosProductos().then(() => {
-        cargarDetalleProducto();
-        cargarProductosRelacionados();
-        // Refresco automático (opción A): stock/precio/galería al día sin recargar.
-        suscribirRefrescoCatalogo(actualizarProductoEnPantalla);
-    });
+document.addEventListener('DOMContentLoaded', async function() {
+    // La ficha decide por el modo (venta/turnos) si muestra stock y variantes:
+    // hay que esperar la configuración para que el modo llegue antes de
+    // renderizar (obtenerProductos no espera la config). Es un único fetch,
+    // cacheado 5 min (cargarConfiguracionGlobal).
+    await cargarConfiguracionGlobal();
+    await cargarTodosLosProductos();
+    cargarDetalleProducto();
+    cargarProductosRelacionados();
+    // Refresco automático (opción A): stock/precio/galería al día sin recargar.
+    suscribirRefrescoCatalogo(actualizarProductoEnPantalla);
 });
 
 // Cargar todos los productos desde el JSON
@@ -53,27 +57,36 @@ function actualizarProductoEnPantalla(datos) {
 }
 
 function actualizarStockEnPantalla(producto) {
+    // Modo turnos: los servicios no manejan stock (0053+). La línea no se
+    // renderizó y el botón queda siempre disponible; acá se mantiene esa regla
+    // ante un refresco de catálogo.
+    const enTurnos = esModoTurnos();
     const stockEl = document.querySelector('.product-stock');
     if (stockEl) {
-        let stockClass = '';
-        let stockText = '';
-        if (producto.stock > 10) {
-            stockText = `En stock (${producto.stock} disponibles)`;
-        } else if (producto.stock > 0) {
-            stockClass = 'low';
-            stockText = `¡Últimas unidades! (${producto.stock} disponibles)`;
+        if (enTurnos) {
+            stockEl.style.display = 'none';
         } else {
-            stockClass = 'out';
-            stockText = 'Agotado';
+            stockEl.style.display = '';
+            let stockClass = '';
+            let stockText = '';
+            if (producto.stock > 10) {
+                stockText = `En stock (${producto.stock} disponibles)`;
+            } else if (producto.stock > 0) {
+                stockClass = 'low';
+                stockText = `¡Últimas unidades! (${producto.stock} disponibles)`;
+            } else {
+                stockClass = 'out';
+                stockText = 'Agotado';
+            }
+            stockEl.className = `product-stock ${stockClass}`;
+            stockEl.textContent = stockText;
         }
-        stockEl.className = `product-stock ${stockClass}`;
-        stockEl.textContent = stockText;
     }
 
     const btn = document.getElementById('btnAddCart');
     if (btn) {
-        btn.disabled = producto.stock === 0;
-        btn.textContent = producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito';
+        btn.disabled = !enTurnos && producto.stock === 0;
+        btn.textContent = (!enTurnos && producto.stock === 0) ? 'Agotado' : 'Agregar al Carrito';
     }
 
     // Recalibrar la cantidad elegida con el nuevo stock disponible.
@@ -132,7 +145,7 @@ function inyectarDatosEstructurados(producto) {
             "url": window.location.href,
             "priceCurrency": "ARS",
             "price": producto.precio,
-            "availability": producto.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "availability": (esModoTurnos() || producto.stock > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             "itemCondition": "https://schema.org/NewCondition"
         }
     };
@@ -185,19 +198,25 @@ function renderizarDetalleProducto(producto) {
     // Horarios disponibles (modo turnos, 0053): los muestra la ficha del
     // servicio como guía. Vacío = tienda de venta o servicio sin agenda.
     const horariosHTML = agruparHorarios(producto.servicioHorarios);
-    
+
+    // En modo turnos los servicios no manejan stock ni variantes: la línea de
+    // stock no se renderiza y el botón queda siempre disponible.
+    const enTurnos = esModoTurnos();
+
     // Determinar estado del stock
     let stockClass = '';
     let stockText = '';
-    if (producto.stock > 10) {
-        stockClass = '';
-        stockText = `En stock (${producto.stock} disponibles)`;
-    } else if (producto.stock > 0) {
-        stockClass = 'low';
-        stockText = `¡Últimas unidades! (${producto.stock} disponibles)`;
-    } else {
-        stockClass = 'out';
-        stockText = 'Agotado';
+    if (!enTurnos) {
+        if (producto.stock > 10) {
+            stockClass = '';
+            stockText = `En stock (${producto.stock} disponibles)`;
+        } else if (producto.stock > 0) {
+            stockClass = 'low';
+            stockText = `¡Últimas unidades! (${producto.stock} disponibles)`;
+        } else {
+            stockClass = 'out';
+            stockText = 'Agotado';
+        }
     }
     
     // Navegación entre productos
@@ -271,7 +290,7 @@ function renderizarDetalleProducto(producto) {
                     </button>
                 </div>
                 
-                <p class="product-stock ${stockClass}">${stockText}</p>
+                ${enTurnos ? '' : `<p class="product-stock ${stockClass}">${stockText}</p>`}
                 
                 <p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
                 
@@ -322,8 +341,8 @@ function renderizarDetalleProducto(producto) {
                 </div>
                 
                 <div class="product-actions-detail">
-                    <button class="btn-add-cart btn-border" id="btnAddCart" onclick="agregarAlCarritoDetalle(${producto.id})" ${producto.stock === 0 ? 'disabled' : ''}>
-                        ${producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito'}
+                    <button class="btn-add-cart btn-border" id="btnAddCart" onclick="agregarAlCarritoDetalle(${producto.id})" ${enTurnos ? '' : (producto.stock === 0 ? 'disabled' : '')}>
+                        ${enTurnos ? 'Agregar al Carrito' : (producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito')}
                     </button>
                     <a href="/carrito" class="btn-go-cart btn-border hidden" id="btnGoCart">
                         Ir al Carrito →
@@ -715,12 +734,17 @@ function cambiarCantidad(cambio) {
     const producto = productos.find(p => p.id === productoId);
     if (!producto) return;
 
-    // Calcular stock disponible real (total - lo que ya está en el carrito en todas sus líneas)
+    // En modo turnos los servicios no manejan stock: no hay tope de cantidad.
+    // En venta, calcular stock disponible real (total - lo que ya está en el
+    // carrito en todas sus líneas).
+    const enTurnos = esModoTurnos();
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     const cantidadEnCarrito = cart
         .filter(item => item.id === producto.id)
         .reduce((sum, item) => sum + item.quantity, 0);
-    const stockDisponibleReal = producto.stock - cantidadEnCarrito;
+    const stockDisponibleReal = enTurnos
+        ? 999999
+        : producto.stock - cantidadEnCarrito;
 
     if (stockDisponibleReal <= 0) {
         cantidadSeleccionada = 0;
@@ -773,7 +797,7 @@ function agregarAlCarritoDetalle(id) {
         .filter(item => item.id === id)
         .reduce((sum, item) => sum + item.quantity, 0);
 
-    if (cantidadDeEsteProducto + cantidadSeleccionada > producto.stock) {
+    if (!esModoTurnos() && cantidadDeEsteProducto + cantidadSeleccionada > producto.stock) {
         mostrarNotificacion('No puedes agregar más de este producto (límite de stock)', 'error');
         return false;
     }

@@ -1,11 +1,14 @@
 // favoritos.js
 
-import { obtenerProductos, generarHTMLFavoritoItem, mostrarNotificacion, formatearPrecio } from './utils.js';
+import { obtenerProductos, generarHTMLFavoritoItem, mostrarNotificacion, formatearPrecio, cargarConfiguracionGlobal } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let allProducts = []; // Para almacenar todos los productos una vez cargados
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // La fila marca "Sin Stock" según el modo (venta/turnos): esperar la
+    // configuración para que el modo llegue antes de renderizar.
+    await cargarConfiguracionGlobal();
     // Cargar todos los productos disponibles
     allProducts = await obtenerProductos();
     // Renderizar la lista de favoritos
