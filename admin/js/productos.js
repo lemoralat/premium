@@ -318,7 +318,7 @@ function abrirModalProducto(idExistente) {
                     <input type="number" id="prdDuracion" min="0" step="5" value="${esc(producto?.servicio_duracion_min ?? 0)}">
                 </div>
                 <div class="admin-field full">
-                    <label>Horarios disponibles por día <span class="hint">(se muestran en la ficha del servicio y como guía en la solicitud de turno; el cliente igual puede elegir otra fecha/hora · máx. ${MAX_HORARIOS})</span></label>
+                    <label>Horarios disponibles por día <span class="hint">(se muestran en la ficha del servicio y limitan la fecha y hora de la solicitud de turno · máx. ${MAX_HORARIOS})</span></label>
                     <div class="admin-repeater" id="horariosRepeater"></div>
                     <button type="button" class="btn btn-sm btn-outline" id="btnAgregarHorario" style="align-self:flex-start; margin-top:0.5rem;">
                         <i class="fa-solid fa-plus"></i> Agregar horario

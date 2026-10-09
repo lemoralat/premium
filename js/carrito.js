@@ -350,14 +350,20 @@ function mostrarFormularioTurno() {
         turnoForm.classList.remove('hidden');
         checkoutBtn.style.display = 'none';
 
+        // Guía y restricción de fecha/hora con la agenda actual del carrito:
+        // se recalculan acá (al abrir) para reflejar cualquier cambio posterior
+        // del carrito, no solo los del primer render.
+        mostrarHorariosCarrito();
+        restringirFormularioTurno();
+
         // Scroll al formulario de solicitud
         turnoForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
 
-// Guía para quien pide el turno: los horarios disponibles (0053) de los
-// servicios que hay en el carrito, por servicio. El formulario sigue aceptando
-// cualquier fecha/hora: esto es solo informativo.
+// Guía para quien pide el turno: los días de la semana en que se atiende cada
+// servicio del carrito (0053). Es informativa: la restricción real de fecha y
+// hora la aplica restringirFormularioTurno() al abrir el formulario.
 function mostrarHorariosCarrito() {
     const contenedor = document.getElementById('turnoHorarios');
     if (!contenedor) return;
@@ -381,12 +387,196 @@ function mostrarHorariosCarrito() {
     }
 
     contenedor.innerHTML = `
-        <strong>Horarios disponibles de tus servicios:</strong>
+        <strong>Días disponibles de tus servicios (la solicitud de turno solo ofrece esos días y horarios):</strong>
         <ul>
             ${lineas.map((l) => `<li>${escaparHtml(l.nombre)}: ${escaparHtml(l.dias.join(', '))}</li>`).join('')}
         </ul>
     `;
     contenedor.hidden = false;
+}
+
+// ---------- Restricción de fecha y hora por la agenda de los servicios (0053) ----------
+// La solicitud de turno solo ofrece días y horarios que respetan la agenda de
+// TODOS los servicios del carrito que declaran horarios (intersección): el día
+// debe estar en las agendas en común y la hora de inicio en alguna franja
+// [desde, hasta), descontando la duración estimada (el turno debe terminar
+// antes del cierre). Un servicio sin horarios declarados no restringe.
+// Se reemplazan los inputs nativos por selects: value "YYYY-MM-DD" / "HH:MM",
+// el mismo contrato que ya lee formulario.js con FormData (fecha y hora).
+
+// Normaliza "Miércoles" → "miercoles" (minúsculas y sin acentos) para comparar
+// el día de la agenda (cadena del panel) con el de la fecha elegida.
+function normalizarDiaTurno(d) {
+    return String(d || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function diaSemanaFecha(fecha) {
+    return normalizarDiaTurno(fecha.toLocaleDateString('es-AR', { weekday: 'long' }));
+}
+
+function minutosAMedianoche(hhmm) {
+    const [h, m] = String(hhmm).split(':').map(Number);
+    return h * 60 + m;
+}
+
+function tiempoAMedianoche(hhmm, paso) {
+    const h = Math.floor(paso / 60);
+    const m = paso % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// Servicios del carrito que declaran agenda y los días de la semana en común
+// entre todos ellos.
+function agendaTurnoCarrito() {
+    const cart = obtenerCarrito();
+    const servicios = cart
+        .map((item) => productosGlobales.find((p) => p.id === item.id))
+        .filter(Boolean)
+        .filter((s) => Array.isArray(s.servicioHorarios) && s.servicioHorarios.length > 0);
+
+    if (servicios.length === 0) return { activo: false, dias: new Set(), servicios: [] };
+
+    let dias = null;
+    for (const s of servicios) {
+        const setDias = new Set(s.servicioHorarios.map((h) => normalizarDiaTurno(h.dia)).filter(Boolean));
+        dias = dias === null ? setDias : new Set([...dias].filter((d) => setDias.has(d)));
+    }
+
+    return { activo: true, dias: dias || new Set(), servicios };
+}
+
+// Horas de inicio posibles del servicio s para un día de la semana (normalizado):
+// cada franja [desde, hasta) se recorre de a 15 minutos desde su inicio y se
+// acota con la duración estimada (inicio + duración ≤ hasta).
+const PASO_TURNO_MIN = 15;
+
+function franjasPosiblesServicio(s, diaNorm) {
+    const dur = Math.max(0, Number(s.servicioDuracionMin) || 0);
+    const inicios = new Set();
+    for (const h of s.servicioHorarios) {
+        if (normalizarDiaTurno(h.dia) !== diaNorm) continue;
+        const desde = String(h.desde || '');
+        const hasta = String(h.hasta || '');
+        if (!/^\d{2}:\d{2}$/.test(desde) || !/^\d{2}:\d{2}$/.test(hasta)) continue;
+        const ultimo = dur > 0 ? tiempoAMedianoche(hasta, minutosAMedianoche(hasta) - dur) : hasta;
+        for (let t = desde; t <= ultimo; t = tiempoAMedianoche(t, minutosAMedianoche(t) + PASO_TURNO_MIN)) {
+            inicios.add(t);
+        }
+    }
+    return inicios;
+}
+
+// Reemplaza los inputs nativos del formulario de turno por selects limitados a
+// la agenda de los servicios del carrito. Idempotente: se llama cada vez que se
+// abre el formulario (mostrarFormularioTurno), así refleja el carrito actual.
+function restringirFormularioTurno() {
+    const campoFecha = document.getElementById('turnoFecha');
+    const campoHora = document.getElementById('turnoHora');
+    if (!campoFecha || !campoHora) return;
+
+    const agenda = agendaTurnoCarrito();
+    if (!agenda.activo) return; // sin agenda declarada: campos sin restricción
+
+    // Select de fecha: próximos 60 días que caen en un día de agenda común.
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const hoyISO = [hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate()]
+        .map((n) => String(n).padStart(2, '0'))
+        .join('-');
+
+    const fechas = [];
+    for (let i = 0; i < 60; i++) {
+        const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + i);
+        if (!agenda.dias.has(diaSemanaFecha(fecha))) continue;
+        fechas.push({
+            valor: [fecha.getFullYear(), fecha.getMonth() + 1, fecha.getDate()]
+                .map((n) => String(n).padStart(2, '0'))
+                .join('-'),
+            fecha
+        });
+    }
+
+    const selectFecha = document.createElement('select');
+    selectFecha.id = 'turnoFecha';
+    selectFecha.name = 'fecha';
+    selectFecha.required = true;
+    selectFecha.setAttribute('aria-label', 'Fecha preferida');
+
+    const opcionFecha = document.createElement('option');
+    opcionFecha.value = '';
+    opcionFecha.textContent = fechas.length
+        ? 'Elegí el día…'
+        : 'Sin días en común en los próximos 60 días';
+    selectFecha.appendChild(opcionFecha);
+    for (const f of fechas) {
+        const opt = document.createElement('option');
+        opt.value = f.valor;
+        opt.textContent = f.fecha.toLocaleDateString('es-AR', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+        selectFecha.appendChild(opt);
+    }
+
+    // Select de hora: franjas en común para el día elegido.
+    const selectHora = document.createElement('select');
+    selectHora.id = 'turnoHora';
+    selectHora.name = 'hora';
+    selectHora.disabled = true;
+    selectHora.setAttribute('aria-label', 'Hora preferida');
+
+    const opcionHora = document.createElement('option');
+    opcionHora.value = '';
+    selectHora.appendChild(opcionHora);
+    opcionHora.textContent = 'Elegí primero el día';
+
+    function poblarHoras() {
+        while (selectHora.options.length > 1) selectHora.remove(1);
+
+        const valorFecha = selectFecha.value;
+        if (!valorFecha) {
+            opcionHora.textContent = 'Elegí primero el día';
+            selectHora.disabled = true;
+            return;
+        }
+
+        const [y, m, d] = valorFecha.split('-').map(Number);
+        const diaNorm = diaSemanaFecha(new Date(y, m - 1, d));
+
+        let horas = null;
+        for (const s of agenda.servicios) {
+            const set = franjasPosiblesServicio(s, diaNorm);
+            horas = horas === null ? set : new Set([...horas].filter((t) => set.has(t)));
+        }
+
+        // Si el día elegido es hoy, se descartan las horas ya pasadas.
+        if (valorFecha === hoyISO && horas) {
+            const minutosAhora = new Date().getHours() * 60 + new Date().getMinutes();
+            horas = new Set([...horas].filter((t) => minutosAMedianoche(t) > minutosAhora));
+        }
+
+        if (!horas || horas.size === 0) {
+            opcionHora.textContent = 'No hay horarios en común para ese día';
+            selectHora.disabled = true;
+            return;
+        }
+
+        opcionHora.textContent = 'Elegí la hora (opcional)';
+        selectHora.disabled = false;
+        [...horas].sort().forEach((t) => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = `${t} hs`;
+            selectHora.appendChild(opt);
+        });
+    }
+
+    selectFecha.addEventListener('change', poblarHoras);
+    campoFecha.replaceWith(selectFecha);
+    campoHora.replaceWith(selectHora);
 }
 
 // Event listener para el botón de checkout
@@ -422,8 +612,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (enTurnos) checkoutBtn.textContent = 'Solicitar turno';
     }
 
-    // Modo turnos: guía de horarios de los servicios del carrito (0053).
-    if (enTurnos) mostrarHorariosCarrito();
+    // Modo turnos: la guía de horarios y la restricción de fecha/hora se
+    // aplican al abrir el formulario (mostrarFormularioTurno), con el carrito
+    // ya establecido.
 
     // Validar cupón al presionar Enter en el input
     const couponInput = document.getElementById('couponInput');
