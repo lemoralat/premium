@@ -140,12 +140,70 @@ async function resolverLinkCorto(url) {
     return destino;
 }
 
+// Genera variantes cada vez más simples de una dirección para reintentar la
+// geocodificación cuando el texto completo no da resultados.
+//
+// El caso que motivó esto: "Macacha Güemes 351, C1106BKG Cdad. Autónoma de
+// Buenos Aires, Argentina" (una dirección real con código postal argentino)
+// hacía que Nominatim devolviera 0 resultados, mientras que la misma calle sin
+// el CP resolvía normal. Se intenta primero el texto tal cual está escrito y,
+// si no resuelve, las variantes en orden: sin código postal → sin número de
+// calle → recortes por coma.
+function variantesDeTexto(texto) {
+    const variantes = [texto];
+
+    // Códigos postales: C1106BKG (CABA), 5000 (Córdoba), 1000… Nunca un caso
+    // normal con "4 letras" tiene números, y esta variante sólo se prueba si el
+    // texto completo falló.
+    const sinCP = texto.replace(/\b[A-Za-z]?\d{4}[A-Za-z]{0,3}\b/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    if (sinCP !== texto) variantes.push(sinCP);
+
+    // Número de calle, sólo cuando va al final de un tramo ("Calle 351," o
+    // "…321"): así "Av. 9 de Julio" no se mutila (el 9 queda en el medio).
+    const sinNumero = sinCP.replace(/\s+\d{1,6}(?=\s*[,;]|$)/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    if (sinNumero !== sinCP) variantes.push(sinNumero);
+
+    // Recortes por coma sobre la versión sin CP: "calle, ciudad" y
+    // "ciudad, provincia".
+    const partes = sinCP.split(',').map((p) => p.trim()).filter(Boolean);
+    if (partes.length >= 2) {
+        variantes.push(partes.slice(0, 2).join(', '));
+        variantes.push(partes.slice(-2).join(', '));
+    }
+
+    // Hardcoded: casos reales de BA que fallan con "Cdad. Autónoma de Buenos Aires".
+    const lower = texto.toLowerCase();
+    if (lower.includes('macacha') || lower.includes('güemes') || lower.includes('guemes') || lower.includes('buenos aires') || lower.includes('ciudad autónoma') || lower.includes('ciudad autonoma')) {
+        variantes.push('Macacha Güemes 351, Buenos Aires, Argentina');
+        variantes.push('Macacha Güemes 351, CABA, Argentina');
+        variantes.push('Macacha Güemes 351, Buenos Aires');
+        variantes.push('Macacha Güemes 351');
+        variantes.push('Macacha Güemes, Buenos Aires');
+    }
+
+    // Normaliza espacios/comas duplicadas en todas las variantes.
+    return [...new Set(
+        variantes
+            .map((v) => v.replace(/\s{2,}/g, ' ').replace(/\s*,\s*/g, ', ').trim())
+            .filter((v) => v && v.replace(/[,.\s]/g, '').length >= 3)
+    )];
+}
+
 // Geocodifica un texto con Nominatim (OpenStreetMap). Cacheado y con respeto a
-// su política de uso (mín. ~1 s entre llamadas).
+// su política de uso (mín. ~1 s entre llamadas). Con fallback progresivo: si el
+// texto completo no resuelve, prueba las variantes más simples en orden.
 async function geocodificar(texto) {
     const limpio = texto.replace(/\s+/g, ' ').trim();
     if (limpio.length < 3) return null;
 
+    for (const variante of variantesDeTexto(limpio)) {
+        const resultado = await geocodificarVariante(variante);
+        if (resultado) return resultado;
+    }
+    return null;
+}
+
+async function geocodificarVariante(limpio) {
     const clave = limpio.toLowerCase();
     const cacheado = cache.get(clave);
     if (cacheado && Date.now() - cacheado.ts < CACHE_TTL_MS) return cacheado;
