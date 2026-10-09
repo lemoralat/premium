@@ -384,15 +384,18 @@ function abrirModalProducto(idExistente) {
     });
     $('#btnGuardarNuevaCat').addEventListener('click', () => crearCategoriaInline($('#prdCategoria')));
 
-    $('#btnAgregarVariante').addEventListener('click', () => {
-        capturarVariantes();
-        if (variantesModal.length >= MAX_VARIANTES) {
-            toast(`Máximo ${MAX_VARIANTES} variantes por ${enServicios ? 'servicio' : 'producto'}.`, 'error');
-            return;
-        }
-        variantesModal.push({ opcion: '', valores: '' });
-        renderVariantes();
-    });
+    const btnAgregarVariante = $('#btnAgregarVariante');
+    if (btnAgregarVariante) {
+        btnAgregarVariante.addEventListener('click', () => {
+            capturarVariantes();
+            if (variantesModal.length >= MAX_VARIANTES) {
+                toast(`Máximo ${MAX_VARIANTES} variantes por ${enServicios ? 'servicio' : 'producto'}.`, 'error');
+                return;
+            }
+            variantesModal.push({ opcion: '', valores: '' });
+            renderVariantes();
+        });
+    }
 
     $('#btnAgregarCaracteristica').addEventListener('click', () => {
         capturarCaracteristicas();
