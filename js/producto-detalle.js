@@ -331,6 +331,7 @@ function renderizarDetalleProducto(producto) {
                 </div>
                 ` : ''}
                 
+                ${enTurnos ? '' : `
                 <div class="quantity-selector">
                     <label for="quantity">Cantidad:</label>
                     <div class="quantity-controls">
@@ -339,7 +340,8 @@ function renderizarDetalleProducto(producto) {
                         <button class="quantity-btn btn-border" onclick="cambiarCantidad(1)" aria-label="Aumentar cantidad">+</button>
                     </div>
                 </div>
-                
+                `}
+
                 <div class="product-actions-detail">
                     <button class="btn-add-cart btn-border" id="btnAddCart" onclick="agregarAlCarritoDetalle(${producto.id})" ${enTurnos ? '' : (producto.stock === 0 ? 'disabled' : '')}>
                         ${enTurnos ? 'Agregar al Carrito' : (producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito')}
@@ -773,6 +775,11 @@ function agregarAlCarritoDetalle(id) {
     const producto = productos.find(p => p.id === id);
     if (!producto) return false;
 
+    // Modo turnos: no se elige cantidad (el turno no se multiplica) y no hay
+    // tope de stock; cada agregado suma 1. En venta, la cantidad elegida.
+    const enTurnos = esModoTurnos();
+    const cantidad = enTurnos ? 1 : cantidadSeleccionada;
+
     // Validar que estén elegidas todas las variantes del producto
     let varianteTexto = '';
     if (tieneVariantes(producto)) {
@@ -797,20 +804,20 @@ function agregarAlCarritoDetalle(id) {
         .filter(item => item.id === id)
         .reduce((sum, item) => sum + item.quantity, 0);
 
-    if (!esModoTurnos() && cantidadDeEsteProducto + cantidadSeleccionada > producto.stock) {
+    if (!enTurnos && cantidadDeEsteProducto + cantidad > producto.stock) {
         mostrarNotificacion('No puedes agregar más de este producto (límite de stock)', 'error');
         return false;
     }
 
     if (existingItem) {
-        existingItem.quantity += cantidadSeleccionada;
+        existingItem.quantity += cantidad;
     } else {
         const nuevoItem = {
             id: producto.id,
             nombre: producto.nombre,
             precio: producto.precio,
             imagen: producto.imagen,
-            quantity: cantidadSeleccionada
+            quantity: cantidad
         };
         if (varianteTexto) nuevoItem.varianteTexto = varianteTexto;
         cart.push(nuevoItem);
@@ -818,7 +825,9 @@ function agregarAlCarritoDetalle(id) {
 
     localStorage.setItem('cart', JSON.stringify(cart));
     if (window.actualizarContadorCarrito) window.actualizarContadorCarrito();
-    mostrarNotificacion(`${cantidadSeleccionada} ${cantidadSeleccionada === 1 ? 'producto agregado' : 'productos agregados'} al carrito`);
+    mostrarNotificacion(enTurnos
+        ? 'Servicio agregado al carrito'
+        : `${cantidad} ${cantidad === 1 ? 'producto agregado' : 'productos agregados'} al carrito`);
     
     // Mostrar "Ir al Carrito" sin ocultar "Agregar al Carrito": el usuario puede
     // seguir agregando (otra variante o más cantidad) antes de ir al carrito

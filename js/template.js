@@ -467,8 +467,10 @@ function renderSidemenuCarrito() {
 
     const itemHTML = cart.map(item => {
         const ref = productosRef.find(p => p.id === item.id);
-        // En modo turnos los servicios no manejan stock: nunca se marcan agotados.
-        const sinStock = !esModoTurnos() && ref && ref.stock === 0;
+        // En modo turnos los servicios no manejan stock ni cantidad: nunca se
+        // marcan agotados y la cantidad queda fija en 1 (sin stepper).
+        const enTurnos = esModoTurnos();
+        const sinStock = !enTurnos && ref && ref.stock === 0;
         const clave = claveItemCarrito(item.id, item.varianteTexto);
         const claveEscapada = escaparHtml(clave);
 
@@ -483,11 +485,13 @@ function renderSidemenuCarrito() {
                 ${sinStock ? `<p class="stock-alert stock-alert-danger">⚠️ Se agotó</p>` : ''}
                 <p class="item-price">$${formatearPrecio(item.precio)}</p>
                 <div class="side-item-controls">
+                    ${enTurnos ? '' : `
                     <div class="quantity-controls">
                         <button type="button" class="qty-btn btn-border" onclick="sideCambiarCantidad(this.dataset.clave, -1)" data-clave="${claveEscapada}" aria-label="Disminuir cantidad" ${sinStock ? 'disabled' : ''}>-</button>
                         <span class="qty-display">${item.quantity}</span>
                         <button type="button" class="qty-btn btn-border" onclick="sideCambiarCantidad(this.dataset.clave, 1)" data-clave="${claveEscapada}" aria-label="Aumentar cantidad" ${sinStock ? 'disabled' : ''}>+</button>
                     </div>
+                    `}
                     <button type="button" class="side-remove-btn" onclick="sideEliminarItem(this.dataset.clave)" data-clave="${claveEscapada}" aria-label="Eliminar ${escaparHtml(item.nombre)}">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -524,6 +528,9 @@ function renderSidemenuCarrito() {
 }
 
 function sideCambiarCantidad(clave, cambio) {
+    // En modo turnos la cantidad está fija en 1 (los servicios no se repiten).
+    if (esModoTurnos()) return;
+
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto) === clave);
     if (!item) return;

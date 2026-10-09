@@ -37,8 +37,9 @@ function renderizarCarrito() {
     cartItemsContainer.innerHTML = cart.map(item => {
         const enTurnos = esModoTurnos();
         const productoRef = productosGlobales.find(p => p.id === item.id);
-        // En modo turnos los servicios no manejan stock: nunca se marcan como
-        // agotados ni de última unidad y no bloquean la cantidad.
+        // En modo turnos los servicios no manejan stock ni cantidad: nunca se
+        // marcan como agotados ni de última unidad y la cantidad queda fija en
+        // 1 (el turno no se multiplica), así que no hay stepper de cantidad.
         const sinStock = !enTurnos && productoRef && productoRef.stock === 0;
         const stockBajo = !enTurnos && productoRef && productoRef.stock > 0 && productoRef.stock < 5;
         const clave = claveItemCarrito(item.id, item.varianteTexto);
@@ -61,11 +62,13 @@ function renderizarCarrito() {
                 <p class="item-price">$${formatearPrecio(item.precio)}</p>
             </div>
             <div class="item-controls">
+                ${enTurnos ? '' : `
                 <div class="quantity-controls">
                     <button class="qty-btn btn-border" onclick="actualizarCantidad(this.dataset.clave, -1)" data-clave="${escaparHtml(clave)}" aria-label="Disminuir cantidad" ${sinStock ? 'disabled' : ''}>-</button>
                     <span class="qty-display">${item.quantity}</span>
                     <button class="qty-btn btn-border" onclick="actualizarCantidad(this.dataset.clave, 1)" data-clave="${escaparHtml(clave)}" aria-label="Aumentar cantidad" ${sinStock ? 'disabled' : ''}>+</button>
                 </div>
+                `}
                 <button class="remove-btn btn-border" onclick="eliminarDelCarrito(this.dataset.clave)" data-clave="${escaparHtml(clave)}" aria-label="Eliminar ${nombreSeguro}">
                     <i class="fa-solid fa-trash-can"></i> Eliminar
                 </button>
@@ -77,8 +80,11 @@ function renderizarCarrito() {
     actualizarTotales();
 }
 
-// Actualizar cantidad de un producto (por clave de línea)
+// Actualizar cantidad de un producto (por clave de línea). En modo turnos no
+// se puede cambiar: los servicios se piden de a 1 (no hay stock ni cantidad).
 function actualizarCantidad(clave, cambio) {
+    if (esModoTurnos()) return;
+
     let cart = obtenerCarrito();
     const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto) === clave);
 
