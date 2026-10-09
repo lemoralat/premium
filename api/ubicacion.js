@@ -171,14 +171,17 @@ function variantesDeTexto(texto) {
         variantes.push(partes.slice(-2).join(', '));
     }
 
-    // Hardcoded: casos reales de BA que fallan con "Cdad. Autónoma de Buenos Aires".
-    const lower = texto.toLowerCase();
-    if (lower.includes('macacha') || lower.includes('güemes') || lower.includes('guemes') || lower.includes('buenos aires') || lower.includes('ciudad autónoma') || lower.includes('ciudad autonoma')) {
-        variantes.push('Macacha Güemes 351, Buenos Aires, Argentina');
-        variantes.push('Macacha Güemes 351, CABA, Argentina');
-        variantes.push('Macacha Güemes 351, Buenos Aires');
-        variantes.push('Macacha Güemes 351');
-        variantes.push('Macacha Güemes, Buenos Aires');
+    // Sin hardcodeos por dirección: generar variantes genéricas útiles.
+    // Quitar iniciales/términos ambiguos solo cuando aparecen como token suelto.
+    const palabrasAmbiguas = ['cdad.', 'ciudad', 'autónoma', 'autonoma', 'de', 'la', 'provincia', 'prov.', 'república', 'republica', 'argentina', 'ar'];
+    // Mejor: probar sin el último tramo si hay 3+ tramos separados por coma
+    const partesNorm = sinCP.split(',').map((p) => p.trim()).filter(Boolean);
+    if (partesNorm.length >= 3) {
+        variantes.push(partesNorm.slice(0, 2).join(', '));
+    }
+    if (partesNorm.length >= 2) {
+        // también probar el primero + último? no siempre ayuda; probar primero solo
+        variantes.push(partesNorm[0]);
     }
 
     // Normaliza espacios/comas duplicadas en todas las variantes.
