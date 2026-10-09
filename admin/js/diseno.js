@@ -18,6 +18,7 @@ import { clienteAdmin } from './admin-supabase.js';
 import { renderizarGestor as renderizarGestorMarquee } from './marquee.js';
 
 const COLOR_DEFECTO = '#000000';
+let esTurnos = false; // modo de la tienda: ajusta "productos" → "servicios"
 
 const RECURSOS_IMAGEN = [
     {
@@ -68,6 +69,7 @@ export async function renderizar(contenedor) {
     const { data, error } = await sb.from('settings').select('*').eq('id', 1).single();
     if (error) throw error;
     const s = data;
+    esTurnos = s.modo_web === 'turnos';
 
     const color = /^#[0-9a-fA-F]{6}$/.test(s.color_principal || '') ? s.color_principal : COLOR_DEFECTO;
     const marqueeColor = /^#[0-9a-fA-F]{6}$/.test(s.marquee_color_fondo || '') ? s.marquee_color_fondo : COLOR_DEFECTO;
@@ -336,7 +338,7 @@ function campoFormatoCard(actual) {
         <div class="admin-field full">
             <label>Formato de las imágenes de los cards</label>
             <div class="diseno-formatos">${opciones}</div>
-            <span class="hint">Se aplica a los cards del catálogo, búsqueda y productos relacionados.</span>
+            <span class="hint">Se aplica a los cards del catálogo, búsqueda y ${esTurnos ? 'servicios relacionados' : 'productos relacionados'}.</span>
         </div>`;
 }
 

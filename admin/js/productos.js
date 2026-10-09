@@ -387,7 +387,7 @@ function abrirModalProducto(idExistente) {
     $('#btnAgregarVariante').addEventListener('click', () => {
         capturarVariantes();
         if (variantesModal.length >= MAX_VARIANTES) {
-            toast(`Máximo ${MAX_VARIANTES} variantes por producto.`, 'error');
+            toast(`Máximo ${MAX_VARIANTES} variantes por ${enServicios ? 'servicio' : 'producto'}.`, 'error');
             return;
         }
         variantesModal.push({ opcion: '', valores: '' });
@@ -397,7 +397,7 @@ function abrirModalProducto(idExistente) {
     $('#btnAgregarCaracteristica').addEventListener('click', () => {
         capturarCaracteristicas();
         if (caracteristicasModal.length >= MAX_CARACTERISTICAS) {
-            toast(`Máximo ${MAX_CARACTERISTICAS} características por producto.`, 'error');
+            toast(`Máximo ${MAX_CARACTERISTICAS} características por ${enServicios ? 'servicio' : 'producto'}.`, 'error');
             return;
         }
         caracteristicasModal.push('');

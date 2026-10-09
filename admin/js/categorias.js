@@ -1,13 +1,15 @@
 // categorias.js — CRUD de categorías.
 
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, estadoVacio } from './admin-ui.js';
-import { clienteAdmin } from './admin-supabase.js';
+import { clienteAdmin, leerModoWeb } from './admin-supabase.js';
 
 let categorias = [];
+let esTurnos = false; // modo de la tienda: ajusta "productos" → "servicios"
 
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
+    esTurnos = (await leerModoWeb()) === 'turnos';
 
     const { data, error } = await sb.from('categories').select('*').order('position', { ascending: true });
     if (error) throw error;
@@ -64,7 +66,7 @@ function abrirModalCategoria(idExistente) {
 
     abrirModal(`
         <h2>${categoria ? 'Editar categoría' : 'Nueva categoría'}</h2>
-        <p class="modal-sub">${categoria ? esc(categoria.name) : 'Creá una categoría para agrupar productos'}</p>
+        <p class="modal-sub">${categoria ? esc(categoria.name) : `Creá una categoría para agrupar ${esTurnos ? 'servicios' : 'productos'}`}</p>
         <form class="admin-form" id="categoriaForm">
             <input type="hidden" id="catId" value="${categoria ? categoria.id : ''}">
             <div class="admin-form-grid">
@@ -131,7 +133,7 @@ async function guardarCategoria(payload, id) {
 }
 
 async function borrarCategoria(id, contenedor) {
-    if (!(await confirmarBorrado('¿Eliminar esta categoría? Los productos quedan sin categoría, no se borran.'))) return;
+    if (!(await confirmarBorrado(`¿Eliminar esta categoría? Los ${esTurnos ? 'servicios' : 'productos'} quedan sin categoría, no se borran.`))) return;
 
     const sb = await clienteAdmin();
     const { error } = await sb.from('categories').delete().eq('id', id);

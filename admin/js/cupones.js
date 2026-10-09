@@ -11,6 +11,7 @@ const MAX_CUPONES = 10;
 
 let cupones = [];
 export let cuponesCargados = false;
+let esTurnos = false; // modo de la tienda: ajusta "productos" → "servicios"
 
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
@@ -25,6 +26,7 @@ export async function renderizar(contenedor) {
     cupones = rCupones.data || [];
     cuponesCargados = true;
     const s = rSettings.data;
+    esTurnos = s.modo_web === 'turnos';
     // Compra mínima DUAL: cantidad de productos y monto, ambas acumulables
     // (0 = regla inactiva).
     const minCantidad = Math.max(0, Math.floor(Number(s.compra_minima_cantidad) || 0));
@@ -59,11 +61,11 @@ export async function renderizar(contenedor) {
         </div>
         <div class="admin-card">
             <h2>Compra mínima</h2>
-            <p class="card-sub">La tienda exige un mínimo antes de finalizar. Podés combinar cantidad de productos y monto: cada regla se activa con un valor mayor a 0 y se aplican JUNTAS. El servidor las vuelve a validar al registrar el pedido.</p>
+            <p class="card-sub">La tienda exige un mínimo antes de finalizar. Podés combinar cantidad de ${esTurnos ? 'servicios' : 'productos'} y monto: cada regla se activa con un valor mayor a 0 y se aplican JUNTAS. El servidor las vuelve a validar al registrar el pedido.</p>
             <form class="admin-form" id="formCompraMinima">
                 <div class="admin-form-grid">
                     <div class="admin-field">
-                        <label for="cmpCantidad">Cantidad mínima de productos</label>
+                        <label for="cmpCantidad">Cantidad mínima de ${esTurnos ? 'servicios' : 'productos'}</label>
                         <input type="number" id="cmpCantidad" min="0" step="1" value="${esc(minCantidad)}">
                         <span class="hint">0 = sin mínimo de unidades.</span>
                     </div>
@@ -260,13 +262,19 @@ async function guardarDescuentos(payload) {
     if (error) throw new Error(error.message);
 }
 
+// "producto" / "servicio" según el modo de la tienda.
+function resumenSingular(cantidad) {
+    if (esTurnos) return cantidad === 1 ? 'servicio' : 'servicios';
+    return cantidad === 1 ? 'producto' : 'productos';
+}
+
 // Texto de estado de la compra mínima (ambas reglas acumulables).
 function resumenMin(cantidad, monto) {
     if (!cantidad && !monto) {
         return 'Desactivada: el cliente puede comprar cualquier cantidad y monto.';
     }
     const partes = [];
-    if (cantidad) partes.push(`${cantidad} ${cantidad === 1 ? 'producto' : 'productos'}`);
+    if (cantidad) partes.push(`${cantidad} ${resumenSingular(cantidad)}`);
     if (monto) partes.push(`$${monto.toLocaleString('es-AR')}`);
     return 'La tienda exige: ' + partes.join(' y ') + '.';
 }

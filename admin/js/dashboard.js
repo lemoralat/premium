@@ -3,7 +3,7 @@
 // (últimas órdenes, stock bajo, últimas reseñas).
 
 import { $, esc, formatearPrecio, formatearFechaHora, estadoCargando } from './admin-ui.js';
-import { clienteAdmin } from './admin-supabase.js';
+import { clienteAdmin, leerModoWeb } from './admin-supabase.js';
 
 const DIA_MS = 86400000;
 const HORA_MS = 3600000;
@@ -32,22 +32,6 @@ const COLOR_ESTADO = Object.freeze({
 // Instancias Chart.js vivas: se destruyen en cada render para no filtrar
 // memoria ni duplicar canvas al navegar entre secciones.
 let charts = []; // { chart, tipo }
-
-// Modo de la tienda (settings.modo_web, migración 0051), cacheado en memoria.
-// Solo afecta la alerta de pedidos colgados: en modo turnos el checkout es el
-// formulario de turno y no entran pedidos nuevos, así que esa alerta no aplica.
-let modoWebPanel = null; // null = sin leer | 'venta' | 'turnos'
-async function leerModoDash() {
-    if (modoWebPanel !== null) return modoWebPanel;
-    try {
-        const sb = await clienteAdmin();
-        const { data } = await sb.from('settings').select('modo_web').eq('id', 1).single();
-        modoWebPanel = data?.modo_web === 'turnos' ? 'turnos' : 'venta';
-    } catch {
-        modoWebPanel = 'venta';
-    }
-    return modoWebPanel;
-}
 
 function destruirCharts() {
     charts.forEach((c) => { try { c.chart.destroy(); } catch { /* noop */ } });
@@ -298,11 +282,12 @@ export async function renderizar(contenedor) {
     const bajoStock = stockBajo.error ? [] : (stockBajo.data || []);
 
     // ---- Alertas accionables ----
-    // En modo turnos no llegan pedidos nuevos: la alerta de pedidos colgados
-    // hace más de 48 h solo aplica al modo venta.
-    const enTurnos = (await leerModoDash()) === 'turnos';
+    // En modo turnos no llegan pedidos nuevos y los servicios no manejan stock:
+    // la alerta de pedidos colgados (48 h) y la de productos sin stock solo
+    // aplican al modo venta.
+    const enTurnos = (await leerModoWeb()) === 'turnos';
     const alertas = [];
-    if (agotadosN > 0) {
+    if (!enTurnos && agotadosN > 0) {
         alertas.push({ clase: 'peligro', icono: 'fa-box-open', texto: `${agotadosN} producto${agotadosN === 1 ? '' : 's'} sin stock.`, enlace: '#/productos', enlaceTexto: 'Ir a productos' });
     }
     if (!enTurnos && pedidosColgados > 0) {
@@ -330,7 +315,7 @@ export async function renderizar(contenedor) {
             ${kpi('fa-sack-dollar', `$${formatearPrecio(ingresos30)}`, 'Ingresos últimos 30 días', deltaIngresos)}
             ${kpi('fa-cart-shopping', pedidos30, 'Pedidos últimos 30 días', deltaPedidos)}
             ${kpi('fa-receipt', pedidos30 ? `$${formatearPrecio(ticketPromedio)}` : '—', 'Ticket promedio', deltaTicket)}
-            ${kpi('fa-box', activos, `Productos activos (${totales} totales)`)}
+            ${kpi('fa-box', activos, `${enTurnos ? 'Servicios' : 'Productos'} activos (${totales} totales)`)}
             ${kpi('fa-clock', pendientes, 'Pedidos pendientes', null, 'warning')}
             ${kpi('fa-star', reseñasActivas.length ? `★ ${valoracionPromedio.toFixed(1)}` : '—', `Valoración (${reseñasActivas.length} reseñas)`, null, 'success')}
         </div>
@@ -356,12 +341,12 @@ export async function renderizar(contenedor) {
                         : sinChart)}
             </div>
             <div class="admin-card">
-                <h2>Top productos vendidos</h2>
+                <h2>Top ${enTurnos ? 'servicios' : 'productos'} vendidos</h2>
                 <p class="card-sub">Por cantidad, últimos 30 días</p>
                 ${!topProductos.length
                     ? '<div class="admin-empty"><p>Sin ventas todavía.</p></div>'
                     : (hayChart
-                        ? `<div class="admin-chart" role="img" aria-label="Gráfico de barras: productos más vendidos"><canvas id="chart-productos"></canvas></div>`
+                        ? `<div class="admin-chart" role="img" aria-label="Gráfico de barras: ${enTurnos ? 'servicios' : 'productos'} más vendidos"><canvas id="chart-productos"></canvas></div>`
                         : sinChart)}
             </div>
         </div>
@@ -390,11 +375,12 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="dashboard-dos-col">
+            ${enTurnos ? '' : `
             <div class="admin-card">
                 <h2>Stock bajo</h2>
                 <p class="card-sub">Productos con menos de 5 unidades disponibles</p>
                 ${listaStockBajo(bajoStock)}
-            </div>
+            </div>`}
             <div class="admin-card">
                 <h2>Últimas reseñas</h2>
                 <p class="card-sub">Testimonios recibidos</p>

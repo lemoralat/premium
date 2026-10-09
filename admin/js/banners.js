@@ -1,9 +1,10 @@
 // banners.js — CRUD de banners promocionales (inicio y carrito).
 
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
-import { clienteAdmin } from './admin-supabase.js';
+import { clienteAdmin, leerModoWeb } from './admin-supabase.js';
 
 let banners = [];
+let esTurnos = false; // modo de la tienda: ajusta "productos" → "servicios"
 
 // Tope de banners POR DESTINO, no un total plano. La garantía real está en la
 // BD (trigger trg_banners_max, migración 0038): esto es la parte amable, que
@@ -23,6 +24,7 @@ const MAX_BANNERS_CARRITO = 1;
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
     const sb = await clienteAdmin();
+    esTurnos = (await leerModoWeb()) === 'turnos';
 
     const { data, error } = await sb.from('banners').select('*').order('position', { ascending: true });
     if (error) throw error;
@@ -192,11 +194,11 @@ function abrirModalBanner(idExistente) {
                 </div>
                 <div class="admin-field">
                     <label for="bnrTitulo">Título</label>
-                    <input type="text" id="bnrTitulo" value="${esc(banner?.titulo || '')}" placeholder="ej: Producto destacado">
+                    <input type="text" id="bnrTitulo" value="${esc(banner?.titulo || '')}" placeholder="ej: ${esTurnos ? 'Servicio destacado' : 'Producto destacado'}">
                 </div>
                 <div class="admin-field">
                     <label for="bnrBoton">Texto del botón</label>
-                    <input type="text" id="bnrBoton" value="${esc(banner?.boton || '')}" placeholder="ej: Ver producto">
+                    <input type="text" id="bnrBoton" value="${esc(banner?.boton || '')}" placeholder="ej: Ver ${esTurnos ? 'servicio' : 'producto'}">
                 </div>
                 <div class="admin-field">
                     <label for="bnrLink">Enlace del botón</label>

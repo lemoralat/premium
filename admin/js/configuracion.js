@@ -23,6 +23,8 @@ export async function renderizar(contenedor) {
     const { data, error } = await sb.from('settings').select('*').eq('id', 1).single();
     if (error) throw error;
     const s = data;
+    // Modo de la tienda: ajusta las etiquetas del panel (Productos → Servicios).
+    const esTurnos = s.modo_web === 'turnos';
 
     contenedor.innerHTML = `
         <div class="admin-card">
@@ -46,7 +48,7 @@ export async function renderizar(contenedor) {
                     </div>
                     <div class="admin-field full">
                         <label for="cfgSiteDescription">Descripción del negocio</label>
-                        <textarea id="cfgSiteDescription" rows="3" maxlength="160" placeholder="Ej: Venta de productos por encargo, con envíos a todo el país.">${esc(s.site_description ?? '')}</textarea>
+                        <textarea id="cfgSiteDescription" rows="3" maxlength="160" placeholder="${esTurnos ? 'Ej: Reservá tu turno y te confirmamos al instante.' : 'Ej: Venta de productos por encargo, con envíos a todo el país.'}">${esc(s.site_description ?? '')}</textarea>
                         <span class="hint">Es el meta description del sitio: el texto que muestran Google y los previews al compartir un link. Google corta alrededor de los 160 caracteres, así que conviene que la idea entre ahí. Vacío = se conserva el texto genérico.</span>
                     </div>
                 </div>
@@ -187,7 +189,7 @@ export async function renderizar(contenedor) {
                     </div>
                     <div class="admin-field">
                         <label for="cfgPopupCta">Texto del botón</label>
-                        <input type="text" id="cfgPopupCta" value="${esc(s.popup_cta && s.popup_cta !== DEFAULT_POPUP.cta ? s.popup_cta : '')}" placeholder="${esc(DEFAULT_POPUP.cta)}">
+                        <input type="text" id="cfgPopupCta" value="${esc(s.popup_cta && s.popup_cta !== DEFAULT_POPUP.cta ? s.popup_cta : '')}" placeholder="${esc(esTurnos ? 'Ver servicios' : DEFAULT_POPUP.cta)}">
                     </div>
                     <div class="admin-field full">
                         <label for="cfgPopupDescripcion">Descripción</label>
@@ -223,7 +225,7 @@ export async function renderizar(contenedor) {
             <div class="admin-form-grid">
                 <div class="admin-field">
                     <button type="button" class="btn btn-outline" id="btnExportarProductos">
-                        <i class="fa-solid fa-box"></i> Exportar productos (.csv)
+                        <i class="fa-solid fa-box"></i> Exportar ${esTurnos ? 'servicios' : 'productos'} (.csv)
                     </button>
                     <span class="hint">Catálogo: precios, stock, categoría, destacado y estado.</span>
                 </div>
@@ -319,7 +321,7 @@ export async function renderizar(contenedor) {
     const camposPopup = () => ({
         popup_titulo: $('#cfgPopupTitulo').value.trim() || DEFAULT_POPUP.titulo,
         popup_descripcion: $('#cfgPopupDescripcion').value.trim() || DEFAULT_POPUP.descripcion,
-        popup_cta: $('#cfgPopupCta').value.trim() || DEFAULT_POPUP.cta,
+        popup_cta: $('#cfgPopupCta').value.trim() || (esTurnos ? 'Ver servicios' : DEFAULT_POPUP.cta),
         popup_cta_url: $('#cfgPopupCtaUrl').value.trim() || DEFAULT_POPUP.ctaUrl,
         popup_activo: $('#cfgPopupActivo').checked
     });
@@ -384,8 +386,8 @@ export async function renderizar(contenedor) {
     exportar(
         $('#btnExportarProductos'),
         exportarProductosCSV,
-        'No hay productos para exportar.',
-        (n) => `Productos exportados: ${n} filas.`
+        `No hay ${esTurnos ? 'servicios' : 'productos'} para exportar.`,
+        (n) => `${esTurnos ? 'Servicios' : 'Productos'} exportados: ${n} filas.`
     );
     exportar(
         $('#btnExportarPedidos'),

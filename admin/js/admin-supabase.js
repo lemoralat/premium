@@ -89,3 +89,21 @@ export function clienteAdmin() {
     }
     return promesa;
 }
+
+let modoWebCache = null; // null = sin leer | 'venta' | 'turnos'
+
+// Modo de la tienda (settings.modo_web, migración 0051), cacheado en memoria
+// por sesión del panel. Lo usan las vistas que ajustan el texto al modo
+// (Productos → Servicios). Atajo: si la vista ya leyó la fila settings
+// completa, conviene usar ese valor en lugar de esta consulta.
+export async function leerModoWeb() {
+    if (modoWebCache !== null) return modoWebCache;
+    try {
+        const sb = await clienteAdmin();
+        const { data } = await sb.from('settings').select('modo_web').eq('id', 1).single();
+        modoWebCache = data?.modo_web === 'turnos' ? 'turnos' : 'venta';
+    } catch {
+        modoWebCache = 'venta';
+    }
+    return modoWebCache;
+}
