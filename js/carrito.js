@@ -435,6 +435,12 @@ function minutosAMedianoche(hhmm) {
     return h * 60 + m;
 }
 
+function minutosAMedianocheAString(min) {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 function tiempoAMedianoche(hhmm, paso) {
     const h = Math.floor(paso / 60);
     const m = paso % 60;
@@ -474,9 +480,15 @@ function franjasPosiblesServicio(s, diaNorm) {
         const desde = String(h.desde || '');
         const hasta = String(h.hasta || '');
         if (!/^\d{2}:\d{2}$/.test(desde) || !/^\d{2}:\d{2}$/.test(hasta)) continue;
-        const ultimo = dur > 0 ? tiempoAMedianoche(hasta, minutosAMedianoche(hasta) - dur) : hasta;
-        for (let t = desde; t <= ultimo; t = tiempoAMedianoche(t, minutosAMedianoche(t) + PASO_TURNO_MIN)) {
-            inicios.add(t);
+        const desdeMin = minutosAMedianoche(desde);
+        const hastaMin = minutosAMedianoche(hasta);
+        if (hastaMin <= desdeMin) continue;
+        const paso = dur > 0 ? dur : PASO_TURNO_MIN;
+        if (paso <= 0) continue;
+        const ultimoMin = dur > 0 ? (hastaMin - dur) : hastaMin;
+        if (ultimoMin < desdeMin) continue;
+        for (let tMin = desdeMin; tMin <= ultimoMin; tMin += paso) {
+            inicios.add(minutosAMedianocheAString(tMin));
         }
     }
     return inicios;
