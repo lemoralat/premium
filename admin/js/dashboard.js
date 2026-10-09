@@ -33,6 +33,22 @@ const COLOR_ESTADO = Object.freeze({
 // memoria ni duplicar canvas al navegar entre secciones.
 let charts = []; // { chart, tipo }
 
+// Modo de la tienda (settings.modo_web, migración 0051), cacheado en memoria.
+// Solo afecta la alerta de pedidos colgados: en modo turnos el checkout es el
+// formulario de turno y no entran pedidos nuevos, así que esa alerta no aplica.
+let modoWebPanel = null; // null = sin leer | 'venta' | 'turnos'
+async function leerModoDash() {
+    if (modoWebPanel !== null) return modoWebPanel;
+    try {
+        const sb = await clienteAdmin();
+        const { data } = await sb.from('settings').select('modo_web').eq('id', 1).single();
+        modoWebPanel = data?.modo_web === 'turnos' ? 'turnos' : 'venta';
+    } catch {
+        modoWebPanel = 'venta';
+    }
+    return modoWebPanel;
+}
+
 function destruirCharts() {
     charts.forEach((c) => { try { c.chart.destroy(); } catch { /* noop */ } });
     charts = [];
@@ -282,11 +298,14 @@ export async function renderizar(contenedor) {
     const bajoStock = stockBajo.error ? [] : (stockBajo.data || []);
 
     // ---- Alertas accionables ----
+    // En modo turnos no llegan pedidos nuevos: la alerta de pedidos colgados
+    // hace más de 48 h solo aplica al modo venta.
+    const enTurnos = (await leerModoDash()) === 'turnos';
     const alertas = [];
     if (agotadosN > 0) {
         alertas.push({ clase: 'peligro', icono: 'fa-box-open', texto: `${agotadosN} producto${agotadosN === 1 ? '' : 's'} sin stock.`, enlace: '#/productos', enlaceTexto: 'Ir a productos' });
     }
-    if (pedidosColgados > 0) {
+    if (!enTurnos && pedidosColgados > 0) {
         alertas.push({ clase: 'advertencia', icono: 'fa-clock', texto: `${pedidosColgados} pedido${pedidosColgados === 1 ? '' : 's'} pendiente${pedidosColgados === 1 ? '' : 's'} hace más de 48 h.`, enlace: '#/pedidos', enlaceTexto: 'Ir a pedidos' });
     }
 

@@ -339,11 +339,30 @@ export async function renderizar(contenedor) {
     };
 
     vincular('#configFormGeneral', () => sinColumnasAusentes(camposGenerales()));
-    vincular('#configFormTipoWeb', () => sinColumnasAusentes(camposTipoWeb()));
     vincular('#configFormRedes', camposRedes);
     vincular('#configFormWhatsapp', camposWhatsapp);
     vincular('#configFormTransferencia', () => sinColumnasAusentes(camposTransferencia()));
     vincular('#configFormPopup', camposPopup);
+
+    // Tipo de web: el panel depende del modo (menú Productos/Servicios y las
+    // secciones Pedidos/Turnos visibles según el caso), así que si cambia se
+    // recarga para reflejarlo en el acto. Sin cambio de modo, se guarda normal.
+    const modoActual = s.modo_web === 'turnos' ? 'turnos' : 'venta';
+    $('#configFormTipoWeb').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitBtn = event.submitter || $('#configFormTipoWeb').querySelector('[type="submit"]');
+        const payload = sinColumnasAusentes(camposTipoWeb());
+        const nuevoModo = payload.modo_web === 'turnos' ? 'turnos' : 'venta';
+        conCarga(submitBtn, guardarConfig(payload))
+            .then(() => {
+                toast('Configuración guardada.');
+                if (nuevoModo !== modoActual) {
+                    // Espera a que se vea el toast antes de recargar el panel.
+                    setTimeout(() => window.location.reload(), 700);
+                }
+            })
+            .catch((error) => toast(error.message, 'error'));
+    });
 
     // Exportar datos (CSV): productos y pedidos, cada uno con su archivo.
     // Las exportaciones se lanzan SOLO con el click del botón: se pasa la

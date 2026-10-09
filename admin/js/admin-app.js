@@ -49,6 +49,25 @@ async function navegar() {
     const hash = (window.location.hash || '#/dashboard').replace(/^#\//, '').split('?')[0];
     const nombre = secciones[hash] ? hash : 'dashboard';
 
+    // Secciones que dependen del modo de la tienda (settings.modo_web): en modo
+    // turnos no entran pedidos (el checkout es el formulario de turno) y en modo
+    // venta no llegan turnos. Un enlace o bookmark directo a esas rutas se
+    // redirige al dashboard con aviso; el menú ya las oculta (leerModoWebPanel).
+    if (nombre === 'pedidos' || nombre === 'turnos') {
+        if (modoWebPanel === null) await leerModoWebPanel();
+        const bloqueada =
+            (nombre === 'pedidos' && modoWebPanel === 'turnos') ||
+            (nombre === 'turnos' && modoWebPanel === 'venta');
+        if (bloqueada) {
+            toast(modoWebPanel === 'turnos'
+                ? 'La tienda está en modo turnos: los pedidos no se utilizan en este modo.'
+                : 'La tienda está en modo venta: los turnos no se utilizan en este modo.');
+            window.location.hash = '#/dashboard';
+            navegando = false;
+            return;
+        }
+    }
+
     // Cambios sin guardar: si hay cambios en la sección actual y se intenta ir
     // a otra, se pregunta antes de avanzar (Guardar / Descartar / Cancelar).
     if (nombre !== seccionActual && hayCambios()) {
@@ -197,6 +216,18 @@ async function leerModoWebPanel() {
                     .filter((n) => n.nodeType === Node.TEXT_NODE)
                     .forEach((n) => { n.nodeValue = mw === 'turnos' ? ' Servicios' : ' Productos'; });
             }
+
+            // El panel espeja el modo de la tienda: en modo turnos el checkout
+            // es el formulario de turno (no entran pedidos nuevos) y en modo
+            // venta no llegan turnos. Se oculta la sección que no corresponde;
+            // los datos históricos se conservan en la base y la sección
+            // reaparece al volver al otro modo.
+            const mostrarSeccion = (seccion, visible) => {
+                const link = document.querySelector(`#adminNav a[data-seccion="${seccion}"]`);
+                if (link) link.style.display = visible ? '' : 'none';
+            };
+            mostrarSeccion('pedidos', mw === 'venta');
+            mostrarSeccion('turnos', mw === 'turnos');
         }
     } catch {
         if (modoWebPanel === null) modoWebPanel = 'venta';
