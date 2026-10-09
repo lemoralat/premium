@@ -43,8 +43,8 @@ export async function renderizar(contenedor) {
                     </div>
                     <div class="admin-field full">
                         <label for="cfgAddress">Ubicación del negocio</label>
-                        <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="Dirección como texto o URL de Google Maps">
-                        <span class="hint">¿Tu negocio tiene una ubicación física? Indicá la dirección o agregá la URL de Google Maps.</span>
+                        <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="Pegá el enlace de Google Maps (o Apple Maps) de tu negocio">
+                        <span class="hint">Solo se acepta una URL de mapa (Google Maps, Apple Maps o un enlace válido para incrustar). Con eso se mostrará el mapa en la página de contacto.</span>
                     </div>
                     <div class="admin-field full">
                         <label for="cfgSiteDescription">Descripción del negocio</label>

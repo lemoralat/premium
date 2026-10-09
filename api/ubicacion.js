@@ -4,16 +4,12 @@
 // coordenadas, para que contacto.html la muestre en un mapa de OpenStreetMap.
 //
 // Acepta en el campo `valor`:
-//   - una dirección como texto          → se geocodifica con Nominatim,
 //   - un link corto maps.app.goo.gl/…   → se siguen las redirecciones server-side
-//                                          y se extraen las coordenadas,
-//   - una URL de mapas larga (place/search, embeds pb=, ?q=lat,lng, …) → se
-//     extraen las coordenadas/el nombre del lugar del texto de la URL.
+//   - una URL de mapas (Google Maps, Apple Maps) larga → se extraen coordenadas
 //
-// MOTIVO: el embed keyless de Google (maps?q=…&output=embed) fue desactivado
-// por Google y muestra "Este contenido está bloqueado"; los links cortos no
-// son embebibles desde el navegador (CORS en la redirección). OpenStreetMap
-// se incrusta sin API key y sin restricciones de referrer.
+// MOTIVO: simplificar el uso. La página de contacto usa OpenStreetMap embebido,
+// y extraemos las coordenadas desde la URL provista. Si no contiene
+// coordenadas, no seguimos intentando geocodificar texto.
 //
 // Respuestas:
 //   200 { status:'success', lat, lng, nombre, fuente }
@@ -250,51 +246,36 @@ async function geocodificarVariante(limpio) {
     return entrada;
 }
 
-// Resuelve el valor (texto o URL) a coordenadas + nombre legible.
+// Resuelve el valor (URL de mapa) a coordenadas + nombre legible.
+// Si no es una URL de mapa o no se pueden extraer coordenadas, devuelve null.
 async function resolver(valor) {
-    const clave = valor.toLowerCase().replace(/\s+/g, ' ').trim();
+    const limpio = valor.trim();
+    const clave = limpio.toLowerCase();
     const cacheado = cache.get(clave);
     if (cacheado && Date.now() - cacheado.ts < CACHE_TTL_MS) return cacheado;
 
-    let resultado = null;
-
-    if (/^https?:\/\//i.test(valor)) {
-        let url = valor;
-        if (/maps\.app\.goo\.gl/i.test(url)) {
-            url = await resolverLinkCorto(url);
-        }
-        const extraido = extraerDeUrl(url) || extraerDeUrl(valor);
-
-        if (extraido) {
-            if (coordenadasValidas(extraido.lat, extraido.lng)) {
-                resultado = { lat: extraido.lat, lng: extraido.lng, nombre: extraido.nombre || '', fuente: 'url' };
-            } else if (extraido.nombre) {
-                // URL con nombre de lugar pero sin coordenadas → geocodificar el nombre.
-                const geo = await geocodificar(extraido.nombre);
-                if (geo) resultado = { lat: geo.lat, lng: geo.lng, nombre: extraido.nombre, fuente: 'url' };
-            }
-        }
-
-        // URL sin coordenadas ni nombre parsable: intentar con el ?q= si existe.
-        if (!resultado) {
-            const q = valor.match(/[?&]q=([^&]+)/);
-            if (q) {
-                const geo = await geocodificar(decod(q[1]));
-                if (geo) resultado = { lat: geo.lat, lng: geo.lng, nombre: geo.nombre, fuente: 'url' };
-            }
-        }
+    if (!/^https?:\/\//i.test(limpio)) {
+        return null;
     }
 
-    // Texto plano (o URL que no se pudo parsear) → geocodificación directa.
-    if (!resultado) {
-        const geo = await geocodificar(valor);
-        if (geo) resultado = { lat: geo.lat, lng: geo.lng, nombre: geo.nombre, fuente: 'texto' };
+    let url = limpio;
+    if (/maps\.app\.goo\.gl/i.test(url)) {
+        url = await resolverLinkCorto(url);
     }
 
-    if (resultado) {
-        resultado.ts = Date.now();
-        cache.set(clave, resultado);
+    const extraido = extraerDeUrl(url) || extraerDeUrl(limpio);
+    if (!extraido || !coordenadasValidas(extraido.lat, extraido.lng)) {
+        return null;
     }
+
+    const resultado = {
+        lat: extraido.lat,
+        lng: extraido.lng,
+        nombre: extraido.nombre || '',
+        fuente: 'url',
+        ts: Date.now()
+    };
+    cache.set(clave, resultado);
     return resultado;
 }
 
@@ -312,7 +293,7 @@ module.exports = async function handler(request, response) {
 
     const valor = String((request.body && request.body.valor) || '').trim();
     if (!valor || valor.length > 500) {
-        return response.status(400).json({ status: 'error', message: 'Indicá una dirección o URL.' });
+        return response.status(400).json({ status: 'error', message: 'Pegá la URL del mapa de tu negocio.' });
     }
 
     try {
@@ -320,7 +301,7 @@ module.exports = async function handler(request, response) {
         if (!ubicacion || !coordenadasValidas(ubicacion.lat, ubicacion.lng)) {
             return response.status(400).json({
                 status: 'error',
-                message: 'No se pudo ubicar el negocio con ese valor.'
+                message: 'Pegá un enlace válido de Google Maps o Apple Maps.'
             });
         }
         return response.status(200).json({
