@@ -177,6 +177,13 @@ function eliminarCupon() {
 function actualizarTotales() {
     const cart = obtenerCarrito();
     const cupon = sessionStorage.getItem('appliedCoupon');
+    const enTurnos = esModoTurnos();
+
+    // En modo turnos no hay envío: se oculta la fila del resumen (no aplica a
+    // los servicios). Se decide acá porque actualizarTotales es el refresh del
+    // resumen completo, con carrito lleno o vacío.
+    const shippingRow = document.getElementById('shippingRow');
+    if (shippingRow) shippingRow.style.display = enTurnos ? 'none' : 'flex';
 
     const applyBtn = document.getElementById('applyCouponBtn');
     const removeBtn = document.getElementById('removeCouponBtn');
@@ -255,7 +262,6 @@ function actualizarTotales() {
     // compra ni stock disponible (se coordina después), a diferencia del checkout.
     const checkoutBtn = document.getElementById('checkoutBtn');
     if (checkoutBtn) {
-        const enTurnos = esModoTurnos();
         checkoutBtn.disabled = cart.length === 0 || (!enTurnos && (haySinStock || !min.cumple));
     }
 }
