@@ -29,8 +29,11 @@
 -- RE-EJECUTABLE: add column if not exists / create or replace / drop if
 -- exists, dentro de begin/commit.
 --
--- APLICACIÓN: SQL Editor del dashboard. Correr el archivo completo. Al final
--- registra su nombre en public.schema_migrations.
+-- APLICACIÓN: SQL Editor del dashboard. Correr el archivo completo.
+--   IMPORTANTE: correr DESPUÉS de la 0052 (ésta dropea la firma vieja que la
+--   0052 revoca; si 0053 se corriera primero, la 0052 fallaría con
+--   "function does not exist"). Al final registra su nombre en
+--   public.schema_migrations.
 -- ============================================================================
 
 begin;
