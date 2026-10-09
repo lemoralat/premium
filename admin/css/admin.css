@@ -927,6 +927,8 @@ td.td-expandir .pedido-acciones {
 .estado-procesando { background: var(--primary-light); color: var(--primary); }
 .estado-enviado { background: var(--estado-enviado-bg); color: var(--estado-enviado-text); }
 .estado-entregado { background: var(--success-bg); color: var(--success); }
+.estado-confirmado { background: var(--primary-light); color: var(--primary); }
+.estado-realizado { background: var(--success-bg); color: var(--success); }
 .estado-cancelado { background: var(--estado-cancelado-bg); color: var(--text-muted); }
 
 .admin-stock-bajo { color: var(--danger); font-weight: 600; }
@@ -1695,5 +1697,5 @@ html[data-tema="dark"] {
        azul #1d3a5f, estaba en 2.23:1 — tampoco cumplía). En dark el texto
        pasa a un azul claro, el mismo criterio que ya usa --estado-enviado-text.
        Solo en dark: en light el par azul sobre azul claro es el que hay. */
-    .estado-procesando { color: #93a8f5; }
+    .estado-procesando, .estado-confirmado { color: #93a8f5; }
 }

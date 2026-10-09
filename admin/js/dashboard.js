@@ -145,12 +145,57 @@ function kpi(icono, valor, etiqueta, delta = null, clase = '') {
 }
 
 // Contadores por estado (para el donut).
-function conteoEstados(ordenes) {
-    const conteo = { Pendiente: 0, Procesando: 0, Enviado: 0, Entregado: 0, Cancelado: 0 };
+function conteoEstados(ordenes, estados = ESTADOS) {
+    const conteo = Object.fromEntries(estados.map((e) => [e, 0]));
     for (const o of ordenes || []) {
         if (conteo[o.estado] !== undefined) conteo[o.estado]++;
     }
     return conteo;
+}
+
+// Estados y colores de los turnos (mismos nombres que la BD / turnos.js).
+const TURNOS_ESTADOS = ['Pendiente', 'Confirmado', 'Realizado', 'Cancelado'];
+const COLOR_ESTADO_TURNO = Object.freeze({
+    Pendiente: COLORES.advertencia,
+    Confirmado: COLORES.primario,
+    Realizado: COLORES.exito,
+    Cancelado: COLORES.gris
+});
+
+// Total estimado de un turno: suma de cantidad × precio_unitario del snapshot
+// items (migración 0053). Sin items (turnos viejos) el total es 0.
+function totalTurno(t) {
+    const items = Array.isArray(t.items) ? t.items : [];
+    return items.reduce((s, it) => s + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0);
+}
+
+// Items del snapshot normalizados como array (supabase devuelve jsonb parseado).
+function itemsTurno(t) {
+    return Array.isArray(t.items) ? t.items : [];
+}
+
+// Próximas citas: turnos Pendiente/Confirmado con fecha >= hoy, ordenados por
+// fecha y hora. La fecha se guarda como texto ISO YYYY-MM-DD desde el
+// formulario (ver carrito.js), así el orden lexicográfico es el cronológico.
+function proximasCitas(turnos) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const hoyISO = [hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate()]
+        .map((n) => String(n).padStart(2, '0'))
+        .join('-');
+    return (turnos || [])
+        .filter((t) => t.estado === 'Pendiente' || t.estado === 'Confirmado')
+        .filter((t) => String(t.fecha || '').slice(0, 10) >= hoyISO)
+        .sort((a, b) => String(a.fecha || '').localeCompare(String(b.fecha || ''))
+            || String(a.hora || '').localeCompare(String(b.hora || '')))
+        .slice(0, 6);
+}
+
+// 'YYYY-MM-DD' → 'DD/MM/YYYY' sin desfase de zona horaria.
+function formatearFechaCita(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) return esc(iso || '—');
+    return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
 function crearChart(canvasId, config, tipo = '') {
@@ -175,21 +220,35 @@ export async function renderizar(contenedor) {
     const inicio60 = new Date(ahora - 60 * DIA_MS).toISOString();
     const hace48h = new Date(ahora - 48 * HORA_MS).toISOString();
 
-    const [
-        statsProductos,
-        stockBajo,
-        agotados,
-        pom,
-        pendientesR,
-        ordenes60,       // último 60 días: ingresos, deltas, donut, cupones
-        ordenes30Items,  // último 30 días con items (top productos + categorías)
-        ultimasOrdenes,
-        reseñas
-    ] = await Promise.all([
-        Promise.all([
-            sb.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
-            sb.from('products').select('id', { count: 'exact', head: true })
-        ]),
+    // En modo turnos el dashboard se alimenta de la tabla `turnos` (las
+    // solicitudes con su snapshot `items` desde la 0053) en vez de `orders`:
+    // acá los pedidos, el stock y los agotados no existen. Los conteos de
+    // products y las reseñas son comunes a ambos modos.
+    const enTurnos = (await leerModoWeb()) === 'turnos';
+
+    const statsProductos = Promise.all([
+        sb.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
+        sb.from('products').select('id', { count: 'exact', head: true })
+    ]);
+
+    // ---- Consultas según el modo ----
+    const restoQueries = enTurnos ? [
+        // Solicitudes de los últimos 60 días (ingresos estimados, deltas,
+        // donut de estados, top servicios/categorías y próximas citas).
+        sb.from('turnos').select('id, numero, cliente, fecha, hora, items, estado, created_at')
+            .gte('created_at', inicio60).order('created_at', { ascending: true }),
+        // Turnos pendientes (todos, sin límite de fecha, como en venta).
+        sb.from('turnos').select('id', { count: 'exact', head: true }).eq('estado', 'Pendiente'),
+        // Turnos pendientes hace más de 48 h (alerta accionable de agenda).
+        sb.from('turnos').select('id', { count: 'exact', head: true }).eq('estado', 'Pendiente').lt('created_at', hace48h),
+        // Últimas solicitudes (tabla).
+        sb.from('turnos').select('id, numero, cliente, fecha, hora, items, estado, created_at')
+            .order('created_at', { ascending: false }).limit(6),
+        // Categorías de los servicios, para el gráfico por categoría.
+        sb.from('products').select('id, categoria:categories(name)'),
+        sb.from('reviews').select('nombre, valoracion, resena, fecha').eq('activo', true)
+            .order('fecha', { ascending: false })
+    ] : [
         sb.from('products').select('id, nombre, stock').gte('stock', 1).lt('stock', 5).order('stock', { ascending: true }).limit(8),
         sb.from('products').select('id', { count: 'exact', head: true }).eq('activo', true).eq('stock', 0),
         sb.from('orders').select('id', { count: 'exact', head: true }).eq('estado', 'Pendiente').lt('created_at', hace48h),
@@ -202,25 +261,127 @@ export async function renderizar(contenedor) {
             .order('created_at', { ascending: false }).limit(6),
         sb.from('reviews').select('nombre, valoracion, resena, fecha').eq('activo', true)
             .order('fecha', { ascending: false })
-    ]);
+    ];
 
-    const [activosR, totalesR] = statsProductos;
+    const [statsProductosR, ...rest] = await Promise.all([statsProductos, ...restoQueries]);
+    const [activosR, totalesR] = statsProductosR;
     const activos = activosR.error ? 0 : (activosR.count ?? 0);
     const totales = totalesR.error ? 0 : (totalesR.count ?? 0);
-    const agotadosN = agotados.error ? 0 : (agotados.count ?? 0);
-    const pedidosColgados = pom.error ? 0 : (pom.count ?? 0);
-    const pendientes = pendientesR.error ? 0 : (pendientesR.count ?? 0);
 
-    // ---- Precálculo de métricas sobre la ventana de 60 días ----
-    const ventana = (ordenes60.error ? [] : (ordenes60.data || []))
-        .map((o) => ({ ...o, ts: Date.parse(o.created_at) || 0 }));
+    // ---- Métricas por modo (sobre la ventana común de 60 días) ----
+    let agotadosN = 0;
+    let colgados = 0;
+    let pendientes = 0;
+    let ventana = [];
+    let topCupones = [];
+    let topProductos = [];
+    let topCategorias = [];
+    let ordenes = [];
+    let bajoStock = [];
+    let proximas = [];
+    let catPorId = new Map(); // id de servicio -> categoría actual (modo turnos)
 
+    if (enTurnos) {
+        const [turnos60, pendientesR, colgadosR, ultimosTurnos, productosCat] = rest;
+        pendientes = pendientesR.error ? 0 : (pendientesR.count ?? 0);
+        colgados = colgadosR.error ? 0 : (colgadosR.count ?? 0);
+        ventana = (turnos60.error ? [] : (turnos60.data || []))
+            .map((t) => ({ ...t, ts: Date.parse(t.created_at) || 0, total: totalTurno(t) }));
+        ordenes = ultimosTurnos.error ? [] : (ultimosTurnos.data || []);
+        proximas = proximasCitas(turnos60.error ? [] : (turnos60.data || []));
+
+        // Categoría actual de cada servicio (para el gráfico por categoría).
+        // El agregado de top servicios/categorías se hace más abajo sobre la
+        // ventana de 30 días, igual que en venta (los gráficos dicen 30 días).
+        catPorId = new Map((productosCat.error ? [] : (productosCat.data || []))
+            .map((p) => [p.id, p.categoria?.name || 'Sin categoría']));
+    } else {
+        const [stockBajoR, agotados, pom, pendientesR, ordenes60, ordenes30Items, ultimasOrdenes] = rest;
+        agotadosN = agotados.error ? 0 : (agotados.count ?? 0);
+        colgados = pom.error ? 0 : (pom.count ?? 0);
+        pendientes = pendientesR.error ? 0 : (pendientesR.count ?? 0);
+        ventana = (ordenes60.error ? [] : (ordenes60.data || []))
+            .map((o) => ({ ...o, ts: Date.parse(o.created_at) || 0 }));
+
+        // ---- Cupones (últimos 30 días) ----
+        const cupones = new Map(); // cupon -> { pedidos, descuento }
+        for (const o of ventana) {
+            if (o.ts < Date.parse(inicio30)) continue;
+            if (!o.cupon || o.cupon === 'NINGUNO') continue;
+            const c = cupones.get(o.cupon) || { pedidos: 0, descuento: 0 };
+            c.pedidos++;
+            c.descuento += Number(o.descuento || 0);
+            cupones.set(o.cupon, c);
+        }
+        topCupones = [...cupones.entries()]
+            .sort((a, b) => b[1].pedidos - a[1].pedidos)
+            .slice(0, 5);
+
+        // ---- Top productos y categorías (30 días, por cantidad vendida) ----
+        const porProducto = new Map(); // clave -> { nombre, cantidad }
+        const porCategoria = new Map(); // nombre -> cantidad
+        const ordenes30ItemsOk = ordenes30Items.error ? [] : (ordenes30Items.data || []);
+        for (const o of ordenes30ItemsOk) {
+            for (const it of (o.order_items || [])) {
+                const nombreProd = it.products?.nombre || it.nombre || 'Producto eliminado';
+                const cat = it.products?.categoria?.name || 'Sin categoría';
+                const qty = Number(it.quantity) || 0;
+
+                const cl = it.product_id ?? nombreProd;
+                const p = porProducto.get(cl) || { nombre: nombreProd, cantidad: 0 };
+                p.nombre = nombreProd;
+                p.cantidad += qty;
+                porProducto.set(cl, p);
+
+                porCategoria.set(cat, (porCategoria.get(cat) || 0) + qty);
+            }
+        }
+        topProductos = [...porProducto.values()]
+            .sort((a, b) => b.cantidad - a.cantidad)
+            .slice(0, 5);
+        topCategorias = [...porCategoria.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8);
+
+        ordenes = ultimasOrdenes.error ? [] : (ultimasOrdenes.data || []);
+        bajoStock = stockBajoR.error ? [] : (stockBajoR.data || []);
+    }
+
+    // ---- Ingresos / solicitudes sobre la ventana de 60 días ----
     const ingresos = (lista) => lista
         .filter((o) => o.estado !== 'Cancelado')
         .reduce((s, o) => s + Number(o.total || 0), 0);
 
     const ventana30 = ventana.filter((o) => o.ts >= Date.parse(inicio30));
     const ventanaPrev = ventana.filter((o) => o.ts < Date.parse(inicio30));
+
+    // ---- Top servicios y categorías (modo turnos, últimos 30 días) ----
+    // Se alimenta del snapshot `items` de cada solicitud (por cantidad
+    // solicitada, sin turnos cancelados), igual que venta usa order_items.
+    if (enTurnos) {
+        const porProducto = new Map(); // clave -> { nombre, cantidad }
+        const porCategoria = new Map(); // nombre -> cantidad
+        for (const o of ventana30) {
+            if (o.estado === 'Cancelado') continue;
+            for (const it of itemsTurno(o)) {
+                const nombreServ = it.nombre || 'Servicio eliminado';
+                const cat = catPorId.get(it.id) ?? 'Sin categoría';
+                const qty = Number(it.cantidad) || 0;
+                const cl = it.id ?? nombreServ;
+                const p = porProducto.get(cl) || { nombre: nombreServ, cantidad: 0 };
+                p.nombre = nombreServ;
+                p.cantidad += qty;
+                porProducto.set(cl, p);
+                porCategoria.set(cat, (porCategoria.get(cat) || 0) + qty);
+            }
+        }
+        topProductos = [...porProducto.values()]
+            .sort((a, b) => b.cantidad - a.cantidad)
+            .slice(0, 5);
+        topCategorias = [...porCategoria.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8);
+    }
 
     const ingresos30 = ingresos(ventana30);
     const ingresosPrev = ingresos(ventanaPrev);
@@ -232,69 +393,31 @@ export async function renderizar(contenedor) {
     const deltaPedidos = calcularDelta(pedidos30, pedidosPrev);
     const deltaTicket = calcularDelta(ticketPromedio, pedidosPrev > 0 ? ingresosPrev / pedidosPrev : 0);
 
-    // ---- Cupones (últimos 30 días) ----
-    const cupones = new Map(); // cupon -> { pedidos, descuento }
-    for (const o of ventana30) {
-        if (!o.cupon || o.cupon === 'NINGUNO') continue;
-        const c = cupones.get(o.cupon) || { pedidos: 0, descuento: 0 };
-        c.pedidos++;
-        c.descuento += Number(o.descuento || 0);
-        cupones.set(o.cupon, c);
-    }
-    const topCupones = [...cupones.entries()]
-        .sort((a, b) => b[1].pedidos - a[1].pedidos)
-        .slice(0, 5);
-
-    // ---- Top productos y categorías (30 días, por cantidad vendida) ----
-    const porProducto = new Map(); // clave -> { nombre, cantidad }
-    const porCategoria = new Map(); // nombre -> cantidad
-    const ordenes30ItemsOk = ordenes30Items.error ? [] : (ordenes30Items.data || []);
-    for (const o of ordenes30ItemsOk) {
-        for (const it of (o.order_items || [])) {
-            const nombreProd = it.products?.nombre || it.nombre || 'Producto eliminado';
-            const cat = it.products?.categoria?.name || 'Sin categoría';
-            const qty = Number(it.quantity) || 0;
-
-            const cl = it.product_id ?? nombreProd;
-            const p = porProducto.get(cl) || { nombre: nombreProd, cantidad: 0 };
-            p.nombre = nombreProd;
-            p.cantidad += qty;
-            porProducto.set(cl, p);
-
-            porCategoria.set(cat, (porCategoria.get(cat) || 0) + qty);
-        }
-    }
-    const topProductos = [...porProducto.values()]
-        .sort((a, b) => b.cantidad - a.cantidad)
-        .slice(0, 5);
-    const topCategorias = [...porCategoria.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8);
-
     // ---- Reseñas: promedio + últimas 4 ----
-    const reseñasActivas = reseñas.error ? [] : (reseñas.data || []);
+    const reseñasR = rest[rest.length - 1];
+    const reseñasActivas = reseñasR.error ? [] : (reseñasR.data || []);
     const valoracionPromedio = reseñasActivas.length
         ? reseñasActivas.reduce((s, r) => s + Number(r.valoracion || 0), 0) / reseñasActivas.length
         : 0;
     const ultimasResenas = reseñasActivas.slice(0, 4);
 
-    const ordenes = ultimasOrdenes.error ? [] : (ultimasOrdenes.data || []);
-    const bajoStock = stockBajo.error ? [] : (stockBajo.data || []);
-
     // ---- Alertas accionables ----
-    // En modo turnos no llegan pedidos nuevos y los servicios no manejan stock:
-    // la alerta de pedidos colgados (48 h) y la de productos sin stock solo
-    // aplican al modo venta.
-    const enTurnos = (await leerModoWeb()) === 'turnos';
+    // En venta: pedidos colgados y productos sin stock. En turnos: solicitudes
+    // pendientes hace más de 48 h (la agenda espera confirmación del dueño).
     const alertas = [];
     if (!enTurnos && agotadosN > 0) {
         alertas.push({ clase: 'peligro', icono: 'fa-box-open', texto: `${agotadosN} producto${agotadosN === 1 ? '' : 's'} sin stock.`, enlace: '#/productos', enlaceTexto: 'Ir a productos' });
     }
-    if (!enTurnos && pedidosColgados > 0) {
-        alertas.push({ clase: 'advertencia', icono: 'fa-clock', texto: `${pedidosColgados} pedido${pedidosColgados === 1 ? '' : 's'} pendiente${pedidosColgados === 1 ? '' : 's'} hace más de 48 h.`, enlace: '#/pedidos', enlaceTexto: 'Ir a pedidos' });
+    if (!enTurnos && colgados > 0) {
+        alertas.push({ clase: 'advertencia', icono: 'fa-clock', texto: `${colgados} pedido${colgados === 1 ? '' : 's'} pendiente${colgados === 1 ? '' : 's'} hace más de 48 h.`, enlace: '#/pedidos', enlaceTexto: 'Ir a pedidos' });
+    }
+    if (enTurnos && colgados > 0) {
+        alertas.push({ clase: 'advertencia', icono: 'fa-calendar-day', texto: `${colgados} turno${colgados === 1 ? '' : 's'} pendiente${colgados === 1 ? '' : 's'} hace más de 48 h.`, enlace: '#/turnos', enlaceTexto: 'Ir a turnos' });
     }
 
-    const hayVentas30 = ventana30.length > 0 && ingresos30 > 0;
+    const hayVentas30 = enTurnos
+        ? ventana30.some((o) => o.estado !== 'Cancelado')
+        : (ventana30.length > 0 && ingresos30 > 0);
     const hayChart = typeof window.Chart !== 'undefined';
     // Aviso que se muestra cuando Chart.js no cargó (p. ej. SRI/red bloqueó el
     // CDN): el resto del dashboard sigue funcionando sin gráficos.
@@ -312,39 +435,45 @@ export async function renderizar(contenedor) {
         </div>` : ''}
 
         <div class="admin-grid">
-            ${kpi('fa-sack-dollar', `$${formatearPrecio(ingresos30)}`, 'Ingresos últimos 30 días', deltaIngresos)}
-            ${kpi('fa-cart-shopping', pedidos30, 'Pedidos últimos 30 días', deltaPedidos)}
-            ${kpi('fa-receipt', pedidos30 ? `$${formatearPrecio(ticketPromedio)}` : '—', 'Ticket promedio', deltaTicket)}
+            ${kpi('fa-sack-dollar', `$${formatearPrecio(ingresos30)}`, enTurnos ? 'Ingresos estimados (30 días)' : 'Ingresos últimos 30 días', deltaIngresos)}
+            ${kpi(enTurnos ? 'fa-calendar-check' : 'fa-cart-shopping', pedidos30, enTurnos ? 'Solicitudes (30 días)' : 'Pedidos últimos 30 días', deltaPedidos)}
+            ${kpi('fa-receipt', pedidos30 ? `$${formatearPrecio(ticketPromedio)}` : '—', enTurnos ? 'Valor promedio / solicitud' : 'Ticket promedio', deltaTicket)}
             ${kpi('fa-box', activos, `${enTurnos ? 'Servicios' : 'Productos'} activos (${totales} totales)`)}
-            ${kpi('fa-clock', pendientes, 'Pedidos pendientes', null, 'warning')}
+            ${kpi(enTurnos ? 'fa-calendar-day' : 'fa-clock', pendientes, enTurnos ? 'Turnos pendientes' : 'Pedidos pendientes', null, 'warning')}
             ${kpi('fa-star', reseñasActivas.length ? `★ ${valoracionPromedio.toFixed(1)}` : '—', `Valoración (${reseñasActivas.length} reseñas)`, null, 'success')}
         </div>
 
         <div class="admin-card">
-            <h2>Ingresos últimos 30 días</h2>
-            <p class="card-sub">Ventas diarias confirmadas (sin cancelados)</p>
+            <h2>${enTurnos ? 'Ingresos estimados (30 días)' : 'Ingresos últimos 30 días'}</h2>
+            <p class="card-sub">${enTurnos ? 'Estimación por precios de los servicios (sin cancelados)' : 'Ventas diarias confirmadas (sin cancelados)'}</p>
             ${!hayVentas30
-                ? '<div class="admin-empty"><p>Todavía no hay ventas en este periodo.</p></div>'
+                ? (enTurnos
+                    ? '<div class="admin-empty"><p>Todavía no hay turnos en este periodo.</p></div>'
+                    : '<div class="admin-empty"><p>Todavía no hay ventas en este periodo.</p></div>')
                 : (hayChart
-                    ? `<div class="admin-chart" role="img" aria-label="Gráfico de línea: ingresos diarios de los últimos 30 días"><canvas id="chart-ingresos"></canvas></div>`
+                    ? `<div class="admin-chart" role="img" aria-label="Gráfico de línea: ${enTurnos ? 'ingresos estimados' : 'ingresos'} diarios de los últimos 30 días"><canvas id="chart-ingresos"></canvas></div>`
                     : sinChart)}
         </div>
 
         <div class="dashboard-dos-col">
             <div class="admin-card">
-                <h2>Pedidos por estado</h2>
+                <h2>${enTurnos ? 'Turnos' : 'Pedidos'} por estado</h2>
                 <p class="card-sub">Últimos 30 días</p>
                 ${!hayVentas30
-                    ? '<div class="admin-empty"><p>Todavía no hay pedidos en este periodo.</p></div>'
+                    ? (enTurnos
+                        ? '<div class="admin-empty"><p>Todavía no hay turnos en este periodo.</p></div>'
+                        : '<div class="admin-empty"><p>Todavía no hay pedidos en este periodo.</p></div>')
                     : (hayChart
-                        ? `<div class="admin-chart" role="img" aria-label="Gráfico de torta: pedidos por estado"><canvas id="chart-estados"></canvas></div>`
+                        ? `<div class="admin-chart" role="img" aria-label="Gráfico de torta: ${enTurnos ? 'turnos' : 'pedidos'} por estado"><canvas id="chart-estados"></canvas></div>`
                         : sinChart)}
             </div>
             <div class="admin-card">
-                <h2>Top ${enTurnos ? 'servicios' : 'productos'} vendidos</h2>
+                <h2>Top ${enTurnos ? 'servicios solicitados' : 'productos vendidos'}</h2>
                 <p class="card-sub">Por cantidad, últimos 30 días</p>
                 ${!topProductos.length
-                    ? '<div class="admin-empty"><p>Sin ventas todavía.</p></div>'
+                    ? (enTurnos
+                        ? '<div class="admin-empty"><p>Sin solicitudes todavía.</p></div>'
+                        : '<div class="admin-empty"><p>Sin ventas todavía.</p></div>')
                     : (hayChart
                         ? `<div class="admin-chart" role="img" aria-label="Gráfico de barras: ${enTurnos ? 'servicios' : 'productos'} más vendidos"><canvas id="chart-productos"></canvas></div>`
                         : sinChart)}
@@ -353,25 +482,31 @@ export async function renderizar(contenedor) {
 
         <div class="dashboard-dos-col">
             <div class="admin-card">
-                <h2>Ventas por categoría</h2>
+                <h2>${enTurnos ? 'Servicios' : 'Ventas'} por categoría</h2>
                 <p class="card-sub">Unidades, últimos 30 días</p>
                 ${!topCategorias.length
-                    ? '<div class="admin-empty"><p>Sin ventas todavía.</p></div>'
+                    ? (enTurnos
+                        ? '<div class="admin-empty"><p>Sin solicitudes todavía.</p></div>'
+                        : '<div class="admin-empty"><p>Sin ventas todavía.</p></div>')
                     : (hayChart
-                        ? `<div class="admin-chart" role="img" aria-label="Gráfico de barras: ventas por categoría"><canvas id="chart-categorias"></canvas></div>`
+                        ? `<div class="admin-chart" role="img" aria-label="Gráfico de barras: ${enTurnos ? 'servicios' : 'ventas'} por categoría"><canvas id="chart-categorias"></canvas></div>`
                         : sinChart)}
             </div>
             <div class="admin-card">
-                <h2>Cupones usados</h2>
+                ${enTurnos
+                    ? `<h2>Próximas citas</h2>
+                <p class="card-sub">Turnos pendientes/confirmados con fecha desde hoy</p>
+                ${tablaProximasCitas(proximas)}`
+                    : `<h2>Cupones usados</h2>
                 <p class="card-sub">Últimos 30 días</p>
-                ${tablaCupones(topCupones)}
+                ${tablaCupones(topCupones)}`}
             </div>
         </div>
 
         <div class="admin-card">
-            <h2>Últimas órdenes</h2>
-            <p class="card-sub">Los pedidos más recientes de la tienda</p>
-            ${tablaOrdenes(ordenes)}
+            <h2>${enTurnos ? 'Últimas solicitudes' : 'Últimas órdenes'}</h2>
+            <p class="card-sub">${enTurnos ? 'Las solicitudes de turno más recientes' : 'Los pedidos más recientes de la tienda'}</p>
+            ${enTurnos ? tablaTurnos(ordenes) : tablaOrdenes(ordenes)}
         </div>
 
         <div class="dashboard-dos-col">
@@ -398,7 +533,7 @@ export async function renderizar(contenedor) {
             data: {
                 labels: serie.etiquetas,
                 datasets: [{
-                    label: 'Ingresos',
+                    label: enTurnos ? 'Estimado' : 'Ingresos',
                     data: serie.valores,
                     borderColor: COLORES.primario,
                     backgroundColor: cc.lineaFill,
@@ -423,15 +558,17 @@ export async function renderizar(contenedor) {
             }
         }, 'line');
 
-        const conteo = conteoEstados(ventana30);
-        const etiquetas = ESTADOS.filter((e) => conteo[e] > 0);
+        const estadosModo = enTurnos ? TURNOS_ESTADOS : ESTADOS;
+        const coloresModo = enTurnos ? COLOR_ESTADO_TURNO : COLOR_ESTADO;
+        const conteo = conteoEstados(ventana30, estadosModo);
+        const etiquetas = estadosModo.filter((e) => conteo[e] > 0);
         crearChart('chart-estados', {
             type: 'doughnut',
             data: {
                 labels: etiquetas,
                 datasets: [{
                     data: etiquetas.map((e) => conteo[e]),
-                    backgroundColor: etiquetas.map((e) => COLOR_ESTADO[e]),
+                    backgroundColor: etiquetas.map((e) => coloresModo[e]),
                     borderWidth: 2,
                     borderColor: cc.separador
                 }]
@@ -556,6 +693,64 @@ function extraerClientes(o) {
         try { return JSON.parse(o.cliente); } catch { return null; }
     }
     return o.cliente;
+}
+
+// Últimas solicitudes de turno (dashboard modo turnos). El total se estima
+// desde el snapshot items (cantidad × precio_unitario, migración 0053).
+function tablaTurnos(lista) {
+    if (!lista.length) {
+        return '<div class="admin-empty"><p>Todavía no hay solicitudes de turno.</p></div>';
+    }
+    return `
+        <div class="admin-tabla-wrap">
+            <table class="admin-tabla">
+                <thead>
+                    <tr>
+                        <th>Número</th><th>Fecha de cita</th><th>Hora</th><th>Cliente</th><th>Total estimado</th><th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${lista.map((t) => `
+                        <tr>
+                            <td data-label="Número"><strong>${esc(t.numero)}</strong></td>
+                            <td data-label="Fecha de cita">${formatearFechaCita(t.fecha)}</td>
+                            <td data-label="Hora">${esc(t.hora || 'A coordinar')}</td>
+                            <td data-label="Cliente">${esc(extraerClientes(t)?.nombre || '—')}</td>
+                            <td data-label="Total estimado">$${formatearPrecio(totalTurno(t))}</td>
+                            <td data-label="Estado"><span class="estado-badge estado-${esc(t.estado.toLowerCase())}">${esc(t.estado)}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>`;
+}
+
+// Próximas citas (dashboard modo turnos): misma estructura, sin total.
+function tablaProximasCitas(lista) {
+    if (!lista.length) {
+        return '<div class="admin-empty"><p>No hay citas próximas.</p></div>';
+    }
+    return `
+        <div class="admin-tabla-wrap">
+            <table class="admin-tabla">
+                <thead>
+                    <tr>
+                        <th>Número</th><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${lista.map((t) => `
+                        <tr>
+                            <td data-label="Número"><strong>${esc(t.numero)}</strong></td>
+                            <td data-label="Fecha">${formatearFechaCita(t.fecha)}</td>
+                            <td data-label="Hora">${esc(t.hora || 'A coordinar')}</td>
+                            <td data-label="Cliente">${esc(extraerClientes(t)?.nombre || '—')}</td>
+                            <td data-label="Estado"><span class="estado-badge estado-${esc(t.estado.toLowerCase())}">${esc(t.estado)}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>`;
 }
 
 function listaStockBajo(lista) {
