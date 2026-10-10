@@ -136,12 +136,23 @@ function pintar(contenedor) {
 
     const buscarInput = $('#turnoBuscar');
     if (buscarInput) {
-        buscarInput.addEventListener('input', () => {
+        // Pintar() recrea todo el bloque (el input vive dentro del innerHTML),
+        // así que al filtrar hay que devolverle el foco y el caret: si no, el
+        // campo pierde el foco en cada tecla y solo se escribe de a una letra.
+        const refrescar = () => {
             busqueda = buscarInput.value.trim();
+            const caret = buscarInput.selectionStart ?? buscarInput.value.length;
             pintar(contenedor);
-        });
+            const nuevo = $('#turnoBuscar');
+            if (nuevo) {
+                nuevo.focus();
+                const pos = Math.min(caret, nuevo.value.length);
+                nuevo.setSelectionRange(pos, pos);
+            }
+        };
+        buscarInput.addEventListener('input', refrescar);
         buscarInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') pintar(contenedor);
+            if (e.key === 'Enter') refrescar();
         });
     }
 

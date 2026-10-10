@@ -95,12 +95,23 @@ function pintar(contenedor) {
 
     const buscarInput = $('#pedBuscar');
     if (buscarInput) {
-        buscarInput.addEventListener('input', () => {
+        // Pintar() recrea el input (está dentro del innerHTML que se repinta),
+        // así que hay que restaurar foco y caret: si no, se pierde el foco en
+        // cada tecla y solo se puede escribir de a una letra.
+        const refrescar = () => {
             busqueda = buscarInput.value.trim();
+            const caret = buscarInput.selectionStart ?? buscarInput.value.length;
             pintar(contenedor);
-        });
+            const nuevo = $('#pedBuscar');
+            if (nuevo) {
+                nuevo.focus();
+                const pos = Math.min(caret, nuevo.value.length);
+                nuevo.setSelectionRange(pos, pos);
+            }
+        };
+        buscarInput.addEventListener('input', refrescar);
         buscarInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') pintar(contenedor);
+            if (e.key === 'Enter') refrescar();
         });
     }
 

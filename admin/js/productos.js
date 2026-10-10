@@ -128,7 +128,20 @@ function pintar(contenedor) {
     $('#btnNuevoProducto').addEventListener('click', () => abrirModalProducto(null));
 
     const buscar = $('#prodBuscar');
-    const inputEv = () => { busqueda = buscar.value.trim(); pintar(contenedor); };
+    // Pintar() recrea el input (está dentro del innerHTML que se repinta), así
+    // que filtrar sin restaurar foco y caret deja el campo sin foco en cada
+    // tecla: solo se podría escribir de a una letra.
+    const refrescar = () => {
+        const caret = buscar.selectionStart ?? buscar.value.length;
+        pintar(contenedor);
+        const nuevo = $('#prodBuscar');
+        if (nuevo) {
+            nuevo.focus();
+            const pos = Math.min(caret, nuevo.value.length);
+            nuevo.setSelectionRange(pos, pos);
+        }
+    };
+    const inputEv = () => { busqueda = buscar.value.trim(); refrescar(); };
     buscar.addEventListener('input', inputEv);
     buscar.addEventListener('keydown', (e) => { if (e.key === 'Enter') inputEv(); });
 
