@@ -1923,7 +1923,10 @@ footer p {
 }
 
 .devBy {
-    width: 40px;
+    /* wordmark horizontal de Lemora (img/lemora_footer.svg): altura fija con
+       ancho automático — los 40px de ancho eran para la marca cuadrada. */
+    height: 16px;
+    width: auto;
     vertical-align: middle;
     margin-left: 10px;
 }
@@ -1932,6 +1935,7 @@ footer p {
     .devBy {
         margin-top: 10px;
         margin-left: 0;
+        height: 18px;
     }
 }
 
