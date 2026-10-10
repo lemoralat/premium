@@ -846,6 +846,11 @@ function agregarAlCarritoDetalle(id) {
 
 // Cargar productos relacionados
 function cargarProductosRelacionados() {
+    // En modo turnos el catálogo son servicios (misma etiqueta que usa el
+    // panel en Diseño); la config ya está cargada porque el init la espera.
+    const titulo = document.getElementById('relatedTitle');
+    if (titulo) titulo.textContent = esModoTurnos() ? 'Servicios Relacionados' : 'Productos Relacionados';
+
     const productoId = obtenerIdProducto();
     const productoActual = productos.find(p => p.id === productoId);
     
