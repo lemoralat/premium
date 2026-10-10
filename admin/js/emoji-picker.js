@@ -5,8 +5,12 @@
 // panel con emojis curados agrupados por categoría (el mismo criterio de lista
 // curada que iconos-fa.js) y un buscador por nombre. Un clic inserta el emoji
 // en la posición del cursor respetando maxlength, y el panel queda abierto
-// para insertar varios. Se cierra con Esc, clic afuera, scroll/resize o
-// tocando el botón otra vez.
+// para insertar varios.
+//
+// Navegación: la grilla scrollea sin que el panel se cierre, y las flechas del
+// teclado (←↑→↓) mueven el foco entre los emojis visibles (Enter inserta el
+// enfocado). Se cierra con Esc, clic afuera, scroll del contenedor de fondo,
+// resize o tocando el botón otra vez.
 //
 // El panel se cuelga de <body> con position:fixed y un z-index por encima de
 // los modales (.admin-modal es z-index:100; acá 220) así no se recorta ni por
@@ -210,6 +214,7 @@ export function instalarEmojiPicker({ input, boton }) {
 
     function filtrar(texto) {
         const q = (texto || '').trim().toLowerCase();
+        let hayVisibles = 0;
         popover.querySelectorAll('.admin-emoji-bloque').forEach((bloque) => {
             let visibles = 0;
             bloque.querySelectorAll('.admin-emoji-celda').forEach((celda) => {
@@ -218,7 +223,17 @@ export function instalarEmojiPicker({ input, boton }) {
                 if (coincide) visibles += 1;
             });
             bloque.hidden = visibles === 0;
+            hayVisibles += visibles;
         });
+
+        // Si el foco quedó en un emoji que el filtro ocultó, moverlo al primer
+        // visible (sin robarle el foco al buscador).
+        const activo = document.activeElement;
+        if (activo?.classList?.contains('admin-emoji-celda') && activo.hidden && hayVisibles) {
+            const siguiente = popover.querySelector('.admin-emoji-celda:not([hidden])');
+            if (siguiente) asegurarVisible(siguiente);
+            siguiente?.focus();
+        }
     }
 
     function enPointerFuera(e) {
@@ -234,8 +249,67 @@ export function instalarEmojiPicker({ input, boton }) {
         cerrar();
     }
 
-    function enScroll() {
-        if (popover) cerrar();
+    function enScroll(e) {
+        if (!popover) return;
+        // Scroll DENTRO del panel (la grilla de emojis): no cerrar, así se
+        // navega con scroll. Solo se cierra con scrolls del contenedor de
+        // fondo (el modal / la página).
+        if (popover.contains(e.target)) return;
+        cerrar();
+    }
+
+    // ---------- Navegación por teclado (flechas entre emojis) ----------
+    function celdasVisibles() {
+        return [...popover.querySelectorAll('.admin-emoji-celda')].filter((c) => !c.hidden);
+    }
+
+    // Número de columnas de la grilla: todas comparten ancho, así que se saca
+    // de la primera fila de la primera grilla visible.
+    function cantidadColumnas() {
+        const cuerpo = popover?.querySelector('.admin-emoji-cuerpo');
+        const grilla = cuerpo?.querySelector('.admin-emoji-bloque:not([hidden]) > .admin-emoji-grilla');
+        if (!grilla) return 1;
+        const celdas = [...grilla.querySelectorAll('.admin-emoji-celda')].filter((c) => !c.hidden);
+        const primera = celdas[0];
+        if (!primera) return 1;
+        const tope = Math.round(primera.getBoundingClientRect().top);
+        return Math.max(1, celdas.filter((c) => Math.round(c.getBoundingClientRect().top) === tope).length);
+    }
+
+    // Lleva la celda a la vista scrolleando SOLO el cuerpo interno (nunca el
+    // modal de fondo: eso dispararía el scroll externo y cerraría el picker).
+    function asegurarVisible(celda) {
+        const cuerpo = popover?.querySelector('.admin-emoji-cuerpo');
+        if (!cuerpo || !celda) return;
+        const cr = celda.getBoundingClientRect();
+        const pr = cuerpo.getBoundingClientRect();
+        if (cr.top < pr.top) cuerpo.scrollTop -= (pr.top - cr.top) + 2;
+        else if (cr.bottom > pr.bottom) cuerpo.scrollTop += (cr.bottom - pr.bottom) + 2;
+    }
+
+    function enTeclaPopup(e) {
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+        // Si el foco está en el buscador, dejar las flechas nativas.
+        if (e.target.matches('input, textarea, select')) return;
+        e.preventDefault();
+
+        const lista = celdasVisibles();
+        if (!lista.length) return;
+        const cols = cantidadColumnas() || 1;
+
+        let actual = lista.indexOf(document.activeElement);
+        if (actual === -1) actual = 0;
+
+        let destino = actual;
+        if (e.key === 'ArrowLeft') destino = Math.max(0, actual - 1);
+        else if (e.key === 'ArrowRight') destino = Math.min(lista.length - 1, actual + 1);
+        else if (e.key === 'ArrowDown') destino = Math.min(lista.length - 1, actual + cols);
+        else if (e.key === 'ArrowUp') destino = Math.max(0, actual - cols);
+
+        if (destino === actual) return;
+        const celda = lista[destino];
+        asegurarVisible(celda);
+        celda.focus();
     }
 
     function cerrar() {
@@ -302,6 +376,7 @@ export function instalarEmojiPicker({ input, boton }) {
             celda.addEventListener('click', () => insertar(celda.dataset.emoji));
         });
         buscar?.addEventListener('input', () => filtrar(buscar.value));
+        popover.addEventListener('keydown', enTeclaPopup);
 
         document.addEventListener('pointerdown', enPointerFuera, true);
         document.addEventListener('keydown', enTecla, true);
@@ -315,7 +390,12 @@ export function instalarEmojiPicker({ input, boton }) {
         });
         observador.observe(document.body, { childList: true });
 
-        buscar?.focus();
+        // Foco inicial en el primer emoji visible: habilita la navegación por
+        // teclado sin disparar scroll ni el teclado del móvil (el buscador se
+        // enfoca solo si el usuario lo toca).
+        const primera = celdasVisibles()[0];
+        if (primera) asegurarVisible(primera);
+        primera?.focus();
     }
 
     boton.addEventListener('click', (e) => {
