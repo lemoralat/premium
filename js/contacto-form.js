@@ -22,18 +22,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function aplicarUbicacion() {
     const contenedor = document.querySelector('.contact-map-container');
+    const grid = document.querySelector('.contact-grid');
     if (!contenedor) return;
 
     // template.js ya la cargó, pero es idempotente (caché de 5 min).
     await cargarConfiguracionGlobal();
 
     const ubicacion = (CONFIG_APP.address || '').trim();
+    // Sin dirección: se oculta el mapa y el formulario queda solo y centrado.
     if (!ubicacion) {
         contenedor.classList.add('sin-ubicacion');
+        if (grid) grid.classList.add('contact-grid--sin-ubicacion');
         return;
     }
 
     contenedor.classList.remove('sin-ubicacion');
+    if (grid) grid.classList.remove('contact-grid--sin-ubicacion');
 
     const zonaMapa = document.querySelector('.contact-map');
     const mapaFrame = document.getElementById('contactMapFrame');

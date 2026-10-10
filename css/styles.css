@@ -1254,6 +1254,19 @@ span {
     display: none;
 }
 
+/* Sin ubicación, la columna del formulario queda SOLA y CENTRADA (en vez de
+   ocupar solo la mitad izquierda del grid), con un ancho cómodo equivalente
+   al de la columna original con mapa. */
+.contact-grid--sin-ubicacion {
+    grid-template-columns: 1fr;
+}
+
+.contact-grid--sin-ubicacion .contact-container {
+    width: min(100%, 42rem);
+    margin-inline: auto;
+    justify-self: center;
+}
+
 .contact-map-container h2 {
     line-height: 1.2;
     color: var(--text-color);
