@@ -5,8 +5,8 @@
 // Misma arquitectura que api/pedido.js:
 //   - Usa la SERVICE ROLE key SOLO del lado servidor (variable de entorno).
 //   - Delega toda la lógica a la RPC `insertar_turno` (transacción única:
-//     valida nombre/teléfono/email/fecha, normaliza los ítems del carrito,
-//     genera el número TRN-#### e inserta).
+//     valida nombre/teléfono/email/fecha/hora — fecha y hora son obligatorias —,
+//     normaliza los ítems del carrito, genera el número TRN-#### e inserta).
 //   - El frontend POSTea a /api/turno y espera { status: 'success' } o
 //     { status: 'error', message }. La respuesta trae `numero`/`fecha`/`hora`/
 //     `items`/`total` (migración 0053): el frontend arma el mensaje de WhatsApp
@@ -72,7 +72,7 @@ module.exports = async function handler(request, response) {
     const fecha = String(body.fecha).trim();
     const hora = typeof body.hora === 'string' ? body.hora.trim() : '';
     const notas = typeof body.notas === 'string' ? body.notas.trim() : '';
-    if (!fecha || fecha.length > 60 || hora.length > 30 || notas.length > 2000) {
+    if (!fecha || !hora || fecha.length > 60 || hora.length > 30 || notas.length > 2000) {
         return response.status(400).json({ status: 'error', message: 'Datos de la solicitud inválidos.' });
     }
 
@@ -139,10 +139,10 @@ module.exports = async function handler(request, response) {
         const detalle = String(error.message || '');
         // Solo exponemos mensajes de la RPC que controlamos nosotros; el resto
         // (errores de BD, etc.) se devuelve genérico pero se loguea completo.
-        const amistoso = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email|demasiadas solicitudes|intentá de nuevo|horario ya no está disponible|elegí otro)/i.test(detalle)
+        const amistoso = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email|demasiadas solicitudes|intentá de nuevo|horario ya no está disponible|elegí otro|hora es obligatoria|hora válida)/i.test(detalle)
             ? detalle
             : 'No se pudo registrar la solicitud.';
-        const conflicto = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email|horario ya no está disponible|elegí otro)/i.test(detalle);
+        const conflicto = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email|horario ya no está disponible|elegí otro|hora es obligatoria|hora válida)/i.test(detalle);
         const limiteTasa = /demasiadas solicitudes|intentá de nuevo/i.test(detalle);
         console.error('❌ Error registrando solicitud de turno en Supabase:', detalle);
         return response.status(limiteTasa ? 429 : (conflicto ? 409 : 500)).json({ status: 'error', message: amistoso });

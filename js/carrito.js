@@ -616,6 +616,7 @@ async function restringirFormularioTurno() {
     const selectHora = document.createElement('select');
     selectHora.id = 'turnoHora';
     selectHora.name = 'hora';
+    selectHora.required = true;
     selectHora.disabled = true;
     selectHora.setAttribute('aria-label', 'Hora preferida');
 
@@ -642,7 +643,7 @@ async function restringirFormularioTurno() {
             return;
         }
 
-        opcionHora.textContent = 'Elegí la hora (opcional)';
+        opcionHora.textContent = 'Elegí la hora';
         selectHora.disabled = false;
         [...horas].sort().forEach((t) => {
             const opt = document.createElement('option');

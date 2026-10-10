@@ -79,7 +79,8 @@ function validarDatosTurno(datos) {
         { campo: 'turnoNombre', valido: v => v.length >= 2, mensaje: 'Ingresá tu nombre completo (mínimo 2 caracteres)' },
         { campo: 'turnoTelefono', valido: v => /^[\d\s+\-()]+$/.test(v) && v.replace(/\D/g, '').length >= 7, mensaje: 'Ingresá un teléfono válido (mínimo 7 dígitos)' },
         { campo: 'turnoEmail', valido: v => v === '' || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), mensaje: 'Ingresá un email válido' },
-        { campo: 'turnoFecha', valido: v => v !== '', mensaje: 'Elegí una fecha preferida' }
+        { campo: 'turnoFecha', valido: v => v !== '', mensaje: 'Elegí una fecha preferida' },
+        { campo: 'turnoHora', valido: v => v !== '', mensaje: 'Elegí una hora preferida' }
     ];
 
     let errores = 0;
@@ -518,7 +519,8 @@ function construirUrlWhatsAppTurno(datos, respuesta) {
 
     mensaje += `*Cita solicitada:*\n`;
     mensaje += `Fecha: ${respuesta.fecha || datos.turnoFecha}\n`;
-    mensaje += `Hora: ${respuesta.hora || (datos.turnoHora || 'A coordinar')}\n\n`;
+    // La hora es obligatoria (form + servidor): siempre viene de la base.
+    mensaje += `Hora: ${respuesta.hora}\n\n`;
 
     if (items.length === 0) {
         const producto = respuesta.producto;

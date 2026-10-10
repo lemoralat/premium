@@ -181,6 +181,15 @@ begin
         raise exception 'Estructura de solicitud inválida';
     end if;
 
+    -- Fecha y HORA son obligatorias (el frontend las exige y el servidor
+    -- también: sin hora puntual no hay franja que reservar ni validar).
+    if btrim(coalesce(p_hora, '')) = '' then
+        raise exception 'La hora es obligatoria';
+    end if;
+    if p_hora !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
+        raise exception 'Ingresá una hora válida (formato HH:MM)';
+    end if;
+
     v_nombre   := btrim(coalesce(p_cliente->>'nombre', ''));
     v_telefono := btrim(coalesce(p_cliente->>'telefono', ''));
     v_email    := lower(btrim(coalesce(p_cliente->>'email', '')));
@@ -258,7 +267,9 @@ begin
     -- 0.4) DISPONIBILIDAD (0054): un horario Confirmado/Realizado de la misma
     --      fecha ocupa su franja y esta solicitud se rechaza. Pendiente y
     --      Cancelado no bloquean (solicitud sin confirmar / horario liberado).
-    --      Sin hora puntual no hay franja que validar (se coordina después).
+    --      La hora quedó garantizada en 0.1 (obligatoria, formato HH:MM): esta
+    --      comprobación corre siempre que haya hora puntual, que es el caso
+    --      normal de la tienda actual.
     if btrim(coalesce(p_hora, '')) ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
         -- Duración del turno solicitado: suma de la duración de los servicios
         -- del carrito (15 min por servicio sin duración declarada).
@@ -393,7 +404,7 @@ revoke all on function public.insertar_turno(jsonb, text, text, jsonb, text, jso
 grant execute on function public.insertar_turno(jsonb, text, text, jsonb, text, jsonb, uuid) to service_role;
 
 comment on function public.insertar_turno(jsonb, text, text, jsonb, text, jsonb, uuid) is
-    'Registra una solicitud de turno: valida nombre/teléfono/email/fecha, normaliza los items del carrito (id, nombre, variante_texto, cantidad, precio_unitario), rechaza los horarios ocupados por un turno Confirmado/Realizado de la misma fecha (0054), genera el numero TRN-#### y devuelve la solicitud con items y total como fuente de verdad. Protecciones: idempotencia por token, anti-spam de 10 solicitudes/hora por correo, límites de payload sobre items, serialización por fecha con advisory lock y set search_path (migración 0054).';
+    'Registra una solicitud de turno: valida nombre/teléfono/email y fecha + hora (ambas obligatorias, hora en formato HH:MM); normaliza los items del carrito (id, nombre, variante_texto, cantidad, precio_unitario); rechaza los horarios ocupados por un turno Confirmado/Realizado de la misma fecha (0054); genera el numero TRN-#### y devuelve la solicitud con items y total como fuente de verdad. Protecciones: idempotencia por token, anti-spam de 10 solicitudes/hora por correo, límites de payload sobre items, serialización por fecha con advisory lock y set search_path (migración 0054).';
 
 -- ----------------------------------------------------------------------------
 -- 3) Registro en schema_migrations (si 0045 ya creó la tabla)
