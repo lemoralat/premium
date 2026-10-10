@@ -8,6 +8,7 @@ let categorias = [];
 let busqueda = '';
 let filtroCategoria = 'todas';
 let filtroActivo = 'todos';
+let seleccionados = new Set();
 
 // Tipo de web (settings.modo_web, migración 0051): en modo turnos los
 // productos se gestionan como servicios (duración estimada + horarios por día
@@ -54,6 +55,7 @@ export async function renderizar(contenedor) {
     categorias = categoriasR.data || [];
     modoWeb = settingsR.data?.modo_web === 'turnos' ? 'turnos' : 'venta';
 
+    seleccionados.clear();
     pintar(contenedor);
 }
 
@@ -66,6 +68,10 @@ function pintar(contenedor) {
         const porBusqueda = !q || String(p.nombre).toLowerCase().includes(q);
         return porCategoria && porActivo && porBusqueda;
     });
+
+    const conSeleccion = seleccionados.size > 0;
+    const todosVisibles = filtrados.length > 0 && filtrados.every((p) => seleccionados.has(p.id));
+    const algunosVisibles = !todosVisibles && filtrados.some((p) => seleccionados.has(p.id));
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
@@ -89,6 +95,15 @@ function pintar(contenedor) {
             <span style="color:var(--text-muted); font-size:0.85rem;">${filtrados.length} de ${productos.length}</span>
         </div>
 
+        ${conSeleccion ? `
+        <div class="admin-bulkbar" role="status">
+            <span class="admin-bulkbar-info"><i class="fa-solid fa-square-check"></i> <strong>${seleccionados.size}</strong> ${enServicios ? 'servicio(s)' : 'producto(s)'} seleccionado(s)</span>
+            <div class="admin-bulkbar-acciones">
+                <button type="button" class="btn btn-sm btn-outline" id="btnLimpiarSeleccionProductos">Quitar selección</button>
+                <button type="button" class="btn btn-sm btn-danger" id="btnBorrarSeleccionProductos"><i class="fa-solid fa-trash-can"></i> Borrar seleccionados</button>
+            </div>
+        </div>` : ''}
+
         ${filtrados.length === 0 ? `
         <div class="admin-card">
             <div class="admin-empty"><i class="fa-solid fa-box-open"></i><h3>${enServicios ? 'Sin servicios' : 'Sin productos'}</h3><p>No hay ${enServicios ? 'servicios' : 'productos'} que coincidan con la búsqueda.</p></div>
@@ -97,6 +112,7 @@ function pintar(contenedor) {
             <table class="admin-tabla">
                 <thead>
                     <tr>
+                        <th class="th-check"><label class="admin-check" title="Seleccionar todos los visibles"><input type="checkbox" id="selTodosProductos" aria-label="Seleccionar todos los visibles" ${todosVisibles ? 'checked' : ''}></label></th>
                         <th>${enServicios ? 'Servicio' : 'Producto'}</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Variantes</th><th>Visible</th><th></th>
                     </tr>
                 </thead>
@@ -130,6 +146,43 @@ function pintar(contenedor) {
     contenedor.querySelectorAll('[data-toggle-activo]').forEach((chk) => {
         chk.addEventListener('change', () => toggleActivo(Number(chk.dataset.toggleActivo), chk.checked));
     });
+
+    // Selección de filas (checkbox individual)
+    contenedor.querySelectorAll('[data-seleccion-producto]').forEach((cb) => {
+        cb.addEventListener('change', () => {
+            const id = Number(cb.dataset.seleccionProducto);
+            if (cb.checked) seleccionados.add(id);
+            else seleccionados.delete(id);
+            pintar(contenedor);
+        });
+    });
+
+    // Seleccionar / deseleccionar todos los visibles
+    const selTodos = $('#selTodosProductos');
+    if (selTodos) {
+        selTodos.indeterminate = algunosVisibles;
+        selTodos.addEventListener('change', () => {
+            const ids = filtrados.map((p) => p.id);
+            if (selTodos.checked) ids.forEach((id) => seleccionados.add(id));
+            else ids.forEach((id) => seleccionados.delete(id));
+            pintar(contenedor);
+        });
+    }
+
+    // Barra de lote: quitar selección
+    const btnLimpiarSel = $('#btnLimpiarSeleccionProductos');
+    if (btnLimpiarSel) {
+        btnLimpiarSel.addEventListener('click', () => {
+            seleccionados.clear();
+            pintar(contenedor);
+        });
+    }
+
+    // Barra de lote: borrar seleccionados
+    const btnBorrarSel = $('#btnBorrarSeleccionProductos');
+    if (btnBorrarSel) {
+        btnBorrarSel.addEventListener('click', () => borrarProductos([...seleccionados]));
+    }
 }
 
 function imagenPrincipalDe(p) {
@@ -148,6 +201,11 @@ function filaProducto(p) {
     const tieneDuracion = enServicios && Number(p.servicio_duracion_min) > 0;
     return `
         <tr>
+            <td class="td-check">
+                <label class="admin-check" title="Seleccionar este ${enServicios ? 'servicio' : 'producto'}">
+                    <input type="checkbox" data-seleccion-producto="${esc(p.id)}" aria-label="Seleccionar ${esc(p.nombre)}" ${seleccionados.has(p.id) ? 'checked' : ''}>
+                </label>
+            </td>
             <td class="td-principal">
                 <div style="display:flex; align-items:center; gap:0.7rem;">
                     ${imagenPrincipalDe(p)}
@@ -930,6 +988,42 @@ async function borrarProducto(id) {
         }
         toast('Producto eliminado.');
         renderizar(contenedorActual || $('#adminView'));
+    } catch (error) {
+        toast(`No se pudo eliminar: ${error.message}`, 'error');
+    }
+}
+
+// Borrado en lote (barra de selección). Elimina varios productos/servicios de
+// una y limpia sus imágenes de Storage (misma lógica que borrarProducto, sin
+// confirmar fila por fila).
+async function borrarProductos(ids) {
+    const enServicios = modoWeb === 'turnos';
+    const palabra = enServicios ? 'servicio' : 'producto';
+    const ok = await confirmarBorrado(
+        `¿Eliminar <strong>${ids.length}</strong> ${palabra}${ids.length === 1 ? '' : 's'} en lote?`
+        + '<br><br>Se borran sus imágenes, variantes y horarios. Los pedidos o turnos anteriores no se ven afectados. Esta acción no se puede deshacer.'
+        , { html: true }
+    );
+    if (!ok) return;
+
+    try {
+        const sb = await clienteAdmin();
+        const { error } = await sb.from('products').delete().in('id', ids);
+        if (error) throw error;
+
+        // Limpiar de Storage las imágenes de los productos eliminados
+        const eliminados = new Set(ids);
+        for (const p of productos) {
+            if (!eliminados.has(p.id)) continue;
+            for (const img of (Array.isArray(p.imagenes) ? p.imagenes : [])) {
+                if (img.storage_path) await eliminarImagenAdmin(img.storage_path);
+            }
+        }
+
+        productos = productos.filter((p) => !eliminados.has(p.id));
+        seleccionados.clear();
+        toast(`${ids.length} ${palabra}${ids.length === 1 ? '' : 's'} eliminado${ids.length === 1 ? '' : 's'}`);
+        pintar(contenedorActual || $('#adminView'));
     } catch (error) {
         toast(`No se pudo eliminar: ${error.message}`, 'error');
     }
