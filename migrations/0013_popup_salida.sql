@@ -10,7 +10,10 @@
 --   popup_cta_url     → destino del CTA (página interna o URL externa)
 --   popup_activo      → true muestra el popup, false lo desactiva
 --
--- Los defaults replica el contenido que la tienda mostraba hasta ahora.
+-- Los defaults replican el contenido que la tienda mostraba hasta ahora.
+-- El popup ARRANCA DESACTIVADO (`default false`): el dueño lo enciende desde
+-- Configuración → Popup de salida. (La 0055 apaga las filas que quedaron con
+-- el default true de las primeras versiones de esta migración.)
 -- Al agregar columnas NOT NULL con default, la fila existente (id=1) recibe
 -- automáticamente los valores por defecto.
 --
@@ -22,7 +25,7 @@ alter table public.settings
     add column if not exists popup_descripcion text    not null default 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
     add column if not exists popup_cta         text    not null default 'Ver productos',
     add column if not exists popup_cta_url     text    not null default 'index.html#tienda',
-    add column if not exists popup_activo      boolean not null default true;
+    add column if not exists popup_activo      boolean not null default false;
 
 comment on column public.settings.popup_titulo
     is 'Título del popup de salida';

@@ -7,13 +7,14 @@ import { exportarProductosCSV, exportarPedidosCSV, descargarCSV } from './export
 
 // Defaults del popup de salida (replican el contenido que la tienda mostraba
 // antes de que fuese configurable). Se usan si la columna aún no existe (la
-// migración 0013 todavía no aplicada) o si el admin la deja vacía.
+// migración 0013 todavía no aplicada) o si el admin la deja vacía. Desde la
+// 0055 el popup arranca DESACTIVADO: `activo` solo se enciende explícitamente.
 const DEFAULT_POPUP = {
     titulo: '¿Te vas tan pronto?',
     descripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
     cta: 'Ver productos',
     ctaUrl: '/#tienda',
-    activo: true
+    activo: false
 };
 
 export async function renderizar(contenedor) {
@@ -202,7 +203,7 @@ export async function renderizar(contenedor) {
                     </div>
                     <div class="admin-field full">
                         <label class="admin-check">
-                            <input type="checkbox" id="cfgPopupActivo" ${s.popup_activo === false ? '' : 'checked'}>
+                            <input type="checkbox" id="cfgPopupActivo" ${s.popup_activo === true ? 'checked' : ''}>
                             Popup activo (se muestra al intentar salir de la tienda)
                         </label>
                     </div>

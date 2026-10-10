@@ -69,13 +69,14 @@ export const CONFIG_APP = {
     socialLinkedin: '',
     socialWhatsapp: '',
     socialOtra: '',
-    // Popup de salida (Configuración → Popup de salida). Defaults = contenido
-    // que la tienda mostró siempre.
+    // Popup de salida (Configuración → Popup de salida). Defaults del contenido
+    // que la tienda mostró siempre; el popup arranca DESACTIVADO (0055) y solo
+    // se muestra si el dueño lo activa explícitamente en el panel.
     popupTitulo: '¿Te vas tan pronto?',
     popupDescripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
     popupCta: 'Ver productos',
     popupCtaUrl: '/#tienda',
-    popupActivo: true,
+    popupActivo: false,
     // Marquee promocional (sección "Diseño" del panel). Conservadores: antes de
     // la migración 0017 (columna ausente) la barra queda oculta.
     marqueeActivo: false,
@@ -166,12 +167,14 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.socialWhatsapp = c.social_whatsapp || '';
             CONFIG_APP.socialOtra = c.social_otra || '';
 
-            // Popup de salida (Configuración → Popup de salida)
+            // Popup de salida (Configuración → Popup de salida). `=== true`:
+            // default apagado (0055), solo un valor explícito enciende el
+            // popup — mismo criterio conservador que marqueeActivo.
             CONFIG_APP.popupTitulo = c.popup_titulo || CONFIG_APP.popupTitulo;
             CONFIG_APP.popupDescripcion = c.popup_descripcion || CONFIG_APP.popupDescripcion;
             CONFIG_APP.popupCta = c.popup_cta || CONFIG_APP.popupCta;
             CONFIG_APP.popupCtaUrl = c.popup_cta_url || CONFIG_APP.popupCtaUrl;
-            CONFIG_APP.popupActivo = c.popup_activo !== false;
+            CONFIG_APP.popupActivo = c.popup_activo === true;
 
             // Marquee (sección "Diseño" del panel). `=== true`: sin la
             // migración 0017 la columna no existe → barra oculta.

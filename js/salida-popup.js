@@ -42,7 +42,9 @@
 
     // Configuración del popup (Configuración → Popup de salida). La expone
     // template.js en window.POPUP_CONFIG; mientras no esté lista se usan los
-    // mismos valores que la tienda mostró siempre.
+    // mismos valores de contenido. `activo` es conservador (=== true, 0055):
+    // sin configuración cargada el popup queda apagado; solo enciende si se
+    // activó explícitamente.
     function configPopup() {
         const c = window.POPUP_CONFIG || {};
         return {
@@ -50,7 +52,7 @@
             descripcion: c.descripcion || 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
             cta: c.cta || 'Ver productos',
             ctaUrl: c.ctaUrl || '/#tienda',
-            activo: c.activo !== false
+            activo: c.activo === true
         };
     }
 
