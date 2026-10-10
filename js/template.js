@@ -57,12 +57,20 @@ function renderHeader(activePage = '', categorias = []) {
             : '';
     }).join('');
 
-    header.innerHTML = `
+    // Si no hay ninguna red social configurada (ni una sola URL navegable), el
+    // bloque .redes completo no se renderiza: el header arranca directo en la
+    // barra de navegación, sin dejar una franja vacía arriba.
+    const bloqueRedesHTML = redesHTML
+        ? `
         <div class="redes">
             <div class="contenedor">
                 ${redesHTML}
             </div>
-        </div>
+        </div>`
+        : '';
+
+    header.innerHTML = `
+        ${bloqueRedesHTML}
         <nav class="navbar" aria-label="Menú principal">
             <div class="nav-container contenedor">
                 <!-- Logo + buscador en un mismo contenedor flex: el gap entre
