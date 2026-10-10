@@ -1727,3 +1727,122 @@ html[data-tema="dark"] {
        Solo en dark: en light el par azul sobre azul claro es el que hay. */
     .estado-procesando, .estado-confirmado { color: #93a8f5; }
 }
+
+/* ============================================================================
+   EMOJI PICKER (formularios — ej. mensajes del marquee)
+   ============================================================================ */
+/* Botón de la carita + campo en la misma línea (admin-input-emoji envuelve
+   input y botón). El picker en sí se dibuja en <body> con position:fixed y
+   z-index por encima de los modales, así no se recorta por el overflow. */
+.admin-input-emoji {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
+.admin-input-emoji input { flex: 1; min-width: 0; }
+
+.admin-emoji-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    flex-shrink: 0;
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.admin-emoji-btn.activo {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.admin-emoji-popover {
+    position: fixed;
+    z-index: 220; /* por encima de .admin-modal (100) y de los toasts (200) */
+    width: 300px;
+    max-width: calc(100vw - 1rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.7rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+}
+
+.admin-emoji-buscar-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.admin-emoji-buscar-wrap i {
+    position: absolute;
+    left: 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    pointer-events: none;
+}
+
+.admin-emoji-buscar {
+    width: 100%;
+    padding: 0.4rem 0.6rem 0.4rem 1.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.85rem;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.admin-emoji-buscar:focus { outline: 2px solid var(--primary-light); }
+
+.admin-emoji-cuerpo {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.admin-emoji-bloque[hidden] { display: none; }
+
+.admin-emoji-grupo {
+    margin: 0.35rem 0 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.admin-emoji-grilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 0.25rem;
+}
+
+.admin-emoji-celda {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, transform 0.08s;
+}
+
+.admin-emoji-celda:hover {
+    background: var(--bg);
+    border-color: var(--border);
+    transform: scale(1.12);
+}
+
+.admin-emoji-celda[hidden] { display: none; }

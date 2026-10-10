@@ -7,6 +7,7 @@
 
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
+import { instalarEmojiPicker } from './emoji-picker.js';
 
 // Tope de mensajes. La garantía real está en la BD (trigger
 // trg_marquee_items_max, migración 0035): esto es la parte amable, que evita
@@ -94,8 +95,11 @@ function abrirModalMensaje(idExistente, contenedor) {
             <div class="admin-form-grid">
                 <div class="admin-field full">
                     <label for="mqTexto">Mensaje <span style="color:var(--danger);">*</span></label>
-                    <input type="text" id="mqTexto" required maxlength="200" value="${esc(item?.texto || '')}">
-                    <span class="hint">Obligatorio. Se muestra en la barra sobre el encabezado; podés usar emojis (ej. 🔥 ¡20% OFF con PROMO20!).</span>
+                    <div class="admin-input-emoji">
+                        <input type="text" id="mqTexto" required maxlength="200" value="${esc(item?.texto || '')}" placeholder="Ej. 🔥 ¡20% OFF con PROMO20!">
+                        <button type="button" class="btn btn-sm admin-emoji-btn" id="mqEmojiBtn" aria-label="Insertar emoji" title="Insertar emoji">😀</button>
+                    </div>
+                    <span class="hint">Obligatorio. Se muestra en la barra sobre el encabezado; tocá la carita para insertar emojis.</span>
                 </div>
                 <div class="admin-field">
                     <label for="mqPosition">Orden</label>
@@ -115,6 +119,10 @@ function abrirModalMensaje(idExistente, contenedor) {
             </div>
         </form>
     `);
+
+    // Emoji picker: el botón de la carita junto al campo Mensaje inserta
+    // emojis en la posición del cursor (widget reutilizable de emoji-picker.js).
+    instalarEmojiPicker({ input: $('#mqTexto'), boton: $('#mqEmojiBtn') });
 
     $('#mqForm').addEventListener('submit', async (event) => {
         event.preventDefault();
