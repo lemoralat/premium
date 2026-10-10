@@ -559,7 +559,11 @@ function abrirModalProducto(idExistente) {
                 .filter(Boolean),
             activo: $('#prdActivo').checked,
             destacado: $('#prdDestacado').checked,
-            category_id: categoriaValue ? Number(categoriaValue) : null
+            category_id: categoriaValue ? Number(categoriaValue) : null,
+            // Propiedad del ítem (migración 0056): el modo en que se guarda. Al
+            // cambiar el modo en Configuración, la RPC cambiar_modo_web activa
+            // los del modo entrante y desactiva los del otro (sin borrar).
+            modo: enServicios ? 'turnos' : 'venta'
         };
 
         // Campos de servicio (modo turnos, 0053): se guardan en la misma fila de

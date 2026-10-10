@@ -1,6 +1,6 @@
 // configuracion.js — Configuración global de la tienda (tabla settings, fila única).
 
-import { $, esc, toast, conCarga, estadoCargando } from './admin-ui.js';
+import { $, esc, toast, conCarga, estadoCargando, confirmarDialogo } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { renderizarGestor as renderizarGestorPreguntas } from './preguntas-frecuentes.js';
 import { exportarProductosCSV, exportarPedidosCSV, descargarCSV } from './exportar-datos.js';
@@ -348,23 +348,70 @@ export async function renderizar(contenedor) {
     vincular('#configFormPopup', camposPopup);
 
     // Tipo de web: el panel depende del modo (menú Productos/Servicios y las
-    // secciones Pedidos/Turnos visibles según el caso), así que si cambia se
-    // recarga para reflejarlo en el acto. Sin cambio de modo, se guarda normal.
+    // secciones Pedidos/Turnos visibles según el caso). Si el modo CAMBIA, la
+    // RPC cambiar_modo_web (migración 0056) activa los ítems del modo entrante
+    // y desactiva (sin borrar) los del otro modo, con confirmación previa que
+    // muestra los conteos. Sin cambio de modo, se guarda normal.
     const modoActual = s.modo_web === 'turnos' ? 'turnos' : 'venta';
+    const etiquetaModo = (m) => m === 'turnos' ? 'servicios' : 'productos';
     $('#configFormTipoWeb').addEventListener('submit', async (event) => {
         event.preventDefault();
         const submitBtn = event.submitter || $('#configFormTipoWeb').querySelector('[type="submit"]');
         const payload = sinColumnasAusentes(camposTipoWeb());
         const nuevoModo = payload.modo_web === 'turnos' ? 'turnos' : 'venta';
-        conCarga(submitBtn, guardarConfig(payload))
-            .then(() => {
-                toast('Configuración guardada.');
-                if (nuevoModo !== modoActual) {
-                    // Espera a que se vea el toast antes de recargar el panel.
-                    setTimeout(() => window.location.reload(), 700);
-                }
+
+        if (nuevoModo === modoActual) {
+            conCarga(submitBtn, guardarConfig(payload))
+                .then(() => toast('Configuración guardada.'))
+                .catch((error) => toast(error.message, 'error'));
+            return;
+        }
+
+        // Cambio de modo: consultar conteos para el mensaje de confirmación.
+        // (Si la 0056 no está aplicada, la columna `modo` no existe y esto
+        // falla con error claro: hay que correr la migración primero.)
+        let sb;
+        let conteos = { activar: 0, desactivar: 0 };
+        try {
+            sb = await clienteAdmin();
+            const [activarR, desactivarR] = await Promise.all([
+                sb.from('products').select('id', { count: 'exact', head: true })
+                    .eq('modo', nuevoModo).eq('activo', false),
+                sb.from('products').select('id', { count: 'exact', head: true })
+                    .eq('modo', modoActual).eq('activo', true)
+            ]);
+            if (activarR.error) throw activarR.error;
+            if (desactivarR.error) throw desactivarR.error;
+            conteos = { activar: activarR.count ?? 0, desactivar: desactivarR.count ?? 0 };
+        } catch (error) {
+            toast(`No se pudo preparar el cambio de modo: ${error.message}`, 'error');
+            return;
+        }
+
+        const nombreNuevo = nuevoModo === 'turnos'
+            ? 'Solicitud de turnos (agenda)'
+            : 'Venta de productos (carrito y checkout)';
+        const ok = await confirmarDialogo({
+            titulo: 'Cambiar tipo de web',
+            mensaje:
+                `¿Cambiar el sitio a <strong>${esc(nombreNuevo)}</strong>?`
+                + `<br><br>Se <strong>activarán ${conteos.activar}</strong> ${etiquetaModo(nuevoModo)} y se `
+                + `<strong>desactivarán ${conteos.desactivar}</strong> ${etiquetaModo(modoActual)}. `
+                + 'Ningún ítem se borra: los ocultos siguen en el panel (filtro "Activos e inactivos").',
+            textoConfirmar: `Cambiar a ${nuevoModo === 'turnos' ? 'turnos' : 'venta'}`,
+            mensajeHtml: true
+        });
+        if (!ok) return;
+
+        conCarga(submitBtn, sb.rpc('cambiar_modo_web', { p_modo: nuevoModo }))
+            .then(({ data, error }) => {
+                if (error) throw error;
+                const r = data || {};
+                toast(`Modo ${nuevoModo}: ${r.activados ?? conteos.activar} activado(s), ${r.desactivados ?? conteos.desactivar} desactivado(s).`);
+                // Espera a que se vea el toast antes de recargar el panel.
+                setTimeout(() => window.location.reload(), 700);
             })
-            .catch((error) => toast(error.message, 'error'));
+            .catch((error) => toast(`No se pudo cambiar el modo: ${error.message}`, 'error'));
     });
 
     // Exportar datos (CSV): productos y pedidos, cada uno con su archivo.
