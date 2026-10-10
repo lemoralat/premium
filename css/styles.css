@@ -1927,7 +1927,7 @@ footer p {
        ancho automático — los 40px de ancho eran para la marca cuadrada. */
     height: 16px;
     width: auto;
-    vertical-align: middle;
+    vertical-align: text-bottom;
     margin-left: 10px;
 }
 
