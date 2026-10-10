@@ -230,6 +230,13 @@ function aplicarDisenoGlobal() {
     const aspectRatio = CARD_ASPECT_RATIOS[CONFIG_DISENO.cardImageFormat] || CARD_ASPECT_RATIOS['1:1'];
     document.documentElement.style.setProperty('--product-card-aspect-ratio', aspectRatio);
 
+    // Modo "Sin imágenes" (migración 0057): clase global que la hoja de estilos
+    // usa para ocultar TODA foto de producto (cards, carrito, favoritos y la
+    // galería del detalle). Al volver a un formato con foto la clase se quita y
+    // todo reaparece (los datos de imagen no se tocan).
+    document.body.classList.remove('sin-imagenes');
+    if (CONFIG_DISENO.cardImageFormat === 'sin_imagenes') document.body.classList.add('sin-imagenes');
+
     // Favicon dinámico (todas las páginas usan template.js)
     if (CONFIG_DISENO.faviconUrl) {
         document.querySelectorAll('link[rel="icon"]').forEach((el) => {

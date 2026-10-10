@@ -14,6 +14,9 @@ let seleccionados = new Set();
 // productos se gestionan como servicios (duración estimada + horarios por día
 // de la semana, migración 0053). El resto del CRUD es idéntico.
 let modoWeb = 'venta';
+// 0057: el formato de cards (settings.card_image_format) decide si el
+// formulario permite imágenes — oculto por completo en modo "Sin imágenes".
+let cardSinImagenes = false;
 
 // Estado del formulario abierto
 let variantesModal = [];
@@ -44,7 +47,7 @@ export async function renderizar(contenedor) {
             imagenes:product_images(id, storage_path, es_principal, position)
         `).order('id', { ascending: true }),
         sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true }),
-        sb.from('settings').select('modo_web').eq('id', 1).single()
+        sb.from('settings').select('modo_web, card_image_format').eq('id', 1).single()
     ]);
 
     if (productosR.error) throw productosR.error;
@@ -54,6 +57,7 @@ export async function renderizar(contenedor) {
     productos = productosR.data || [];
     categorias = categoriasR.data || [];
     modoWeb = settingsR.data?.modo_web === 'turnos' ? 'turnos' : 'venta';
+    cardSinImagenes = settingsR.data?.card_image_format === 'sin_imagenes';
 
     seleccionados.clear();
     pintar(contenedor);
@@ -401,6 +405,10 @@ function abrirModalProducto(idExistente) {
                 </button>
             </div>`}
 
+            ${cardSinImagenes ? `
+            <div class="admin-field full">
+                <span class="hint" style="color:var(--warning, #b45309);"><i class="fa-solid fa-triangle-exclamation"></i> Modo <strong>Sin imágenes</strong> activo en Diseño: este ${enServicios ? 'servicio' : 'producto'} no muestra imágenes en la tienda y no se pueden subir nuevas aquí.</span>
+            </div>` : `
             <div class="admin-field full">
                 <label>Imágenes <span class="hint">(una principal + galería; JPG, PNG o WebP hasta 8 MB, se optimizan solas)</span></label>
                 <div class="admin-imagenes" id="imagenesEditor"></div>
@@ -410,7 +418,7 @@ function abrirModalProducto(idExistente) {
                         <input type="file" id="prdImagenArchivo" accept="image/jpeg,image/png,image/webp" multiple>
                     </label>
                 </div>
-            </div>
+            </div>`}
 
             <div class="admin-modal-acciones">
                 <button type="button" class="btn" onclick="document.querySelector('#adminModal [data-cerrar-modal]').click()">Cancelar</button>
@@ -421,7 +429,7 @@ function abrirModalProducto(idExistente) {
 
     renderVariantes();
     renderCaracteristicas();
-    renderImagenes();
+    if (!cardSinImagenes) renderImagenes();
     if (enServicios) renderHorarios();
 
     // Crear categoría inline (sin anidar modales: el producto ya está en el
@@ -478,7 +486,10 @@ function abrirModalProducto(idExistente) {
         });
     }
 
-    $('#prdImagenArchivo').addEventListener('change', async () => {
+    // En modo "Sin imágenes" (0057) el bloque de imágenes no se renderiza:
+    // el input no existe, así que solo se enlaza su listener si está presente.
+    const inputImagen = $('#prdImagenArchivo');
+    if (inputImagen) inputImagen.addEventListener('change', async () => {
         const archivos = [...$('#prdImagenArchivo').files];
         if (!archivos.length) return;
         try {

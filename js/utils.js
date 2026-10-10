@@ -192,7 +192,9 @@ export async function cargarConfiguracionGlobal() {
             }
             CONFIG_DISENO.faviconUrl = c.favicon_path ? urlImagen({ storage_path: c.favicon_path }) : '';
             CONFIG_DISENO.ogImageUrl = c.og_image_path ? urlImagen({ storage_path: c.og_image_path }) : '';
-            if (['1:1', '3:2', '4:5'].includes(c.card_image_format)) {
+            // 0057 agrega 'sin_imagenes' (cards sin foto, sin galería y sin
+            // subida en el formulario del panel).
+            if (['1:1', '3:2', '4:5', 'sin_imagenes'].includes(c.card_image_format)) {
                 CONFIG_DISENO.cardImageFormat = c.card_image_format;
             }
             if (/^#[0-9a-fA-F]{6}$/.test(c.color_principal || '')) {

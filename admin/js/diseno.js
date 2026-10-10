@@ -56,7 +56,10 @@ const LOGO_TAMANOS = [
 const CARD_FORMATS = [
     { valor: '1:1', nombre: 'Cuadrado', desc: '1:1', aspecto: '1 / 1' },
     { valor: '3:2', nombre: 'Horizontal', desc: '3:2', aspecto: '3 / 2' },
-    { valor: '4:5', nombre: 'Vertical', desc: '4:5', aspecto: '4 / 5' }
+    { valor: '4:5', nombre: 'Vertical', desc: '4:5', aspecto: '4 / 5' },
+    // 0057: tienda sin fotos — los cards no muestran imagen, no hay galería y
+    // el panel no permite subir (aspecto null = preview propio en el selector).
+    { valor: 'sin_imagenes', nombre: 'Sin imágenes', desc: 'Cards sin foto, sin galería y sin subida en el formulario.', aspecto: null }
 ];
 
 // Estado por recurso de imagen: path actual, archivo nuevo pendiente y "quitar".
@@ -135,6 +138,15 @@ export async function renderizar(contenedor) {
             .diseno-formato-opcion.activa { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); }
             .diseno-formato-opcion input { position: absolute; opacity: 0; pointer-events: none; }
             .diseno-formato-muestra { width: 42px; max-height: 58px; background: var(--primary); border-radius: 4px; flex: 0 0 auto; }
+            .diseno-formato-muestra--sin-imagen {
+                position: relative; display: flex; align-items: center; justify-content: center;
+                background: transparent; border: 1.5px dashed var(--muted, #94a3b8);
+                width: 42px; height: 42px; color: var(--muted, #94a3b8); font-size: 0.95rem;
+            }
+            .diseno-formato-muestra--sin-imagen .fa-ban {
+                position: absolute; top: -7px; right: -7px; font-size: 0.6rem; color: var(--danger, #dc2626);
+                background: var(--surface, #fff); border-radius: 50%; padding: 1px;
+            }
             .diseno-formato-nombre { font-size: 0.9rem; font-weight: 600; }
             .diseno-formato-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: 0.78rem; margin-top: 0.15rem; }
         </style>
@@ -326,10 +338,18 @@ function campoFormatoCard(actual) {
     const valor = CARD_FORMATS.some((formato) => formato.valor === actual) ? actual : '1:1';
     const opciones = CARD_FORMATS.map((formato) => {
         const activo = formato.valor === valor;
+        // 0057: la opción "Sin imágenes" no tiene relación de aspecto — su
+        // preview es un bloque sin foto con el ícono tachado.
+        const muestra = formato.aspecto
+            ? `<span class="diseno-formato-muestra" style="aspect-ratio:${formato.aspecto};" aria-hidden="true"></span>`
+            : `<span class="diseno-formato-muestra diseno-formato-muestra--sin-imagen" aria-hidden="true">
+                <i class="fa-solid fa-image"></i>
+                <i class="fa-solid fa-ban"></i>
+               </span>`;
         return `
         <label class="diseno-formato-opcion ${activo ? 'activa' : ''}">
             <input type="radio" name="cardImageFormat" value="${esc(formato.valor)}" ${activo ? 'checked' : ''}>
-            <span class="diseno-formato-muestra" style="aspect-ratio:${formato.aspecto};" aria-hidden="true"></span>
+            ${muestra}
             <span class="diseno-formato-nombre">${esc(formato.nombre)}<em>${esc(formato.desc)}</em></span>
         </label>`;
     }).join('');
@@ -338,7 +358,9 @@ function campoFormatoCard(actual) {
         <div class="admin-field full">
             <label>Formato de las imágenes de los cards</label>
             <div class="diseno-formatos">${opciones}</div>
-            <span class="hint">Se aplica a los cards del catálogo, búsqueda y ${esTurnos ? 'servicios relacionados' : 'productos relacionados'}.</span>
+            <span class="hint">${valor === 'sin_imagenes'
+                ? 'Los cards no muestran imagen, el detalle no tiene galería y el formulario no permite subir fotos. Al volver a un formato con foto todo reaparece (las imágenes no se borran).'
+                : `Se aplica a los cards del catálogo, búsqueda y ${esTurnos ? 'servicios relacionados' : 'productos relacionados'}.`}</span>
         </div>`;
 }
 

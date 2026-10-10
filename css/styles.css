@@ -1168,6 +1168,21 @@ span {
     aspect-ratio: 1 / 1;
 }
 
+/* Modo "Sin imágenes" (0057): la clase `sin-imagenes` en <body> la pone
+   js/template.js (aplicarDisenoGlobal) cuando Diseño → Formato de cards está
+   en "Sin imágenes". Oculta TODA foto de producto de la tienda pública sin
+   tocar los datos: cards (imagen o placeholder + el quick-add, que vive dentro
+   del wrapper), líneas del carrito (drawer y página; .item-image también cubre
+   su placeholder), lista de favoritos/búsqueda y la galería del detalle (que
+   pasa a una sola columna). Al volver a un formato con foto, la clase se quita
+   y todo reaparece. */
+.sin-imagenes .product-card .product-image-wrapper,
+.sin-imagenes .item-image,
+.sin-imagenes .favorito-item .favorito-media { display: none; }
+
+.sin-imagenes .product-detail-grid .product-detail-image-container { display: none; }
+.sin-imagenes .product-detail-grid { grid-template-columns: 1fr; }
+
 .product-info {
     padding: 1.25rem;
     flex: 1;
