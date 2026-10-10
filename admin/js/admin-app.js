@@ -163,37 +163,47 @@ function configurarMenuMovil() {
 }
 
 // Branding del panel: usa el logotipo configurado en Diseño (settings.logo_path)
-// y el nombre de la tienda (Configuración → Datos generales, settings.site_name);
-// si no hay logotipo cargado queda el default de lemora (../img/lemora.svg) y si
-// no hay nombre, se mantiene "Lemora Administración". También actualiza el
-// favicon, igual que la tienda. No bloquea el arranque del panel.
+// para la marca del sidebar y el nombre de la tienda (Configuración → Datos
+// generales, settings.site_name); si no hay logotipo cargado queda el default
+// de lemora (../img/lemora.svg) y si no hay nombre, se mantiene "Lemora
+// Administración". El favicon usa el de Diseño (settings.favicon_path), mismo
+// criterio que la tienda: si no hay favicon subido mantiene el default de
+// lemora (NO el logotipo). No bloquea el arranque del panel.
 async function aplicarBrandingPanel() {
     const img = document.querySelector('.admin-brand img');
     const nombreEl = document.querySelector('#adminBrandName');
     const iconos = document.querySelectorAll('link[rel="icon"]');
-    const ruta = await (async () => {
-        try {
-            const sb = await clienteAdmin();
-            const { data } = await sb.from('settings').select('logo_path, site_name').eq('id', 1).single();
 
-            const nombre = (data?.site_name || '').trim();
-            if (nombre && nombreEl) {
-                // Reemplaza "Lemora" por el nombre real de la tienda, conservando
-                // la segunda línea "Administración" (bloque de marca del panel).
-                nombreEl.innerHTML = `${esc(nombre)}<br>Administración`;
-            }
+    let logoPath = '';
+    let faviconPath = '';
+    try {
+        const sb = await clienteAdmin();
+        const { data } = await sb.from('settings').select('logo_path, site_name, favicon_path').eq('id', 1).single();
 
-            return data?.logo_path || '';
-        } catch {
-            return ''; // sin acceso o sin configuración: default
+        const nombre = (data?.site_name || '').trim();
+        if (nombre && nombreEl) {
+            // Reemplaza "Lemora" por el nombre real de la tienda, conservando
+            // la segunda línea "Administración" (bloque de marca del panel).
+            nombreEl.innerHTML = `${esc(nombre)}<br>Administración`;
         }
-    })();
 
-    const fuente = ruta ? urlPublica(ruta) : '../img/lemora.svg';
-    if (img) img.src = fuente;
+        logoPath = data?.logo_path || '';
+        faviconPath = data?.favicon_path || '';
+    } catch {
+        // sin acceso o sin configuración: defaults
+    }
+
+    // Marca del sidebar: el logotipo de la tienda.
+    const fuenteLogo = logoPath ? urlPublica(logoPath) : '../img/lemora.svg';
+    if (img) img.src = fuenteLogo;
+
+    // Favicon: el de Diseño (favicon_path). Sin favicon subido se mantiene el
+    // default de lemora (SVG) y el "type" queda como está; cuando hay favicon
+    // propio se limpia el "type" porque el subido puede ser PNG/WebP.
+    const fuenteFavicon = faviconPath ? urlPublica(faviconPath) : '../img/lemora.svg';
     iconos.forEach((el) => {
-        el.href = fuente;
-        if (ruta) el.removeAttribute('type'); // favicon subido puede ser PNG
+        el.href = fuenteFavicon;
+        if (faviconPath) el.removeAttribute('type');
     });
 }
 
