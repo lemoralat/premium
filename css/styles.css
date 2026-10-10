@@ -1928,7 +1928,7 @@ footer p {
     height: 16px;
     width: auto;
     vertical-align: text-bottom;
-    margin-left: 10px;
+    margin-left: 4px;
 }
 
 @media (max-width: 768px) {
