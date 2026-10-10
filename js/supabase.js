@@ -585,6 +585,48 @@ export async function cargarMarquee() {
 }
 
 // ============================================================================
+// TURNOS OCUPADOS (modo turnos, 0054)
+// ============================================================================
+// Horarios que ya están tomados (turno Confirmado/Realizado) para que la
+// solicitud de turno no los ofrezca. La RLS no deja leer `turnos` a la anon
+// key, así que la tienda consulta la RPC pública turnos_ocupados (security
+// definer), que solo expone fecha/hora/duración — nunca datos del cliente.
+export async function cargarTurnosOcupados(desde = '', hasta = '') {
+    const sb = await obtenerClienteSupabase();
+    if (!sb) return { ok: false };
+
+    const clave = `turnos-ocupados:${desde}:${hasta}`;
+    const cacheado = leerCache(clave);
+    if (cacheado) return { ok: true, datos: cacheado };
+
+    try {
+        const { data, error } = await sb.rpc('turnos_ocupados', {
+            p_desde: desde,
+            p_hasta: hasta
+        });
+        if (error) throw error;
+
+        const ocupados = Array.isArray(data)
+            ? data.map((o) => ({
+                fecha: String(o?.fecha || ''),
+                hora: String(o?.hora || ''),
+                duracion: Math.max(0, Math.floor(Number(o?.duracion) || 0))
+            }))
+            : [];
+
+        // TTL corto (30 s): si el admin confirma un turno en el panel, el
+        // horario deja de ofrecerse con la próxima apertura del formulario.
+        cachear(clave, ocupados, 30_000);
+        return { ok: true, datos: ocupados };
+    } catch (error) {
+        // Degradación controlada: se ofrecen todos los horarios de la agenda;
+        // insertar_turno (0054) igual rechaza los ocupados al registrar.
+        console.warn('⚠️ Supabase: no se pudieron cargar los turnos ocupados; la agenda se ofrece sin filtro de ocupación.', error);
+        return { ok: false, error };
+    }
+}
+
+// ============================================================================
 // CONFIGURACIÓN GLOBAL (settings de fila única)
 // ============================================================================
 export async function cargarConfiguracion() {

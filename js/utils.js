@@ -4,7 +4,7 @@
 // devuelve { ok, datos }. Con Supabase caído, las secciones quedan vacías,
 // ocultas o con su contenido estático por defecto; no hay datos alternativos.
 import {
-    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, urlImagen
+    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, cargarTurnosOcupados, urlImagen
 } from './supabase.js';
 
 // Configuración de descuentos (se refresca desde Supabase settings)
@@ -420,6 +420,16 @@ export async function obtenerMarquee() {
 // Comportamiento de enlace de banners/sliders:
 // "interno" (default) → misma pestaña (_self); "externo" → nueva pestaña (_blank).
 // Devuelve los atributos listos para interpolar en un <a> (target + rel noopener).
+// ================= TURNOS OCUPADOS (modo turnos, 0054) =================
+// Horarios ya tomados (turno Confirmado/Realizado) para que la solicitud de
+// turno no los ofrezca. Consulta la RPC pública turnos_ocupados; si falla se
+// degrada a agenda sin filtro (insertar_turno valida igual en el servidor).
+export async function obtenerTurnosOcupados(desde = '', hasta = '') {
+    const remoto = await cargarTurnosOcupados(desde, hasta);
+    if (remoto.ok) return remoto.datos;
+    return [];
+}
+
 export function atributosEnlace(entidad) {
     const externo = (entidad && entidad.target === 'externo') ? true : false;
     return externo ? 'target="_blank" rel="noopener"' : 'target="_self"';

@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, atributosEnlace, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, atributosEnlace, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos, obtenerTurnosOcupados } from './utils.js';
 
 let productosGlobales = [];
 
@@ -497,7 +497,9 @@ function franjasPosiblesServicio(s, diaNorm) {
 // Reemplaza los inputs nativos del formulario de turno por selects limitados a
 // la agenda de los servicios del carrito. Idempotente: se llama cada vez que se
 // abre el formulario (mostrarFormularioTurno), así refleja el carrito actual.
-function restringirFormularioTurno() {
+// Desde la migración 0054 también descarta los horarios ya tomados (turno
+// Confirmado/Realizado): solo se ofrecen días y horas que siguen libres.
+async function restringirFormularioTurno() {
     const campoFecha = document.getElementById('turnoFecha');
     const campoHora = document.getElementById('turnoHora');
     if (!campoFecha || !campoHora) return;
@@ -524,6 +526,71 @@ function restringirFormularioTurno() {
         });
     }
 
+    // Horarios ya tomados (0054): la anon key no puede leer `turnos` por RLS,
+    // así que se consultan por la RPC pública turnos_ocupados. Si falla (RPC
+    // sin aplicar o Supabase caído) se degrada a la agenda sin ocupación:
+    // insertar_turno igual valida al registrar (el servidor es la verdad).
+    const finRango = fechas.length ? fechas[fechas.length - 1].valor : hoyISO;
+    const ocupados = await obtenerTurnosOcupados(hoyISO, finRango);
+    const ocupadosPorFecha = new Map();
+    for (const o of Array.isArray(ocupados) ? ocupados : []) {
+        if (!o || !o.fecha || !o.hora) continue;
+        if (!ocupadosPorFecha.has(o.fecha)) ocupadosPorFecha.set(o.fecha, []);
+        ocupadosPorFecha.get(o.fecha).push({
+            hora: String(o.hora),
+            duracion: Math.max(0, Math.floor(Number(o.duracion) || 0))
+        });
+    }
+
+    // Duración del turno que se está reservando (suma de los servicios del
+    // carrito): 15 min de paso por servicio sin duración declarada, el mismo
+    // criterio que usa el servidor (0054) para calcular superposiciones.
+    const durNueva = obtenerCarrito().reduce((suma, item) => {
+        const ref = productosGlobales.find((p) => p.id === item.id);
+        const dur = ref ? Math.max(0, Number(ref.servicioDuracionMin) || 0) : 0;
+        return suma + (dur > 0 ? dur : PASO_TURNO_MIN);
+    }, 0);
+
+    // Horas de inicio posibles de la agenda común para una fecha, sin horas
+    // pasadas (si es hoy) y sin las que se superponen con un turno tomado.
+    const horasDisponiblesDe = (valorFecha) => {
+        const [y, m, d] = valorFecha.split('-').map(Number);
+        const diaNorm = diaSemanaFecha(new Date(y, m - 1, d));
+
+        let horas = null;
+        for (const s of agenda.servicios) {
+            const set = franjasPosiblesServicio(s, diaNorm);
+            horas = horas === null ? set : new Set([...horas].filter((t) => set.has(t)));
+        }
+        if (!horas) return new Set();
+
+        if (valorFecha === hoyISO) {
+            const minutosAhora = new Date().getHours() * 60 + new Date().getMinutes();
+            horas = new Set([...horas].filter((t) => minutosAMedianoche(t) > minutosAhora));
+        }
+
+        const tomados = ocupadosPorFecha.get(valorFecha) || [];
+        if (tomados.length) {
+            horas = new Set([...horas].filter((t) => {
+                const tMin = minutosAMedianoche(t);
+                return !tomados.some((o) => {
+                    const eIni = minutosAMedianoche(o.hora);
+                    const eFin = eIni + (o.duracion > 0 ? o.duracion : 1);
+                    return tMin < eFin && eIni < tMin + (durNueva > 0 ? durNueva : 1);
+                });
+            }));
+        }
+
+        return horas;
+    };
+
+    // Solo se ofrecen días que aún tienen al menos un horario libre.
+    const conDisponibilidad = [];
+    for (const f of fechas) {
+        const horas = horasDisponiblesDe(f.valor);
+        if (horas.size > 0) conDisponibilidad.push({ ...f, horas });
+    }
+
     const selectFecha = document.createElement('select');
     selectFecha.id = 'turnoFecha';
     selectFecha.name = 'fecha';
@@ -532,11 +599,11 @@ function restringirFormularioTurno() {
 
     const opcionFecha = document.createElement('option');
     opcionFecha.value = '';
-    opcionFecha.textContent = fechas.length
+    opcionFecha.textContent = conDisponibilidad.length
         ? 'Elegí el día…'
-        : 'Sin días en común en los próximos 60 días';
+        : 'Sin horarios disponibles en los próximos 60 días';
     selectFecha.appendChild(opcionFecha);
-    for (const f of fechas) {
+    for (const f of conDisponibilidad) {
         const opt = document.createElement('option');
         opt.value = f.valor;
         opt.textContent = f.fecha.toLocaleDateString('es-AR', {
@@ -545,7 +612,7 @@ function restringirFormularioTurno() {
         selectFecha.appendChild(opt);
     }
 
-    // Select de hora: franjas en común para el día elegido.
+    // Select de hora: franjas en común para el día elegido y aún libres.
     const selectHora = document.createElement('select');
     selectHora.id = 'turnoHora';
     selectHora.name = 'hora';
@@ -567,23 +634,10 @@ function restringirFormularioTurno() {
             return;
         }
 
-        const [y, m, d] = valorFecha.split('-').map(Number);
-        const diaNorm = diaSemanaFecha(new Date(y, m - 1, d));
-
-        let horas = null;
-        for (const s of agenda.servicios) {
-            const set = franjasPosiblesServicio(s, diaNorm);
-            horas = horas === null ? set : new Set([...horas].filter((t) => set.has(t)));
-        }
-
-        // Si el día elegido es hoy, se descartan las horas ya pasadas.
-        if (valorFecha === hoyISO && horas) {
-            const minutosAhora = new Date().getHours() * 60 + new Date().getMinutes();
-            horas = new Set([...horas].filter((t) => minutosAMedianoche(t) > minutosAhora));
-        }
-
-        if (!horas || horas.size === 0) {
-            opcionHora.textContent = 'No hay horarios en común para ese día';
+        const dia = conDisponibilidad.find((f) => f.valor === valorFecha);
+        const horas = dia ? dia.horas : new Set();
+        if (!horas.size) {
+            opcionHora.textContent = 'No hay horarios disponibles para ese día';
             selectHora.disabled = true;
             return;
         }

@@ -139,10 +139,10 @@ module.exports = async function handler(request, response) {
         const detalle = String(error.message || '');
         // Solo exponemos mensajes de la RPC que controlamos nosotros; el resto
         // (errores de BD, etc.) se devuelve genérico pero se loguea completo.
-        const amistoso = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email|demasiadas solicitudes|intentá de nuevo)/i.test(detalle)
+        const amistoso = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email|demasiadas solicitudes|intentá de nuevo|horario ya no está disponible|elegí otro)/i.test(detalle)
             ? detalle
             : 'No se pudo registrar la solicitud.';
-        const conflicto = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email)/i.test(detalle);
+        const conflicto = /(estructura de solicitud inválida|nombre es obligatorio|teléfono|email|horario ya no está disponible|elegí otro)/i.test(detalle);
         const limiteTasa = /demasiadas solicitudes|intentá de nuevo/i.test(detalle);
         console.error('❌ Error registrando solicitud de turno en Supabase:', detalle);
         return response.status(limiteTasa ? 429 : (conflicto ? 409 : 500)).json({ status: 'error', message: amistoso });
