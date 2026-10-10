@@ -716,15 +716,13 @@ function renderHorarios() {
     const repeater = $('#horariosRepeater');
     if (!repeater) return;
     repeater.innerHTML = horariosModal.map((h, idx) => `
-        <div class="admin-repeater-row" data-horario-row="${idx}">
-            <select data-campo="dia" aria-label="Día" style="min-width:140px; padding:0.5rem 0.6rem; border:1px solid var(--border); border-radius:8px;">
+        <div class="admin-repeater-row repeater-horario-row" data-horario-row="${idx}">
+            <select data-campo="dia" aria-label="Día">
                 <option value="">Día…</option>
                 ${DIAS_AGENDA.map((d) => `<option value="${d}" ${h.dia === d ? 'selected' : ''}>${d}</option>`).join('')}
             </select>
-            <input type="time" data-campo="desde" aria-label="Desde" value="${esc(h.desde)}"
-                   style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
-            <input type="time" data-campo="hasta" aria-label="Hasta" value="${esc(h.hasta)}"
-                   style="padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:8px;">
+            <input type="time" data-campo="desde" aria-label="Desde" value="${esc(h.desde)}">
+            <input type="time" data-campo="hasta" aria-label="Hasta" value="${esc(h.hasta)}">
             <button type="button" class="btn btn-sm btn-danger" data-quitar-horario="${idx}" aria-label="Quitar horario">
                 <i class="fa-solid fa-xmark"></i>
             </button>

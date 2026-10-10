@@ -638,6 +638,34 @@ td.td-expandir .pedido-acciones {
     justify-content: center;
 }
 
+/* Horarios por día (0053): cada fila tiene 4 elementos (día, desde, hasta,
+   quitar). A diferencia de variantes (3 columnas → 1fr 2fr auto), sin este
+   grid el botón de quitar caería a la fila de abajo. Columnas proporcionales:
+   día más ancho, desde/hasta iguales y botón fijo al final. */
+.repeater-horario-row {
+    grid-template-columns: 1.3fr 1fr 1fr auto;
+}
+
+.repeater-horario-row select,
+.repeater-horario-row input[type="time"] {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.repeater-horario-row .btn {
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    flex-shrink: 0;
+    justify-content: center;
+}
+
 /* Slider: selector "Mostrar en" (ambos / móvil / escritorio) */
 .slider-dispositivos {
     display: flex;
