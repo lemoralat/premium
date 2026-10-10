@@ -4203,7 +4203,7 @@ body.zoom-active {
 
 .marquee-track {
     display: inline-flex;
-    animation: marquee-scroll 25s linear infinite;
+    animation: marquee-scroll 35s linear infinite;
 }
 
 .marquee-track:hover {
@@ -4430,7 +4430,7 @@ body.zoom-active {
     }
 
     .marquee-track {
-        animation-duration: 20s;
+        animation-duration: 30s;
     }
 }
 
@@ -4444,7 +4444,7 @@ body.zoom-active {
     }
 
     .marquee-track {
-        animation-duration: 18s;
+        animation-duration: 28s;
     }
 }
 
