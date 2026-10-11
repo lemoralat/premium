@@ -5158,8 +5158,6 @@ html.cart-sidemenu-locked body {
     margin-bottom: 0.5rem;
 }
 
-.side-cart-empty h3 {}
-
 .side-cart-empty p {
     color: var(--secondary-color);
     font-size: 0.9rem;
