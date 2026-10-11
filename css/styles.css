@@ -504,7 +504,7 @@ span {
     position: sticky;
     top: 0;
     z-index: var(--z-nav);
-    padding: 0.4rem;
+    padding: 0.8rem;
 }
 
 /* Comportamiento del sticky igual al móvil en todos los breakpoints:
