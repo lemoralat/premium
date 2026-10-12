@@ -146,6 +146,20 @@ img { max-width: 100%; }
 }
 .admin-nav a.active i { color: var(--primary); }
 
+/* Encabezados de grupo del menú lateral (General / Mi negocio / Apariencia /
+   Cuenta): separan visualmente los bloques de navegación. No son enlaces. */
+.admin-nav-grupo {
+    margin: 0.8rem 0 0.15rem;
+    padding: 0 0.85rem;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    user-select: none;
+}
+.admin-nav-grupo:first-child { margin-top: 0; }
+
 .admin-sidebar-footer {
     padding: 1rem 1.2rem;
     border-top: 1px solid var(--border);

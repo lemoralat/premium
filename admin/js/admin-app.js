@@ -31,7 +31,7 @@ const secciones = {
     pedidos:       { ...pedidos,       titulo: 'Pedidos' },
     turnos:        { ...turnos,        titulo: 'Turnos' },
     cupones:       { ...cupones,       titulo: 'Descuentos' },
-    slider:        { ...slider,        titulo: 'Slider' },
+    slider:        { ...slider,        titulo: 'Carrusel' },
     banners:       { ...banners,       titulo: 'Banners' },
     resenas:       { ...resenas,       titulo: 'Reseñas' },
     'iconos-pie':  { ...iconosPie,     titulo: 'Iconos' },
@@ -52,7 +52,8 @@ async function navegar() {
     // Secciones que dependen del modo de la tienda (settings.modo_web): en modo
     // turnos no entran pedidos (el checkout es el formulario de turno) y en modo
     // venta no llegan turnos. Un enlace o bookmark directo a esas rutas se
-    // redirige al dashboard con aviso; el menú ya las oculta (leerModoWebPanel).
+    // redirige al dashboard con aviso; el menú muestra una única entrada
+    // Pedidos/Turnos según el modo (leerModoWebPanel).
     if (nombre === 'pedidos' || nombre === 'turnos') {
         if (modoWebPanel === null) await leerModoWebPanel();
         const bloqueada =
@@ -211,6 +212,35 @@ async function aplicarBrandingPanel() {
 // memoria para no repetir el query. En modo turnos los productos se gestionan
 // como servicios: el menú lateral y el título de la sección usan esa palabra.
 let modoWebPanel = null; // null = sin leer | 'venta' | 'turnos'
+
+// El menú lateral espeja el modo de la tienda: "Productos" ↔ "Servicios" y una
+// única entrada "Pedidos" ↔ "Turnos" (grupo Mi negocio). Las rutas #/pedidos y
+// #/turnos siguen existiendo; el router bloquea la que no corresponde al modo,
+// así que acá esa entrada cambia de ruta, icono y texto según el caso.
+function adaptarMenuAlModo(mw) {
+    const esTurnos = mw === 'turnos';
+
+    // Productos ↔ Servicios: cambia solo el texto (mismo icono y misma ruta).
+    const enlaceProductos = document.querySelector('#adminNav a[data-seccion="productos"]');
+    if (enlaceProductos) {
+        [...enlaceProductos.childNodes]
+            .filter((n) => n.nodeType === Node.TEXT_NODE)
+            .forEach((n) => { n.nodeValue = esTurnos ? ' Servicios' : ' Productos'; });
+    }
+
+    // Pedidos ↔ Turnos: cambia de ruta, icono y texto.
+    const enlacePedidos = document.querySelector('#adminNav [data-nav="pedidos-turnos"]');
+    if (enlacePedidos) {
+        enlacePedidos.dataset.seccion = esTurnos ? 'turnos' : 'pedidos';
+        enlacePedidos.setAttribute('href', esTurnos ? '#/turnos' : '#/pedidos');
+        const icono = enlacePedidos.querySelector('i');
+        if (icono) icono.className = esTurnos ? 'fa-solid fa-calendar-check' : 'fa-solid fa-cart-shopping';
+        [...enlacePedidos.childNodes]
+            .filter((n) => n.nodeType === Node.TEXT_NODE)
+            .forEach((n) => { n.nodeValue = esTurnos ? ' Turnos' : ' Pedidos'; });
+    }
+}
+
 async function leerModoWebPanel() {
     try {
         const sb = await clienteAdmin();
@@ -218,26 +248,7 @@ async function leerModoWebPanel() {
         const mw = data?.modo_web === 'turnos' ? 'turnos' : 'venta';
         if (modoWebPanel !== mw) {
             modoWebPanel = mw;
-            // Actualiza la etiqueta del menú lateral (Productos → Servicios),
-            // conservando el icono (el texto vive en un text node propio).
-            const enlace = document.querySelector('#adminNav a[data-seccion="productos"]');
-            if (enlace && enlace.childNodes) {
-                [...enlace.childNodes]
-                    .filter((n) => n.nodeType === Node.TEXT_NODE)
-                    .forEach((n) => { n.nodeValue = mw === 'turnos' ? ' Servicios' : ' Productos'; });
-            }
-
-            // El panel espeja el modo de la tienda: en modo turnos el checkout
-            // es el formulario de turno (no entran pedidos nuevos) y en modo
-            // venta no llegan turnos. Se oculta la sección que no corresponde;
-            // los datos históricos se conservan en la base y la sección
-            // reaparece al volver al otro modo.
-            const mostrarSeccion = (seccion, visible) => {
-                const link = document.querySelector(`#adminNav a[data-seccion="${seccion}"]`);
-                if (link) link.style.display = visible ? '' : 'none';
-            };
-            mostrarSeccion('pedidos', mw === 'venta');
-            mostrarSeccion('turnos', mw === 'turnos');
+            adaptarMenuAlModo(mw);
         }
     } catch {
         if (modoWebPanel === null) modoWebPanel = 'venta';
