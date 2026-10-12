@@ -92,12 +92,14 @@ export async function renderizar(contenedor) {
                 border: 1px dashed var(--border); border-radius: 10px; background: #fafafa;
                 padding: 0.5rem;
             }
-            .diseno-preview img { max-width: 220px; max-height: 96px; object-fit: contain; }
+            .diseno-preview img { max-width: 160px; max-height: 64px; object-fit: contain; }
             .diseno-preview-vacio { color: var(--muted, #64748b); font-size: 0.8rem; text-align: center; padding: 0.5rem; }
             .diseno-preview-acciones { display: flex; gap: 0.5rem; align-items: center; }
             .diseno-color { display: flex; gap: 0.7rem; align-items: center; margin-bottom: 0.3rem; }
             .diseno-color input[type="color"] { width: 46px; height: 40px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; }
             .diseno-color input[type="text"] { width: 9ch; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: lowercase; }
+            /* Separación entre las opciones de la barra y el gestor de mensajes. */
+            .diseno-marquee-config { margin-bottom: 1rem; }
             .diseno-bordes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.8rem; }
             .diseno-borde {
                 position: relative; display: flex; flex-direction: column; gap: 0.55rem; align-items: flex-start;
@@ -168,21 +170,6 @@ export async function renderizar(contenedor) {
                         <span class="hint">Se utiliza en los botones, enlaces y otros detalles de la tienda.</span>
                     </div>
                     <div class="admin-field full">
-                        <label for="dsnMarqueeColor">Color de fondo de la barra promocional</label>
-                        <div class="diseno-color">
-                            <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" aria-label="Selector de color de fondo de la barra promocional">
-                            <input type="text" id="dsnMarqueeColor" value="${esc(marqueeColor)}" maxlength="7" spellcheck="false" aria-label="Color del marquee en hexadecimal">
-                            <button type="button" class="btn btn-sm btn-outline" id="dsnMarqueeColorRestaurar">Restaurar (#000000)</button>
-                        </div>
-                        <span class="hint">Cambia el color de fondo de la barra animada que aparece en la parte superior de la tienda. El texto siempre será blanco.</span>
-                    </div>
-                    <div class="admin-field full">
-                        <label class="admin-check">
-                            <input type="checkbox" id="dsnMarqueeActivo" ${s.marquee_activo === true ? 'checked' : ''}>
-                            Mostrar barra promocional en la tienda
-                        </label>
-                    </div>
-                    <div class="admin-field full">
                         <label>Estilo de bordes</label>
                         <div class="diseno-bordes">${bordesHTML}</div>
                     </div>
@@ -196,6 +183,23 @@ export async function renderizar(contenedor) {
         <div class="admin-card">
             <h2>Barra promocional</h2>
             <p class="card-sub">Es la barra animada que aparece sobre el encabezado de la tienda. </p>
+            <div class="admin-form-grid diseno-marquee-config">
+                <div class="admin-field full">
+                    <label for="dsnMarqueeColor">Color de fondo de la barra promocional</label>
+                    <div class="diseno-color">
+                        <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" aria-label="Selector de color de fondo de la barra promocional">
+                        <input type="text" id="dsnMarqueeColor" value="${esc(marqueeColor)}" maxlength="7" spellcheck="false" aria-label="Color del marquee en hexadecimal">
+                        <button type="button" class="btn btn-sm btn-outline" id="dsnMarqueeColorRestaurar">Restaurar (#000000)</button>
+                    </div>
+                    <span class="hint">Cambia el color de fondo de la barra animada que aparece en la parte superior de la tienda. El texto siempre será blanco.</span>
+                </div>
+                <div class="admin-field full">
+                    <label class="admin-check">
+                        <input type="checkbox" id="dsnMarqueeActivo" ${s.marquee_activo === true ? 'checked' : ''}>
+                        Mostrar barra promocional en la tienda
+                    </label>
+                </div>
+            </div>
             <div id="marqueeGestor"></div>
         </div>
     `;
