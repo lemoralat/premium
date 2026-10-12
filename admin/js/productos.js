@@ -117,7 +117,7 @@ function pintar(contenedor) {
                 <thead>
                     <tr>
                         <th class="th-check"><label class="admin-check" title="Seleccionar todos los visibles"><input type="checkbox" id="selTodosProductos" aria-label="Seleccionar todos los visibles" ${todosVisibles ? 'checked' : ''}></label></th>
-                        <th>${enServicios ? 'Servicio' : 'Producto'}</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Variantes</th><th>Visible</th><th></th>
+                        <th>${enServicios ? 'Servicio' : 'Producto'}</th><th>Categoría</th><th>Precio</th>${enServicios ? '<th>Duración estimada</th>' : '<th>Stock</th><th>Variantes</th>'}<th>Visible</th><th></th>
                     </tr>
                 </thead>
                 <tbody>${filtrados.map((p) => filaProducto(p)).join('')}</tbody>
@@ -215,7 +215,6 @@ function filaProducto(p) {
     const enServicios = modoWeb === 'turnos';
     const nroVariantes = Array.isArray(p.opciones) ? p.opciones.length : 0;
     const stockClase = p.stock === 0 ? 'admin-stock-bajo' : p.stock < 5 ? 'admin-stock-medio' : 'admin-stock-ok';
-    const tieneDuracion = enServicios && Number(p.servicio_duracion_min) > 0;
     return `
         <tr>
             <td class="td-check">
@@ -229,7 +228,6 @@ function filaProducto(p) {
                     <div>
                         <strong>${esc(p.nombre)}</strong>
                         ${p.destacado ? ' <span class="estado-badge estado-procesando" style="margin-left:0.3rem;">⭐ Destacado</span>' : ''}
-                        ${tieneDuracion ? `<span class="estado-badge estado-entregado" style="margin-left:0.3rem;">⏱ ${Number(p.servicio_duracion_min)} min</span>` : ''}
                         ${p.precio_anterior != null && Number(p.precio_anterior) > Number(p.precio)
                             ? `<span style="color:var(--text-muted); font-size:0.75rem;"> antes $${formatearPrecio(p.precio_anterior)}</span>`
                             : ''}
@@ -239,12 +237,12 @@ function filaProducto(p) {
             </td>
             <td data-label="Categoría">${esc(p.categoria?.name || '—')}</td>
             <td data-label="Precio"><strong>$${formatearPrecio(p.precio)}</strong></td>
-            <td data-label="Stock">${enServicios
-                ? '<span style="color:var(--text-muted);">—</span>'
-                : `<span class="${stockClase}">${esc(p.stock)}</span>`}</td>
-            <td data-label="Variantes">${enServicios
-                ? '<span style="color:var(--text-muted);">—</span>'
-                : (nroVariantes > 0 ? esc(nroVariantes) : '<span style="color:var(--text-muted);">—</span>')}</td>
+            ${enServicios
+                ? `<td data-label="Duración estimada">${Number(p.servicio_duracion_min) > 0
+                    ? `${Number(p.servicio_duracion_min)} min`
+                    : '<span style="color:var(--text-muted);">—</span>'}</td>`
+                : `<td data-label="Stock"><span class="${stockClase}">${esc(p.stock)}</span></td>
+            <td data-label="Variantes">${nroVariantes > 0 ? esc(nroVariantes) : '<span style="color:var(--text-muted);">—</span>'}</td>`}
             <td data-label="Visible">
                 <label class="admin-check">
                     <input type="checkbox" data-toggle-activo="${esc(p.id)}" ${p.activo ? 'checked' : ''} aria-label="Activar/desactivar ${esc(p.nombre)}">
