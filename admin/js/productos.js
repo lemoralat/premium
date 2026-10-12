@@ -321,17 +321,17 @@ function abrirModalProducto(idExistente) {
 
     abrirModal(`
         <h2>${producto ? (enServicios ? 'Editar servicio' : 'Editar producto') : (enServicios ? 'Nuevo servicio' : 'Nuevo producto')}</h2>
-        <p class="modal-sub">${producto ? esc(producto.nombre) : (enServicios ? 'Cargá un servicio nuevo en la agenda' : 'Cargá un producto nuevo en el catálogo')}</p>
+        <p class="modal-sub">${producto ? esc(producto.nombre) : (enServicios ? 'Cargá un servicio nuevo en la agenda' : 'Agregá un producto nuevo a tu tienda.')}</p>
         <form class="admin-form" id="productoForm">
             <input type="hidden" id="prdId" value="${producto ? producto.id : ''}">
 
             <div class="admin-field full">
                 <label for="prdNombre">Nombre *</label>
-                <input type="text" id="prdNombre" required value="${esc(producto?.nombre || '')}" placeholder="${enServicios ? 'ej: Corte de pelo y barba' : 'ej: Buzo canguro liso hombre'}">
+                <input type="text" id="prdNombre" required value="${esc(producto?.nombre || '')}" placeholder="${enServicios ? 'ej: Corte de pelo y barba' : 'ej: Zapatillas urbanas unisex'}">
             </div>
             <div class="admin-field full">
                 <label for="prdDescripcion">Descripción corta</label>
-                <input type="text" id="prdDescripcion" value="${esc(producto?.descripcion || '')}" placeholder="La que se ve en las tarjetas del catálogo">
+                <input type="text" id="prdDescripcion" value="${esc(producto?.descripcion || '')}" placeholder="Es el texto breve que aparece junto al producto en la tienda">
             </div>
             <div class="admin-field full">
                 <label for="prdDetallada">Descripción detallada</label>
@@ -357,31 +357,31 @@ function abrirModalProducto(idExistente) {
                         <button type="button" class="btn btn-sm btn-primary" id="btnGuardarNuevaCat">Crear</button>
                         <button type="button" class="btn btn-sm" id="btnCancelarNuevaCat">Cancelar</button>
                     </div>
-                    <span class="hint">Si la categoría ya existe, quedará seleccionada sin duplicarla.</span>
+                    <span class="hint">Si escribís una categoría que ya existe, se seleccionará la que ya está creada para evitar repetirla.</span>
                 </div>
                 ${enServicios ? '' : `
                 <div class="admin-field">
-                    <label for="prdStock">Stock (unidades) *</label>
+                    <label for="prdStock">Cantidad disponible *</label>
                     <input type="number" id="prdStock" required min="0" step="1" value="${esc(producto?.stock ?? 0)}">
                 </div>`}
                 <div class="admin-field">
                     <label for="prdPrecio">Precio ($) *</label>
-                    <input type="number" id="prdPrecio" required min="0" step="1" value="${esc(producto?.precio ?? '')}" placeholder="ej: 54000">
+                    <input type="number" id="prdPrecio" required min="0" step="1" value="${esc(producto?.precio ?? '')}">
                 </div>
                 <div class="admin-field">
-                    <label for="prdPrecioAnterior">Precio anterior ($) <span class="hint">(para tachar)</span></label>
-                    <input type="number" id="prdPrecioAnterior" min="0" step="1" value="${esc(producto?.precio_anterior ?? '')}" placeholder="Vacío = sin oferta">
+                    <label for="prdPrecioAnterior">Precio anterior ($) </label>
+                    <input type="number" id="prdPrecioAnterior" min="0" step="1" value="${esc(producto?.precio_anterior ?? '')}" placeholder="Dejá este campo vacío si el producto no está en oferta">
                 </div>
                 <div class="admin-field full">
                     <label class="admin-check">
                         <input type="checkbox" id="prdActivo" ${producto?.activo === false ? '' : 'checked'}>
-                        ${enServicios ? 'Servicio' : 'Producto'} activo (visible en la tienda)
+                        ${enServicios ? 'Servicio' : 'Producto'} activo (Si está activado, el producto se verá en tu tienda)
                     </label>
                 </div>
                 <div class="admin-field full" style="margin-top:-0.75rem;">
                     <label class="admin-check">
                         <input type="checkbox" id="prdDestacado" ${producto?.destacado ? 'checked' : ''}>
-                        ${enServicios ? 'Servicio' : 'Producto'} destacado <span class="hint">(se muestra primero en el home, mezclando categorías)</span>
+                        ${enServicios ? 'Servicio' : 'Producto'} destacado <span class="hint">(Si lo activás, el producto tendrá prioridad al mostrarse en la página principal de tu tienda)</span>
                     </label>
                 </div>
             </div>
@@ -402,7 +402,7 @@ function abrirModalProducto(idExistente) {
             </div>` : ''}
 
             <div class="admin-field full">
-                <label>Características <span class="hint">(cada fila se muestra como un ítem, ej: Material: algodón · máx. ${MAX_CARACTERISTICAS})</span></label>
+                <label>Características <span class="hint">(Agregá datos importantes del producto, como el material, el color o el tipo de tela. Podés incluir hasta ${MAX_CARACTERISTICAS})</span></label>
                 <div class="admin-repeater" id="caracteristicasRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarCaracteristica" style="align-self:flex-start; margin-top:0.5rem;">
                     <i class="fa-solid fa-plus"></i> Agregar característica
@@ -411,7 +411,7 @@ function abrirModalProducto(idExistente) {
 
             ${enServicios ? '' : `
             <div class="admin-field full">
-                <label>Variantes <span class="hint">(opción + valores separados por coma; ej: Talles → 40, 41, 42, 43, 44 · máx. ${MAX_VARIANTES})</span></label>
+                <label>Variantes <span class="hint">(Agregá opciones como talle o color y escribí sus valores separados por comas. Podés incluir hasta 4 opciones; ej: Talles → 40, 41, 42, 43, 44 · máx. ${MAX_VARIANTES})</span></label>
                 <div class="admin-repeater" id="variantesRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarVariante" style="align-self:flex-start; margin-top:0.5rem;">
                     <i class="fa-solid fa-plus"></i> Agregar variante
@@ -420,7 +420,7 @@ function abrirModalProducto(idExistente) {
 
             ${cardSinImagenes ? `
             <div class="admin-field full">
-                <span class="hint" style="color:var(--warning, #b45309);"><i class="fa-solid fa-triangle-exclamation"></i> Modo <strong>Sin imágenes</strong> activo en Diseño: este ${enServicios ? 'servicio' : 'producto'} no muestra imágenes en la tienda y no se pueden subir nuevas aquí.</span>
+                <span class="hint" style="color:var(--warning, #b45309);"><i class="fa-solid fa-triangle-exclamation"></i> Modo <strong>Sin imágenes</strong> activo en Diseño: este ${enServicios ? 'servicio' : 'producto'} no mostrarán fotos y no podrás agregar nuevas hasta cambiar esa opción.</span>
             </div>` : `
             <div class="admin-field full">
                 <label>Imágenes <span class="hint">(una principal + galería; JPG, PNG o WebP hasta 8 MB, se optimizan solas)</span></label>
