@@ -59,7 +59,7 @@ const CARD_FORMATS = [
     { valor: '4:5', nombre: 'Vertical', desc: '4:5', aspecto: '4 / 5' },
     // 0057: tienda sin fotos — los cards no muestran imagen, no hay galería y
     // el panel no permite subir (aspecto null = preview propio en el selector).
-    { valor: 'sin_imagenes', nombre: 'Sin imágenes', desc: 'Los productos/servicios se mostrarán sin fotos. Tampoco se podrán agregar fotos desde el formulario de productos.', aspecto: null }
+    { valor: 'sin_imagenes', nombre: 'Sin imágenes', desc: 'Los productos/servicios se mostrarán sin fotos.', aspecto: null }
 ];
 
 // Estado por recurso de imagen: path actual, archivo nuevo pendiente y "quitar".
@@ -294,7 +294,7 @@ function campoImagen(r, pathActual) {
 // placeholder textual.
 function campoVacioHTML(r, caption) {
     const texto = caption || (r.defaultPreview
-        ? 'Si no lo cambias, se usará el logotipo de Lemora.'
+        ? 'Si no lo cambias, se usará el ícono de Lemora.'
         : 'Sin archivo<br><small>Se seguirá usando el logotipo actual.</small>');
     return r.defaultPreview
         ? `<span class="diseno-preview-vacio"><img src="${esc(r.defaultPreview)}" alt="" class="diseno-preview-defecto"><small>${esc(texto)}</small></span>`
