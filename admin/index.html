@@ -59,19 +59,11 @@
                 <a href="#/cuenta" data-seccion="cuenta"><i class="fa-solid fa-user"></i> Mi cuenta</a>
             </nav>
 
-            <div class="admin-sidebar-footer">
-                <a class="btn btn-outline" href="/" target="_blank" rel="noopener">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver tienda
-                </a>
-                <button type="button" class="btn btn-danger" id="btnLogout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-                </button>
-            </div>
-        </aside>
+            </aside>
 
         <div class="admin-main">
             <header class="admin-topbar">
-                <div style="display:flex; align-items:center; gap:0.8rem;">
+                <div style="display:flex; align-items:center; gap:0.8rem; min-width:0;">
                     <button type="button" class="btn btn-sm admin-menu-toggle" id="btnMenu"
                             aria-label="Abrir menú">
                         <i class="fa-solid fa-bars"></i>
@@ -80,6 +72,14 @@
                 </div>
                 <div class="admin-topbar-user">
                     <span id="adminUserEmail"></span>
+                    <a class="admin-topbar-icono" href="/" target="_blank" rel="noopener"
+                       aria-label="Ver tienda" title="Ver tienda">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                    <button type="button" class="admin-topbar-icono admin-topbar-icono-peligro" id="btnLogout"
+                            aria-label="Cerrar sesión" title="Cerrar sesión">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
                     <button type="button" class="admin-tema-switch" id="btnTemaPanel"
                             aria-label="Cambiar tema del panel" title="Tema del panel">
                         <i class="fa-solid fa-sun"></i>

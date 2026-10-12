@@ -160,16 +160,6 @@ img { max-width: 100%; }
 }
 .admin-nav-grupo:first-child { margin-top: 0; }
 
-.admin-sidebar-footer {
-    padding: 1rem 1.2rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
-}
-
-.admin-sidebar-footer .btn { width: 100%; }
-
 .admin-main {
     flex: 1;
     min-width: 0;
@@ -193,6 +183,11 @@ img { max-width: 100%; }
 .admin-topbar-title {
     font-size: var(--fs-xl);
     font-weight: 700;
+    /* Títulos largos se recortan con "…" en pantallas angostas */
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .admin-topbar-user {
@@ -214,10 +209,11 @@ img { max-width: 100%; }
     white-space: nowrap;
 }
 
-/* Switch de tema del panel (topbar, junto al badge Admin): botón con icono
-   sol/luna que alterna claro/oscuro y persiste en settings.admin_tema (BD).
-   Usa variables → se adapta solo a cada tema. */
-.admin-tema-switch {
+/* Botones de acción del topbar: tema del panel (sol/luna), Ver tienda y
+   Cerrar sesión. Iconos puros de 34px; usan variables → se adaptan a cada
+   tema. */
+.admin-tema-switch,
+.admin-topbar-icono {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -230,16 +226,26 @@ img { max-width: 100%; }
     color: var(--text-muted);
     font-size: var(--fs-lg);
     cursor: pointer;
+    text-decoration: none;
     transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
 }
 
-.admin-tema-switch:hover {
+.admin-tema-switch:hover,
+.admin-topbar-icono:hover {
     border-color: var(--primary);
     color: var(--primary);
     transform: translateY(-1px);
 }
 
-.admin-tema-switch:active { transform: translateY(0); }
+.admin-tema-switch:active,
+.admin-topbar-icono:active { transform: translateY(0); }
+
+/* Cerrar sesión: el hover avisa el carácter destructivo de la acción */
+.admin-topbar-icono-peligro:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-bg);
+}
 
 .admin-content {
     padding: 1.5rem;
@@ -1356,6 +1362,12 @@ body.admin-modal-abierto { overflow: hidden; }
 
 @media (max-width: 600px) {
     .admin-topbar-user span:first-child { display: none; }
+
+    /* Tres iconos en el topbar (Ver tienda, Cerrar sesión, tema):
+       se compactan para que el título no sufra en pantallas angostas */
+    .admin-topbar-user { gap: 0.5rem; }
+    .admin-tema-switch,
+    .admin-topbar-icono { width: 32px; height: 32px; }
 }
 
 /* ============================================================================
