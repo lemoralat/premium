@@ -699,9 +699,6 @@ td.td-expandir .pedido-acciones {
 }
 .sld-dispositivo i { color: var(--text-muted, #64748b); }
 .sld-dispositivo.activa i { color: var(--primary); }
-/* Par de íconos de "Ambos" (móvil + escritorio): juntos y más pegados que el
-   gap del botón, para que se lean como una sola marca. */
-.sld-dispositivo-iconos { display: inline-flex; align-items: center; gap: 0.15rem; }
 
 /* ============================================================================
    IMÁGENES (gestor)
