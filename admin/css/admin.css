@@ -695,8 +695,8 @@ td.td-expandir .pedido-acciones {
     justify-content: center;
 }
 
-/* Slider: selector "Mostrar en" (ambos / móvil / escritorio) */
-.slider-dispositivos {
+/* Carrusel: selector "Mostrar en" (ambos / móvil / escritorio) */
+.carrusel-dispositivos {
     display: flex;
     gap: 0.6rem;
     flex-wrap: wrap;

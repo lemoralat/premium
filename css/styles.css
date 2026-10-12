@@ -3884,10 +3884,10 @@ body.zoom-active {
 
 
 /* ===================================
-   HERO SLIDER - ESTILOS
+   CARRUSEL DEL HERO - ESTILOS
    =================================== */
 
-.hero-slider {
+.hero-carrusel {
     position: relative;
     width: 100%;
     height: 420px;
@@ -3895,13 +3895,13 @@ body.zoom-active {
     background: #000;
 }
 
-.slider-track {
+.carrusel-track {
     display: flex;
     height: 100%;
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.slider-slide {
+.carrusel-item {
     min-width: 100%;
     height: 100%;
     position: relative;
@@ -3909,14 +3909,14 @@ body.zoom-active {
     transition: opacity 0.6s ease;
 }
 
-.slider-slide.active {
+.carrusel-item.active {
     opacity: 1;
     z-index: 1;
 }
 
-/* Anchor opcional del slide dinámico: neutraliza estilos de link sin alterar el diseño.
+/* Anchor opcional del elemento dinámico: neutraliza estilos de link sin alterar el diseño.
    width/height 100% dan altura definida para que el height:100% de la img resuelva igual que sin link */
-.slider-link {
+.carrusel-link {
     display: block;
     width: 100%;
     height: 100%;
@@ -3924,33 +3924,33 @@ body.zoom-active {
     color: inherit;
 }
 
-.slider-slide img {
+.carrusel-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.slider-slide picture {
+.carrusel-item picture {
     display: block;
     width: 100%;
     height: 100%;
 }
 
-.slider-slide picture img {
+.carrusel-item picture img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.slider-image-placeholder {
+.carrusel-image-placeholder {
     width: 100%;
     height: 100%;
 }
 
 /* Overlay con gradiente para mejor legibilidad del texto */
-.slider-content {
+.carrusel-content {
     padding: 1rem 6rem;
     position: absolute;
     inset: 0;
@@ -3964,19 +3964,19 @@ body.zoom-active {
             rgba(0, 0, 0, 0) 100%);
 }
 
-.slider-text {
+.carrusel-text {
     max-width: var(--container-lg);
     width: 100%;
     padding: 0 2rem;
     color: white;
-    animation: slideInContent 0.8s ease-out;
+    animation: entradaCarrusel 0.8s ease-out;
 }
 
-.slider-slide:not(.active) .slider-text {
+.carrusel-item:not(.active) .carrusel-text {
     animation: none;
 }
 
-.slider-text h1 {
+.carrusel-text h1 {
     line-height: 1.1;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
@@ -3984,23 +3984,23 @@ body.zoom-active {
     font-size: 2rem;
 }
 
-.slider-text p {
+.carrusel-text p {
     font-size: var(--fs-body);
     line-height: 1.5;
     margin-bottom: 0;
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Desktop: descripción del slider con tamaño aumentado */
+/* Desktop: descripción del carrusel con tamaño aumentado */
 @media (min-width: 769px) {
-    .slider-text p {
+    .carrusel-text p {
         font-size: calc(var(--fs-body) * 1.4);
         line-height: 1.4;
     }
 }
 
 /* Botones de navegación */
-.slider-nav {
+.carrusel-nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -4021,7 +4021,7 @@ body.zoom-active {
     justify-content: center;
 }
 
-.slider-nav:hover {
+.carrusel-nav:hover {
     background: var(--primary-solid);
     border-color: var(--primary-solid);
     color: var(--text-on-primary);
@@ -4029,32 +4029,33 @@ body.zoom-active {
     transform: translateY(-50%) scale(1.08);
 }
 
-.slider-nav:active {
+.carrusel-nav:active {
     transform: translateY(-50%) scale(0.95);
 }
 
-.slider-nav.prev {
+.carrusel-nav.prev {
     left: 2rem;
 }
 
-.slider-nav.next {
+.carrusel-nav.next {
     right: 2rem;
 }
 
-/* js/hero-slider.js agrega .hero-slider-unico al slider cuando, en el breakpoint
-   actual, quedó un solo slide visible (los slides declaran su mostrarEn). Sin
-   flechas porque no hay a dónde ir: next/prev harían loop al mismo slide.
+/* js/carrusel-hero.js agrega .hero-carrusel-unico al carrusel cuando, en el
+   breakpoint actual, quedó un solo elemento visible (los elementos declaran su
+   mostrarEn). Sin flechas porque no hay a dónde ir: next/prev harían loop al
+   mismo elemento.
 
-   La regla tiene que ser explícita porque .slider-nav declara display: flex, que
+   La regla tiene que ser explícita porque .carrusel-nav declara display: flex, que
    le gana al [hidden] del navegador, así que un atributo hidden no alcanzaría.
    display: none además las saca del recorrido del teclado y del árbol de
    accesibilidad, que es lo que corresponde con botones que ya no hacen nada. */
-.hero-slider.hero-slider-unico .slider-nav {
+.hero-carrusel.hero-carrusel-unico .carrusel-nav {
     display: none;
 }
 
 /* Animación de entrada del contenido */
-@keyframes slideInContent {
+@keyframes entradaCarrusel {
     from {
         opacity: 0;
         transform: translateX(-50px);
@@ -4068,34 +4069,34 @@ body.zoom-active {
 
 /* Responsive - Tablet */
 @media (max-width: 992px) {
-    .hero-slider {
+    .hero-carrusel {
         height: 400px;
     }
 
 
 
-    .slider-nav {
+    .carrusel-nav {
         width: 50px;
         height: 50px;
         font-size: 0.95rem;
     }
 
-    .slider-nav.prev {
+    .carrusel-nav.prev {
         left: 1.5rem;
     }
 
-    .slider-nav.next {
+    .carrusel-nav.next {
         right: 1.5rem;
     }
 }
 
 /* Responsive - Mobile */
 @media (max-width: 768px) {
-    .hero-slider {
+    .hero-carrusel {
         height: 350px;
     }
 
-    .slider-content {
+    .carrusel-content {
         background: linear-gradient(to bottom,
                 rgba(0, 0, 0, 0) 0%,
                 rgba(0, 0, 0, 0.7) 60%,
@@ -4104,80 +4105,80 @@ body.zoom-active {
         padding: 2rem;
     }
 
-    .slider-text {
+    .carrusel-text {
         text-align: center;
         padding: 0;
     }
 
-    .slider-text h1 {
+    .carrusel-text h1 {
         margin: 0;
         font-size: var(--fs-h1);
     }
 
 
-    .slider-nav {
+    .carrusel-nav {
         width: 45px;
         height: 45px;
         font-size: 0.9rem;
     }
 
-    .slider-nav.prev {
+    .carrusel-nav.prev {
         left: 1rem;
     }
 
-    .slider-nav.next {
+    .carrusel-nav.next {
         right: 1rem;
     }
 }
 
 @media (max-width: 480px) {
-    .hero-slider {
+    .hero-carrusel {
         height: 300px;
     }
 
 
 
-    .slider-nav {
+    .carrusel-nav {
         width: 40px;
         height: 40px;
         font-size: 0.85rem;
     }
 
-    .slider-nav.prev {
+    .carrusel-nav.prev {
         left: 0.5rem;
     }
 
-    .slider-nav.next {
+    .carrusel-nav.next {
         right: 0.5rem;
     }
 }
 
 /* Mejora para accesibilidad */
-.slider-nav:focus-visible {
+.carrusel-nav:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 3px;
 }
 
 /* Smooth scroll cuando se navega con teclado */
 @media (prefers-reduced-motion: reduce) {
-    .slider-track {
+    .carrusel-track {
         transition: none;
     }
 
-    .slider-slide {
+    .carrusel-item {
         transition: none;
     }
 
-    .slider-nav {
+    .carrusel-nav {
         transition: none;
     }
 
-    .slider-nav:hover,
-    .slider-nav:active {
+    .carrusel-nav:hover,
+    .carrusel-nav:active {
         transform: translateY(-50%);
     }
 
-    @keyframes slideInContent {
+    @keyframes entradaCarrusel {
 
         from,
         to {
@@ -4872,7 +4873,7 @@ html.exit-intent-locked body {
     border-radius: var(--curva-sm);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: var(--z-notif);
-    animation: slideIn 0.3s ease-out;
+    animation: deslizarIn 0.3s ease-out;
 }
 
 .notificacion-toast.error {
@@ -4881,12 +4882,12 @@ html.exit-intent-locked body {
 
 /* Entrada / salida de los toasts de la tienda (definen las animaciones
    referenciadas por mostrarNotificacion en utils.js) */
-@keyframes slideIn {
+@keyframes deslizarIn {
     from { opacity: 0; transform: translateX(24px); }
     to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes slideOut {
+@keyframes deslizarOut {
     from { opacity: 1; transform: translateX(0); }
     to { opacity: 0; transform: translateX(24px); }
 }
@@ -4917,7 +4918,7 @@ html.exit-intent-locked body {
     text-align: center;
     max-width: 400px;
     margin: 1rem;
-    animation: slideUp 0.3s ease-out;
+    animation: deslizarUp 0.3s ease-out;
 }
 
 /* ============ Migración estilos inline JS ============ */

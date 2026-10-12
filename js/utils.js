@@ -4,7 +4,7 @@
 // devuelve { ok, datos }. Con Supabase caído, las secciones quedan vacías,
 // ocultas o con su contenido estático por defecto; no hay datos alternativos.
 import {
-    cargarProductos, cargarCupones, cargarResenas, cargarSlider, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, cargarTurnosOcupados, urlImagen
+    cargarProductos, cargarCupones, cargarResenas, cargarCarrusel, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, cargarTurnosOcupados, urlImagen
 } from './supabase.js';
 
 // Configuración de descuentos (se refresca desde Supabase settings)
@@ -339,9 +339,9 @@ export async function obtenerResenas() {
     return null; // Sin Supabase: el carrusel usa las reseñas estáticas
 }
 
-// ================= SLIDER =================
-export async function obtenerSlider() {
-    const remoto = await cargarSlider();
+// ================= CARRUSEL =================
+export async function obtenerCarrusel() {
+    const remoto = await cargarCarrusel();
     if (remoto.ok) return remoto.datos;
     return null; // Sin Supabase: el hero usa su fallback estático
 }
@@ -422,7 +422,7 @@ export async function obtenerMarquee() {
     return [];
 }
 
-// Comportamiento de enlace de banners/sliders:
+// Comportamiento de enlace de banners/carrusel:
 // "interno" (default) → misma pestaña (_self); "externo" → nueva pestaña (_blank).
 // Devuelve los atributos listos para interpolar en un <a> (target + rel noopener).
 // ================= TURNOS OCUPADOS (modo turnos, 0054) =================
@@ -611,7 +611,7 @@ export function mostrarNotificacion(mensaje, tipo = 'success') {
     document.body.appendChild(notif);
 
     setTimeout(() => {
-        notif.style.animation = 'slideOut 0.3s ease-out';
+        notif.style.animation = 'deslizarOut 0.3s ease-out';
         setTimeout(() => notif.remove(), 300);
     }, 2000);
 }

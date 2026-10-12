@@ -1,14 +1,14 @@
-// Hero Slider - Autoplay, Loop, Swipe, Stop on Hover
-// Slides dinámicos desde Supabase (tabla slider).
-// Sin slides => la sección se mantiene oculta (hidden en el HTML).
+// Hero Carrusel - Autoplay, Loop, Swipe, Stop on Hover
+// Elementos dinámicos desde Supabase (tabla sliders).
+// Sin elementos => la sección se mantiene oculta (hidden en el HTML).
 
-import { obtenerSlider, recortarTexto, atributosEnlace, escaparHtml, urlSegura, placeholderImagenPublica } from './utils.js';
+import { obtenerCarrusel, recortarTexto, atributosEnlace, escaparHtml, urlSegura, placeholderImagenPublica } from './utils.js';
 
-class HeroSlider {
+class CarruselHero {
     constructor() {
-        this.currentSlide = 0;
-        this.slides = [];
-        this.slider = null;
+        this.currentItem = 0;
+        this.items = [];
+        this.carrusel = null;
         this.track = null;
         this.autoplayInterval = null;
         this.autoplayDelay = 5000; // 5 segundos
@@ -29,23 +29,23 @@ class HeroSlider {
     }
 
     async setup() {
-        this.slider = document.querySelector('.hero-slider');
-        if (!this.slider || this.eventosVinculados) return;
+        this.carrusel = document.querySelector('.hero-carrusel');
+        if (!this.carrusel || this.eventosVinculados) return;
 
-        // La sección llega oculta del HTML (hidden): solo se muestra con slides reales.
-        // El administrador configura los slides desde el panel (tabla slider); sin slides => []
+        // La sección llega oculta del HTML (hidden): solo se muestra con elementos reales.
+        // El administrador configura los elementos desde el panel (tabla sliders); sin elementos => []
         // => la sección desaparece por completo (sin estático, sin JSON viejo).
-        const datos = await obtenerSlider();
+        const datos = await obtenerCarrusel();
         this.datosCompletos = Array.isArray(datos) ? datos : [];
 
         if (this.datosCompletos.length === 0) {
-            this.slider.hidden = true;
+            this.carrusel.hidden = true;
             return;
         }
 
         this.eventosVinculados = true;
 
-        // Configurar eventos (el .hero-slider es un elemento persistente: se
+        // Configurar eventos (el .hero-carrusel es un elemento persistente: se
         // vinculan una sola vez; la reconstrucción solo reemplaza el track).
         this.setupNavigation();
         this.setupAutoplay();
@@ -53,7 +53,7 @@ class HeroSlider {
         this.setupKeyboard();
 
         // Pintar según dispositivo (móvil ≤ 768px / escritorio) y escuchar
-        // cambios de tamaño: el conjunto de slides visibles puede cambiar y
+        // cambios de tamaño: el conjunto de elementos visibles puede cambiar y
         // hay que reconstruir el track con el índice inicial en 0.
         this.ultimoEsMovil = this.esMovil();
         this.pintarSegunDispositivo();
@@ -65,14 +65,14 @@ class HeroSlider {
         return window.matchMedia('(max-width: 768px)').matches;
     }
 
-    // Un slide sin `mostrarEn` se muestra en ambos. Ojo: eso sólo cubre el valor
+    // Un elemento sin `mostrarEn` se muestra en ambos. Ojo: eso sólo cubre el valor
     // ausente; un valor desconocido (por ejemplo 'inventado') no cae en 'ambos'
-    // y el slide no se muestra en ningún breakpoint, con lo que el slider entero
+    // y el elemento no se muestra en ningún breakpoint, con lo que el carrusel entero
     // puede quedar oculto. No se cambia acá porque es semántica de visibilidad
     // y ajena a la navegación; la columna tiene un CHECK que la limita a los
     // tres valores válidos, así que sólo se alcanzaría con datos corruptos.
-    esVisibleEnDispositivo(slide) {
-        const m = (slide.mostrarEn || 'ambos').toLowerCase();
+    esVisibleEnDispositivo(item) {
+        const m = (item.mostrarEn || 'ambos').toLowerCase();
         if (m === 'ambos') return true;
         return this.esMovil() ? m === 'mobile' : m === 'desktop';
     }
@@ -83,37 +83,37 @@ class HeroSlider {
 
         if (visibles.length === 0) {
             this.stopAutoplay();
-            this.slider.hidden = true;
+            this.carrusel.hidden = true;
             return;
         }
 
-        this.track = this.slider.querySelector('.slider-track');
-        this.construirSlides(visibles);
+        this.track = this.carrusel.querySelector('.carrusel-track');
+        this.construirItems(visibles);
 
-        this.slides = this.slider.querySelectorAll('.slider-slide');
-        if (this.slides.length === 0) {
-            this.slider.hidden = true;
+        this.items = this.carrusel.querySelectorAll('.carrusel-item');
+        if (this.items.length === 0) {
+            this.carrusel.hidden = true;
             return;
         }
 
-        this.slider.hidden = false;
+        this.carrusel.hidden = false;
         this.isTransitioning = false;
         this.stopAutoplay();
-        this.goToSlide(0);
+        this.goToItem(0);
         this.ajustarNav();
     }
 
-    // ¿Se muestran las flechas? Depende del breakpoint, no del total: cada slide
-    // declara su `mostrarEn`, así que con 2 slides en la base (uno mobile y otro
+    // ¿Se muestran las flechas? Depende del breakpoint, no del total: cada elemento
+    // declara su `mostrarEn`, así que con 2 elementos en la base (uno mobile y otro
     // desktop) hay 1 solo visible en cada lado y las flechas sobran igual. Por eso
     // se cuenta lo que quedó pintado, no lo que llegó de la base, y se recalcula
     // en cada repintado, o sea también al cruzar el breakpoint.
     //
-    // Con un solo slide, next/prev hacen loop a sí mismo y el autoplay giraba en
+    // Con un solo elemento, next/prev hacen loop a sí mismo y el autoplay giraba en
     // vacío cada 5 s, así que también se corta: no hay a dónde navegar.
     ajustarNav() {
-        const navegable = this.slides.length > 1;
-        this.slider.classList.toggle('hero-slider-unico', !navegable);
+        const navegable = this.items.length > 1;
+        this.carrusel.classList.toggle('hero-carrusel-unico', !navegable);
 
         if (navegable) {
             this.startAutoplay();
@@ -140,47 +140,47 @@ class HeroSlider {
         }, { passive: true });
     }
 
-    // Misma estructura de clases que los slides estáticos del index.html
-    construirSlides(datos) {
-        this.track.innerHTML = datos.map((slide, i) => {
+    // Misma estructura de clases que los elementos estáticos del index.html
+    construirItems(datos) {
+        this.track.innerHTML = datos.map((item, i) => {
             // V-2: texto, imagen y link son contenido administrado → escapar y
             // filtrar esquemas peligrosos antes de interpolar en HTML.
-            const titulo = recortarTexto(slide.titulo);
-            const textoSoporte = recortarTexto(slide.textoSoporte);
-            const imagen = escaparHtml(slide.imagen);
-            const link = slide.link ? urlSegura(slide.link) : '';
+            const titulo = recortarTexto(item.titulo);
+            const textoSoporte = recortarTexto(item.textoSoporte);
+            const imagen = escaparHtml(item.imagen);
+            const link = item.link ? urlSegura(item.link) : '';
             const visual = imagen
                 ? `<img src="${imagen}" alt="${escaparHtml(titulo)}" width="1920" height="1280"${i === 0 ? ' fetchpriority="high"' : ''}>`
-                : placeholderImagenPublica('slider-image-placeholder');
+                : placeholderImagenPublica('carrusel-image-placeholder');
 
             const contenido = `
                     ${visual}
 
-                    <div class="slider-content">
-                        <div class="slider-text">
+                    <div class="carrusel-content">
+                        <div class="carrusel-text">
                             <h1>${escaparHtml(titulo)}</h1>
                             ${textoSoporte ? `<p>${escaparHtml(textoSoporte)}</p>` : ''}
                         </div>
                     </div>
             `;
             return `
-                <div class="slider-slide${i === 0 ? ' active' : ''}">
-                    ${link ? `<a href="${escaparHtml(link)}" ${atributosEnlace(slide)} class="slider-link">${contenido}</a>` : contenido}
+                <div class="carrusel-item${i === 0 ? ' active' : ''}">
+                    ${link ? `<a href="${escaparHtml(link)}" ${atributosEnlace(item)} class="carrusel-link">${contenido}</a>` : contenido}
                 </div>
             `;
         }).join('');
     }
     
     setupNavigation() {
-        const prevBtn = this.slider.querySelector('.slider-nav.prev');
-        const nextBtn = this.slider.querySelector('.slider-nav.next');
+        const prevBtn = this.carrusel.querySelector('.carrusel-nav.prev');
+        const nextBtn = this.carrusel.querySelector('.carrusel-nav.next');
         
         if (prevBtn) {
-            prevBtn.addEventListener('click', () => this.prevSlide());
+            prevBtn.addEventListener('click', () => this.prevItem());
         }
         
         if (nextBtn) {
-            nextBtn.addEventListener('click', () => this.nextSlide());
+            nextBtn.addEventListener('click', () => this.nextItem());
         }
     }
     
@@ -189,8 +189,8 @@ class HeroSlider {
         this.startAutoplay();
         
         // Pausar en hover
-        this.slider.addEventListener('mouseenter', () => this.stopAutoplay());
-        this.slider.addEventListener('mouseleave', () => this.startAutoplay());
+        this.carrusel.addEventListener('mouseenter', () => this.stopAutoplay());
+        this.carrusel.addEventListener('mouseleave', () => this.startAutoplay());
         
         // Pausar cuando la pestaña no está visible
         document.addEventListener('visibilitychange', () => {
@@ -204,11 +204,11 @@ class HeroSlider {
     
     setupTouch() {
         // Touch events para móvil
-        this.slider.addEventListener('touchstart', (e) => {
+        this.carrusel.addEventListener('touchstart', (e) => {
             this.touchStartX = e.changedTouches[0].screenX;
         }, { passive: true });
         
-        this.slider.addEventListener('touchend', (e) => {
+        this.carrusel.addEventListener('touchend', (e) => {
             this.touchEndX = e.changedTouches[0].screenX;
             this.handleSwipe();
         }, { passive: true });
@@ -218,9 +218,9 @@ class HeroSlider {
         // Navegación con teclado
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') {
-                this.prevSlide();
+                this.prevItem();
             } else if (e.key === 'ArrowRight') {
-                this.nextSlide();
+                this.nextItem();
             }
         });
     }
@@ -231,31 +231,31 @@ class HeroSlider {
         
         if (Math.abs(diff) > swipeThreshold) {
             if (diff > 0) {
-                // Swipe left - next slide
-                this.nextSlide();
+                // Swipe left - siguiente elemento
+                this.nextItem();
             } else {
-                // Swipe right - prev slide
-                this.prevSlide();
+                // Swipe right - anterior elemento
+                this.prevItem();
             }
         }
     }
     
-    goToSlide(index) {
+    goToItem(index) {
         if (this.isTransitioning) return;
         
-        this.currentSlide = index;
+        this.currentItem = index;
         this.isTransitioning = true;
         
         // Calcular offset
         const offset = -index * 100;
         this.track.style.transform = `translateX(${offset}%)`;
         
-        // Actualizar slides activos
-        this.slides.forEach((slide, i) => {
+        // Actualizar elementos activos
+        this.items.forEach((item, i) => {
             if (i === index) {
-                slide.classList.add('active');
+                item.classList.add('active');
             } else {
-                slide.classList.remove('active');
+                item.classList.remove('active');
             }
         });
         
@@ -265,46 +265,46 @@ class HeroSlider {
         }, 600);
     }
     
-    nextSlide() {
-        // Sin destino: con un solo slide el loop volvería al mismo. El guard
+    nextItem() {
+        // Sin destino: con un solo elemento el loop volvería al mismo. El guard
         // también evita que el teclado y el swipe muevan el flag
         // isTransitioning sin cambiar nada.
-        if (this.slides.length <= 1) return;
+        if (this.items.length <= 1) return;
 
-        let next = this.currentSlide + 1;
-        if (next >= this.slides.length) {
+        let next = this.currentItem + 1;
+        if (next >= this.items.length) {
             next = 0; // Loop
         }
-        this.goToSlide(next);
+        this.goToItem(next);
         
         // Reiniciar autoplay
         this.restartAutoplay();
     }
     
-    prevSlide() {
-        // Mismo guard que nextSlide().
-        if (this.slides.length <= 1) return;
+    prevItem() {
+        // Mismo guard que nextItem().
+        if (this.items.length <= 1) return;
 
-        let prev = this.currentSlide - 1;
+        let prev = this.currentItem - 1;
         if (prev < 0) {
-            prev = this.slides.length - 1; // Loop
+            prev = this.items.length - 1; // Loop
         }
-        this.goToSlide(prev);
+        this.goToItem(prev);
         
         // Reiniciar autoplay
         this.restartAutoplay();
     }
     
     startAutoplay() {
-        // Con un solo slide no hay giro. El guard va acá y no sólo en
+        // Con un solo elemento no hay giro. El guard va acá y no sólo en
         // ajustarNav() porque mouseleave y visibilitychange llaman a
         // startAutoplay() directo: sin esto volvían a levantar el intervalo en
         // vacío después de que ajustarNav() lo cortara.
-        if (this.slides.length <= 1) return;
+        if (this.items.length <= 1) return;
 
         this.stopAutoplay(); // Limpiar cualquier intervalo anterior
         this.autoplayInterval = setInterval(() => {
-            this.nextSlide();
+            this.nextItem();
         }, this.autoplayDelay);
     }
     
@@ -321,5 +321,5 @@ class HeroSlider {
     }
 }
 
-// Inicializar el slider
-const heroSlider = new HeroSlider();
+// Inicializar el carrusel
+const carruselHero = new CarruselHero();

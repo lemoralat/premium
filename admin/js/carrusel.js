@@ -1,19 +1,19 @@
-// slider.js — CRUD de slides del hero (portada del inicio).
+// carrusel.js — CRUD de elementos del carrusel del hero (portada del inicio).
 
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 
-let slides = [];
+let items = [];
 
-// Tope de slides. La garantía real está en la BD (trigger trg_sliders_max,
+// Tope de elementos. La garantía real está en la BD (trigger trg_sliders_max,
 // migración 0037): esto es la parte amable, que evita que el admin llegue al
 // error. El trigger cuenta TODAS las filas, y acá también: desactivar un
-// slide lo saca del carrusel pero no lo borra, y no libera lugar.
+// elemento lo saca del carrusel pero no lo borra, y no libera lugar.
 //
-// Ojo con los DOS caminos que crean filas: el botón "Nuevo slide" y la acción
+// Ojo con los DOS caminos que crean filas: el botón "Nuevo elemento" y la acción
 // "Duplicar" de cada fila. Con el tope en la base los dos quedan cubiertos
 // igual; el guard de JS es sólo para que el error no llegue como toast.
-const MAX_SLIDES = 12;
+const MAX_ELEMENTOS = 12;
 
 const OPCIONES_MOSTRAR = [
     { valor: 'ambos', nombre: 'Ambos', icono: 'fa-solid fa-arrow-right-arrow-left' },
@@ -27,21 +27,21 @@ export async function renderizar(contenedor) {
 
     const { data, error } = await sb.from('sliders').select('*').order('position', { ascending: true });
     if (error) throw error;
-    slides = data || [];
+    items = data || [];
 
-    // El botón se apaga al llegar al tope. `slides` se relee en cada
+    // El botón se apaga al llegar al tope. `items` se relee en cada
     // renderizado, así que el estado nunca queda desfasado tras un borrado.
-    const alTope = slides.length >= MAX_SLIDES;
-    const quedan = MAX_SLIDES - slides.length;
+    const alTope = items.length >= MAX_ELEMENTOS;
+    const quedan = MAX_ELEMENTOS - items.length;
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
-            <p>Portada del inicio. Sin slides activos, la sección desaparece de la tienda.</p>
-            <button type="button" class="btn btn-primary" id="btnNuevoSlide" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
-                <i class="fa-solid fa-plus"></i> Nuevo slide
+            <p>Portada del inicio. Sin elementos activos, la sección desaparece de la tienda.</p>
+            <button type="button" class="btn btn-primary" id="btnNuevoElemento" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
+                <i class="fa-solid fa-plus"></i> Nuevo elemento
             </button>
         </div>
-        <p class="hint">Máximo ${MAX_SLIDES} slides. ${alTope
+        <p class="hint">Máximo ${MAX_ELEMENTOS} elementos. ${alTope
             ? 'Límite alcanzado: borrá alguno para crear o duplicar otro (desactivar no libera lugar).'
             : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
@@ -55,27 +55,27 @@ export async function renderizar(contenedor) {
     `;
 
     if (!alTope) {
-        $('#btnNuevoSlide').addEventListener('click', () => abrirModalSlide(null));
+        $('#btnNuevoElemento').addEventListener('click', () => abrirModalElemento(null));
     }
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
-        btn.addEventListener('click', () => abrirModalSlide(Number(btn.dataset.editar)));
+        btn.addEventListener('click', () => abrirModalElemento(Number(btn.dataset.editar)));
     });
     contenedor.querySelectorAll('[data-duplicar]').forEach((btn) => {
-        btn.addEventListener('click', () => duplicarSlide(Number(btn.dataset.duplicar), contenedor, btn));
+        btn.addEventListener('click', () => duplicarElemento(Number(btn.dataset.duplicar), contenedor, btn));
     });
     contenedor.querySelectorAll('[data-borrar]').forEach((btn) => {
-        btn.addEventListener('click', () => borrarSlide(Number(btn.dataset.borrar), contenedor));
+        btn.addEventListener('click', () => borrarElemento(Number(btn.dataset.borrar), contenedor));
     });
 }
 
 function filas() {
-    if (!slides.length) {
-        return `<tr><td colspan="6"><div class="admin-empty"><p>No hay slides. Agregá el primero.</p></div></td></tr>`;
+    if (!items.length) {
+        return `<tr><td colspan="6"><div class="admin-empty"><p>No hay elementos. Agregá el primero.</p></div></td></tr>`;
     }
     // "Duplicar" crea una fila nueva, así que se apaga con el mismo tope que
-    // "Nuevo slide". Es el camino que más fácil se olvida en una revisión.
-    const dupDeshabilitado = slides.length >= MAX_SLIDES;
-    return slides.map((s) => `
+    // "Nuevo elemento". Es el camino que más fácil se olvida en una revisión.
+    const dupDeshabilitado = items.length >= MAX_ELEMENTOS;
+    return items.map((s) => `
         <tr>
             <td class="td-principal">
                 <img src="${esc(urlPublica(s.storage_path))}" alt=""
@@ -93,7 +93,7 @@ function filas() {
                 : '<span class="estado-badge estado-cancelado">Inactivo</span>'}</td>
             <td class="td-acciones">
                 <button type="button" class="btn btn-sm" data-editar="${esc(s.id)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm" data-duplicar="${esc(s.id)}" title="${dupDeshabilitado ? 'Límite alcanzado' : 'Duplicar'}" aria-label="Duplicar slide" ${dupDeshabilitado ? 'disabled' : ''}><i class="fa-solid fa-copy"></i></button>
+                <button type="button" class="btn btn-sm" data-duplicar="${esc(s.id)}" title="${dupDeshabilitado ? 'Límite alcanzado' : 'Duplicar'}" aria-label="Duplicar elemento" ${dupDeshabilitado ? 'disabled' : ''}><i class="fa-solid fa-copy"></i></button>
                 <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(s.id)}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
@@ -111,21 +111,21 @@ function etiquetaMostrarEn(valor) {
     return 'Ambos';
 }
 
-function abrirModalSlide(idExistente) {
-    const slide = idExistente ? slides.find((s) => s.id === idExistente) : null;
-    const mostrarEnActual = ['ambos', 'mobile', 'desktop'].includes(slide?.mostrar_en) ? slide.mostrar_en : 'ambos';
+function abrirModalElemento(idExistente) {
+    const item = idExistente ? items.find((s) => s.id === idExistente) : null;
+    const mostrarEnActual = ['ambos', 'mobile', 'desktop'].includes(item?.mostrar_en) ? item.mostrar_en : 'ambos';
 
     abrirModal(`
-        <h2>${slide ? 'Editar slide' : 'Nuevo slide'}</h2>
-        <p class="modal-sub">${slide ? esc(slide.titulo) : 'Agregá una imagen de portada con su texto'}</p>
-        <form class="admin-form" id="slideForm">
-            <input type="hidden" id="sldId" value="${slide ? slide.id : ''}">
-            <input type="hidden" id="sldStorageAnterior" value="${esc(slide?.storage_path || '')}">
+        <h2>${item ? 'Editar elemento' : 'Nuevo elemento'}</h2>
+        <p class="modal-sub">${item ? esc(item.titulo) : 'Agregá una imagen de portada con su texto'}</p>
+        <form class="admin-form" id="elementoForm">
+            <input type="hidden" id="sldId" value="${item ? item.id : ''}">
+            <input type="hidden" id="sldStorageAnterior" value="${esc(item?.storage_path || '')}">
 
             <div class="admin-field full">
                 <label>Imagen de fondo (recomendado 1920×800)</label>
                 <div class="admin-imagenes">
-                    <img src="${esc(urlPublica(slide?.storage_path || ''))}"
+                    <img src="${esc(urlPublica(item?.storage_path || ''))}"
                          alt="" id="sldPreview"
                          style="max-width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border);">
                     <div class="admin-img-upload">
@@ -139,37 +139,37 @@ function abrirModalSlide(idExistente) {
 
             <div class="admin-field full">
                 <label for="sldTitulo">Título</label>
-                <input type="text" id="sldTitulo" value="${esc(slide?.titulo || '')}" placeholder="ej: Envíos a todo el país">
+                <input type="text" id="sldTitulo" value="${esc(item?.titulo || '')}" placeholder="ej: Envíos a todo el país">
             </div>
             <div class="admin-field full">
                 <label for="sldTextoSoporte">Texto de apoyo</label>
-                <textarea id="sldTextoSoporte" placeholder="Texto breve que acompaña al título">${esc(slide?.texto_soporte || '')}</textarea>
+                <textarea id="sldTextoSoporte" placeholder="Texto breve que acompaña al título">${esc(item?.texto_soporte || '')}</textarea>
             </div>
             <div class="admin-form-grid">
                 <div class="admin-field">
                     <label for="sldLink">Enlace (opcional)</label>
-                    <input type="url" id="sldLink" value="${esc(slide?.link || '')}" placeholder="https://…">
+                    <input type="url" id="sldLink" value="${esc(item?.link || '')}" placeholder="https://…">
                 </div>
                 <div class="admin-field">
                     <label for="sldTarget">Comportamiento del enlace</label>
                     <select id="sldTarget">
-                        <option value="interno" ${slide?.target === 'externo' ? '' : 'selected'}>Interno (misma pestaña)</option>
-                        <option value="externo" ${slide?.target === 'externo' ? 'selected' : ''}>Externo (nueva pestaña)</option>
+                        <option value="interno" ${item?.target === 'externo' ? '' : 'selected'}>Interno (misma pestaña)</option>
+                        <option value="externo" ${item?.target === 'externo' ? 'selected' : ''}>Externo (nueva pestaña)</option>
                     </select>
                 </div>
                 <div class="admin-field">
                     <label for="sldPosition">Orden</label>
-                    <input type="number" id="sldPosition" min="0" step="1" value="${esc(slide?.position ?? (slides.length + 1))}">
+                    <input type="number" id="sldPosition" min="0" step="1" value="${esc(item?.position ?? (items.length + 1))}">
                 </div>
                 <div class="admin-field full">
                     <label class="admin-check">
-                        <input type="checkbox" id="sldActivo" ${slide?.activo === false ? '' : 'checked'}>
-                        Slide activo
+                        <input type="checkbox" id="sldActivo" ${item?.activo === false ? '' : 'checked'}>
+                        Elemento activo
                     </label>
                 </div>
                 <div class="admin-field full">
                     <label>Mostrar en</label>
-                    <div class="slider-dispositivos" id="sldDispositivos">
+                    <div class="carrusel-dispositivos" id="sldDispositivos">
                         ${OPCIONES_MOSTRAR.map((o) => {
                             const activo = o.valor === mostrarEnActual;
                             return `
@@ -196,7 +196,7 @@ function abrirModalSlide(idExistente) {
         const archivo = archivoInput.files[0];
         if (!archivo) return;
         try {
-            const lista = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.slider });
+            const lista = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.carrusel });
             archivoOptimizado = lista;
             $('#sldPreview').src = URL.createObjectURL(lista);
             $('#sldPreview').dataset.nombre = archivo.name;
@@ -213,19 +213,19 @@ function abrirModalSlide(idExistente) {
         });
     });
 
-    $('#slideForm').addEventListener('submit', async (event) => {
+    $('#elementoForm').addEventListener('submit', async (event) => {
         event.preventDefault();
-        const submitBtn = event.submitter || $('#slideForm').querySelector('[type="submit"]');
+        const submitBtn = event.submitter || $('#elementoForm').querySelector('[type="submit"]');
 
         const idValor = $('#sldId').value;
         const archivo = archivoOptimizado;
 
-        // `idValor` vacío = slide nuevo. El botón ya viene deshabilitado en el
-        // tope, pero si el panel está abierto en dos pestañas el `slides` de
+        // `idValor` vacío = elemento nuevo. El botón ya viene deshabilitado en el
+        // tope, pero si el panel está abierto en dos pestañas el `items` de
         // esta quedó viejo: el trigger de 0037 lo rechaza igual, esto sólo
         // evita que el error llegue como toast de servidor.
-        if (!idValor && slides.length >= MAX_SLIDES) {
-            toast(`La portada admite máximo ${MAX_SLIDES} slides.`, 'error');
+        if (!idValor && items.length >= MAX_ELEMENTOS) {
+            toast(`La portada admite máximo ${MAX_ELEMENTOS} elementos.`, 'error');
             return;
         }
 
@@ -239,15 +239,15 @@ function abrirModalSlide(idExistente) {
             mostrar_en: document.querySelector('input[name="sldMostrarEn"]:checked')?.value || 'ambos'
         };
 
-        conCarga(submitBtn, guardarSlide(payload, idValor ? Number(idValor) : null, archivo))
+        conCarga(submitBtn, guardarElemento(payload, idValor ? Number(idValor) : null, archivo))
             .then(() => { cerrarModal(); renderizar($('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
     });
 }
 
-async function guardarSlide(payload, id, archivo) {
+async function guardarElemento(payload, id, archivo) {
     const sb = await clienteAdmin();
-    let storagePathAnterior = id ? slides.find((s) => s.id === id)?.storage_path || '' : '';
+    let storagePathAnterior = id ? items.find((s) => s.id === id)?.storage_path || '' : '';
 
     // 1) Crear o actualizar el registro (sin cambios de imagen todavía)
     let registroId = id;
@@ -263,7 +263,7 @@ async function guardarSlide(payload, id, archivo) {
     // 2) Imagen: archivo nuevo, URL externa o sin cambios
     let imagenPayload = null;
     if (archivo) {
-        imagenPayload = { storage_path: await subirImagenAdmin('slider', 'slides', archivo) };
+        imagenPayload = { storage_path: await subirImagenAdmin('slider', 'carrusel', archivo) };
     }
 
     if (imagenPayload) {
@@ -271,7 +271,7 @@ async function guardarSlide(payload, id, archivo) {
         if (error) throw new Error(error.message);
 
         // Liberar el archivo del Storage anterior (si lo había). El chequeo de
-        // referencias va adentro de liberarImagenSiSobra: la copia de un slide
+        // referencias va adentro de liberarImagenSiSobra: la copia de un elemento
         // duplicado comparte el archivo con el original, así que borrarlo sin
         // comprobarlo le dejaría la imagen rota.
         if (archivo) {
@@ -279,41 +279,41 @@ async function guardarSlide(payload, id, archivo) {
         }
     }
 
-    toast(id ? 'Slide actualizado.' : 'Slide creado.');
+    toast(id ? 'Elemento actualizado.' : 'Elemento creado.');
 }
 
-async function borrarSlide(id, contenedor) {
-    if (!(await confirmarBorrado('¿Eliminar este slide?'))) return;
+async function borrarElemento(id, contenedor) {
+    if (!(await confirmarBorrado('¿Eliminar este elemento?'))) return;
     const sb = await clienteAdmin();
-    const slide = slides.find((s) => s.id === id);
+    const item = items.find((s) => s.id === id);
     const { error } = await sb.from('sliders').delete().eq('id', id);
     if (error) {
         toast(`No se pudo eliminar: ${error.message}`, 'error');
         return;
     }
     // La fila ya no está, así que el chequeo de referencias sólo ve a las demás.
-    if (slide?.storage_path) await liberarImagenSiSobra(slide.storage_path);
-    toast('Slide eliminado.');
+    if (item?.storage_path) await liberarImagenSiSobra(item.storage_path);
+    toast('Elemento eliminado.');
     renderizar(contenedor);
 }
 
-// Copia un slide con todos sus datos, para poder editar la variante sin
-// arrancar de cero (por ejemplo, partir el slide de escritorio en dos). La
+// Copia un elemento con todos sus datos, para poder editar la variante sin
+// arrancar de cero (por ejemplo, partir el elemento de escritorio en dos). La
 // copia queda activa y con el mismo comportamiento de enlace que el original.
-async function duplicarSlide(id, contenedor, boton) {
+async function duplicarElemento(id, contenedor, boton) {
     const sb = await clienteAdmin();
-    const original = slides.find((s) => s.id === id);
+    const original = items.find((s) => s.id === id);
     if (!original) {
-        toast('No se encontró el slide a duplicar.', 'error');
+        toast('No se encontró el elemento a duplicar.', 'error');
         return;
     }
 
     // Duplicar inserta una fila, así que pasa por el mismo tope que el botón
-    // "Nuevo slide". El chequeo va acá y no sólo en el atributo `disabled` de
-    // `filas()`: con el panel en dos pestañas el `slides` de esta puede
+    // "Nuevo elemento". El chequeo va acá y no sólo en el atributo `disabled` de
+    // `filas()`: con el panel en dos pestañas el `items` de esta puede
     // tener menos de los que ya hay.
-    if (slides.length >= MAX_SLIDES) {
-        toast(`La portada admite máximo ${MAX_SLIDES} slides. Borá alguno antes de duplicar.`, 'error');
+    if (items.length >= MAX_ELEMENTOS) {
+        toast(`La portada admite máximo ${MAX_ELEMENTOS} elementos. Borrá alguno antes de duplicar.`, 'error');
         return;
     }
 
@@ -326,12 +326,12 @@ async function duplicarSlide(id, contenedor, boton) {
 
     try {
         // 1) Desplazar los que van después, para que la copia caiga justo
-        //    detrás del original sin dejar dos slides con la misma posición: el
+        //    detrás del original sin dejar dos elementos con la misma posición: el
         //    front sólo ordena por `position`, así que un empate haría el orden
         //    no determinista. Va antes del insert a propósito: si el insert
         //    falla queda un hueco en las posiciones, que es inofensivo, y nunca
         //    un empate, que sí lo sería.
-        for (const s of slides) {
+        for (const s of items) {
             if (s.position <= original.position) continue;
             const { error } = await sb
                 .from('sliders')
@@ -357,7 +357,7 @@ async function duplicarSlide(id, contenedor, boton) {
         });
         if (error) throw new Error(error.message);
 
-        toast('Slide duplicado.');
+        toast('Elemento duplicado.');
         renderizar(contenedor);
     } catch (error) {
         toast(`No se pudo duplicar: ${error.message}`, 'error');
@@ -366,7 +366,7 @@ async function duplicarSlide(id, contenedor, boton) {
     }
 }
 
-// Borra el archivo del Storage sólo si ningún otro slide lo sigue usando.
+// Borra el archivo del Storage sólo si ningún otro elemento lo sigue usando.
 //
 // Hace falta porque al duplicar las dos filas comparten el mismo storage_path.
 // Sin esta comprobación, cambiarle la imagen a la copia borraba el archivo del

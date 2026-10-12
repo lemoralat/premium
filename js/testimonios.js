@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // testimonios inventados (María González, Carlos Rodríguez, fechas de
     // 2026). En una plantilla que se vende a clientes eso es lo peor que
     // puede pasar: la tienda muestra reseñas falsas como si fueran reales.
-    // Ahora sigue el mismo patrón que el slider (hero-slider.js): si no hay
+    // Ahora sigue el mismo patrón que el carrusel (carrusel-hero.js): si no hay
     // datos, la sección desaparece. Sin datos de relleno en el repositorio.
     const resenas = await obtenerResenas();
     if (!resenas || resenas.length === 0) {

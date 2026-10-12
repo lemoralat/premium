@@ -157,6 +157,6 @@ function mostrarConfirmacion() {
     });
 }
 
-// Si `mostrarNotificacion` se mueve a `utils.js`, los estilos de animación `fadeIn`, `fadeOut`, `slideUp`
+// Si `mostrarNotificacion` se mueve a `utils.js`, los estilos de animación `fadeIn`, `fadeOut`, `deslizarUp`
 // deberían permanecer en `styles.css` o ser gestionados de forma centralizada.
 // Por ahora, se asume que `mostrarNotificacion` en `utils.js` ya maneja sus propios estilos o los espera en `styles.css`.

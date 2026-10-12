@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // virtual número 1 de Argentina", "los pedidos salen desde Córdoba"). En
     // una plantilla que se reparte entre clientes, esos textos describen a la
     // tienda que.originó el template, no a quien la compró. Ahora la sección
-    // desaparece si no hay datos, como el slider.
+    // desaparece si no hay datos, como el carrusel.
     const iconos = await obtenerIconosPie();
     if (!iconos || iconos.length === 0) {
         if (seccion) seccion.style.display = 'none';

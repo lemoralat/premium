@@ -3,7 +3,7 @@
 //
 // Conecta el frontend estático actual (HTML/CSS/JS vanilla) con Supabase,
 // manteniendo el CONTRATO EXACTO de datos que esperan los módulos existentes
-// (js/utils.js, productos.js, producto-detalle.js, hero-slider.js, etc.).
+// (js/utils.js, productos.js, producto-detalle.js, carrusel-hero.js, etc.).
 //
 // - Usa SOLO la anon key (pública). Nunca hay service_role en el navegador.
 // - Si Supabase no está configurado o falla, devuelve { ok: false }; utils.js
@@ -397,20 +397,20 @@ export async function cargarResenas() {
 }
 
 // ============================================================================
-// SLIDER (hero)
+// CARRUSEL (hero)
 // ============================================================================
-export async function cargarSlider() {
+export async function cargarCarrusel() {
     const sb = await obtenerClienteSupabase();
     if (!sb) return { ok: false };
 
-    const cacheado = leerCache('slider');
+    const cacheado = leerCache('carrusel');
     if (cacheado) return { ok: true, datos: cacheado };
 
     try {
         // `select('*')` en vez de columnas fijas: la columna `mostrar_en`
-        // (migración 0019: mostrar slide en móvil/desktop/ambos) puede no
+        // (migración 0019: mostrar elemento en móvil/desktop/ambos) puede no
         // existir todavía; con una lista fija el query fallaría y toda la
-        // portada se quedaría sin slider. Con '*' las columnas ausentes
+        // portada se quedaría sin carrusel. Con '*' las columnas ausentes
         // simplemente no llegan y `mostrarEn` queda en 'ambos'.
         const { data, error } = await sb
             .from('sliders')
@@ -420,7 +420,7 @@ export async function cargarSlider() {
 
         if (error) throw error;
 
-        const slides = (data || []).map(s => ({
+        const items = (data || []).map(s => ({
             titulo: s.titulo || '',
             textoSoporte: s.texto_soporte || '',
             imagen: urlImagen(s) || '',
@@ -429,10 +429,10 @@ export async function cargarSlider() {
             mostrarEn: s.mostrar_en || 'ambos'
         }));
 
-        cachear('slider', slides);
-        return { ok: true, datos: slides };
+        cachear('carrusel', items);
+        return { ok: true, datos: items };
     } catch (error) {
-        console.warn('⚠️ Supabase: no se pudo cargar el slider. La sección del hero se oculta.', error);
+        console.warn('⚠️ Supabase: no se pudo cargar el carrusel. La sección del hero se oculta.', error);
         return { ok: false, error };
     }
 }

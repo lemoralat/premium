@@ -198,7 +198,7 @@ export const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
 export const MAX_TAMANO_IMAGEN = 8 * 1024 * 1024; // 8 MB
 export const LIMITES_IMAGEN = Object.freeze({
     producto: 1920,
-    slider: 1920,
+    carrusel: 1920,
     bannerFondo: 1920,
     bannerLogo: 1024,
     avatar: 512,

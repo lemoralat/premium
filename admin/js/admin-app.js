@@ -16,7 +16,7 @@ import * as categorias from './categorias.js';
 import * as pedidos from './pedidos.js';
 import * as turnos from './turnos.js';
 import * as cupones from './cupones.js';
-import * as slider from './slider.js';
+import * as carrusel from './carrusel.js';
 import * as banners from './banners.js';
 import * as resenas from './resenas.js';
 import * as iconosPie from './iconos-pie.js';
@@ -31,7 +31,7 @@ const secciones = {
     pedidos:       { ...pedidos,       titulo: 'Pedidos' },
     turnos:        { ...turnos,        titulo: 'Turnos' },
     cupones:       { ...cupones,       titulo: 'Descuentos' },
-    slider:        { ...slider,        titulo: 'Carrusel' },
+    carrusel:      { ...carrusel,       titulo: 'Carrusel' },
     banners:       { ...banners,       titulo: 'Banners' },
     resenas:       { ...resenas,       titulo: 'Reseñas' },
     'iconos-pie':  { ...iconosPie,     titulo: 'Iconos' },
