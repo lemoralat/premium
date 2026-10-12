@@ -96,7 +96,7 @@ function pintar(contenedor) {
                 <option value="activos" ${filtroActivo === 'activos' ? 'selected' : ''}>Solo activos</option>
                 <option value="inactivos" ${filtroActivo === 'inactivos' ? 'selected' : ''}>Solo inactivos</option>
             </select>
-            <span style="color:var(--text-muted); font-size:0.85rem;">${filtrados.length} de ${productos.length}</span>
+            <span style="color:var(--text-muted); font-size:var(--fs-lg);">${filtrados.length} de ${productos.length}</span>
         </div>
 
         ${conSeleccion ? `
@@ -229,9 +229,9 @@ function filaProducto(p) {
                         <strong>${esc(p.nombre)}</strong>
                         ${p.destacado ? ' <span class="estado-badge estado-procesando" style="margin-left:0.3rem;">⭐ Destacado</span>' : ''}
                         ${p.precio_anterior != null && Number(p.precio_anterior) > Number(p.precio)
-                            ? `<span style="color:var(--text-muted); font-size:0.75rem;"> antes $${formatearPrecio(p.precio_anterior)}</span>`
+                            ? `<span style="color:var(--text-muted); font-size:var(--fs-md);"> antes $${formatearPrecio(p.precio_anterior)}</span>`
                             : ''}
-                        <br><span style="color:var(--text-muted); font-size:0.78rem;">#${esc(p.id)}</span>
+                        <br><span style="color:var(--text-muted); font-size:var(--fs-md);">#${esc(p.id)}</span>
                     </div>
                 </div>
             </td>
@@ -868,7 +868,7 @@ function renderImagenes() {
                             ? `<img src="${esc(urlPublica(i.storage_path))}" alt="">`
                             : placeholderImagen('admin-image-placeholder--card', 'Sin imagen')}
                     <div class="admin-img-acciones">
-                        <label style="display:flex; align-items:center; gap:0.3rem; color:#fff; font-size:0.68rem;">
+                        <label style="display:flex; align-items:center; gap:0.3rem; color:#fff; font-size:var(--fs-xs);">
                             <input type="radio" name="imagenPrincipal" data-campo="principal" ${i.esPrincipal ? 'checked' : ''}>
                             Principal
                         </label>

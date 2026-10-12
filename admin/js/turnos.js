@@ -316,14 +316,14 @@ function filaTurno(t) {
             <td colspan="8">
                 <div class="pedido-detalle-grid">
                     <div>
-                        <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Solicitud</h4>
-                        <div style="display:flex; flex-direction:column; gap:0.3rem; font-size:0.85rem;">
+                        <h4 style="margin:0 0 0.7rem; font-size:var(--fs-xl);">Solicitud</h4>
+                        <div style="display:flex; flex-direction:column; gap:0.3rem; font-size:var(--fs-lg);">
                             <span>📅 Fecha preferida: <strong>${esc(t.fecha || '—')}</strong></span>
                             ${t.hora ? `<span>🕐 Hora preferida: <strong>${esc(t.hora)}</strong></span>` : ''}
                             ${servicioDe(t) && !itemsDe(t).length ? `<span>💼 Servicio: <strong>${esc(servicioDe(t).nombre || '')}</strong></span>` : ''}
                             ${itemsDe(t).length ? `
                             <div style="margin-top:0.5rem;">
-                                <strong style="font-size:0.8rem;">Servicios solicitados (${itemsDe(t).length}):</strong>
+                                <strong style="font-size:var(--fs-md);">Servicios solicitados (${itemsDe(t).length}):</strong>
                                 <ul style="margin:0.3rem 0 0 1rem; padding:0; list-style:disc;">
                                     ${itemsDe(t).map((i) => {
                                         const nombre = esc(String(i.nombre || '').trim());
@@ -332,16 +332,16 @@ function filaTurno(t) {
                                         const precio = Number(i.precio_unitario) > 0
                                             ? ` — $${formatearPrecio(Number(i.precio_unitario) * (Number(i.cantidad) || 1))}`
                                             : '';
-                                        return `<li style="font-size:0.85rem;">${nombre}${variante}${cantidad}${precio}</li>`;
+                                        return `<li style="font-size:var(--fs-lg);">${nombre}${variante}${cantidad}${precio}</li>`;
                                     }).join('')}
                                 </ul>
-                                ${totalItems(t) > 0 ? `<span style="font-size:0.85rem; margin-top:0.2rem; display:inline-block;">💰 Total estimado: <strong>$${formatearPrecio(totalItems(t))}</strong></span>` : ''}
+                                ${totalItems(t) > 0 ? `<span style="font-size:var(--fs-lg); margin-top:0.2rem; display:inline-block;">💰 Total estimado: <strong>$${formatearPrecio(totalItems(t))}</strong></span>` : ''}
                             </div>` : ''}
                             ${t.notas ? `<span style="white-space:pre-line;">📝 Notas: ${esc(t.notas)}</span>` : ''}
                         </div>
                     </div>
                     <div>
-                        <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Datos del cliente</h4>
+                        <h4 style="margin:0 0 0.7rem; font-size:var(--fs-xl);">Datos del cliente</h4>
                         ${cliente ? `
                         <div class="admin-pedido-cliente">
                             <strong>${esc(cliente.nombre || '')}</strong>
@@ -569,30 +569,30 @@ function abrirDetalleTurno(t) {
         <p class="modal-sub">Recibida ${esc(formatearFechaHora(t.created_at))}</p>
         <div class="pedido-detalle-grid">
             <div>
-                <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Solicitud</h4>
-                <div style="display:flex; flex-direction:column; gap:0.3rem; font-size:0.85rem;">
+                <h4 style="margin:0 0 0.7rem; font-size:var(--fs-xl);">Solicitud</h4>
+                <div style="display:flex; flex-direction:column; gap:0.3rem; font-size:var(--fs-lg);">
                     <span>📅 Fecha preferida: <strong>${esc(t.fecha || '—')}</strong></span>
                     ${t.hora ? `<span>🕐 Hora preferida: <strong>${esc(t.hora)}</strong></span>` : ''}
                     ${servicioDe(t) && !itemsDe(t).length ? `<span>💼 Servicio: <strong>${esc(servicioDe(t).nombre || '')}</strong></span>` : ''}
                     ${itemsDe(t).length ? `
                     <div style="margin-top:0.5rem;">
-                        <strong style="font-size:0.8rem;">Servicios solicitados (${itemsDe(t).length}):</strong>
+                        <strong style="font-size:var(--fs-md);">Servicios solicitados (${itemsDe(t).length}):</strong>
                         <ul style="margin:0.3rem 0 0 1rem; padding:0; list-style:disc;">
                             ${itemsDe(t).map((i) => {
                                 const nombre = esc(String(i.nombre || '').trim());
                                 const variante = i.variante_texto ? ` [${esc(String(i.variante_texto).trim())}]` : '';
                                 const cantidad = Number(i.cantidad) > 1 ? ` × ${Number(i.cantidad)}` : '';
                                 const precio = Number(i.precio_unitario) > 0 ? ` — $${formatearPrecio(Number(i.precio_unitario) * (Number(i.cantidad) || 1))}` : '';
-                                return `<li style="font-size:0.85rem;">${nombre}${variante}${cantidad}${precio}</li>`;
+                                return `<li style="font-size:var(--fs-lg);">${nombre}${variante}${cantidad}${precio}</li>`;
                             }).join('')}
                         </ul>
-                        ${totalItems(t) > 0 ? `<span style="font-size:0.85rem; margin-top:0.2rem; display:inline-block;">💰 Total estimado: <strong>$${formatearPrecio(totalItems(t))}</strong></span>` : ''}
+                        ${totalItems(t) > 0 ? `<span style="font-size:var(--fs-lg); margin-top:0.2rem; display:inline-block;">💰 Total estimado: <strong>$${formatearPrecio(totalItems(t))}</strong></span>` : ''}
                     </div>` : ''}
                     ${t.notas ? `<span style="white-space:pre-line;">📝 Notas: ${esc(t.notas)}</span>` : ''}
                 </div>
             </div>
             <div>
-                <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Datos del cliente</h4>
+                <h4 style="margin:0 0 0.7rem; font-size:var(--fs-xl);">Datos del cliente</h4>
                 ${cliente ? `
                     <div class="admin-pedido-cliente">
                         <strong>${esc(cliente.nombre || '')}</strong>
@@ -602,7 +602,7 @@ function abrirDetalleTurno(t) {
             </div>
         </div>
         <div class="admin-field" style="margin-top:1.1rem;">
-            <label style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:0.35rem;">Estado del turno</label>
+            <label style="font-weight:600; font-size:var(--fs-lg); display:block; margin-bottom:0.35rem;">Estado del turno</label>
             <select class="admin-estado-select" id="calEstadoTurno" data-anterior="${esc(t.estado)}">
                 ${ESTADOS.map((e) => `<option value="${esc(e)}" ${e === t.estado ? 'selected' : ''}>${esc(e)}</option>`).join('')}
             </select>

@@ -271,7 +271,7 @@ function filaPedido(o) {
             <td data-label="Cliente">${esc(cliente?.nombre || '—')}</td>
             <td data-label="Productos">${esc(cantidad)}</td>
             <td data-label="Total"><strong>$${formatearPrecio(o.total)}</strong>
-                ${o.descuento > 0 ? `<br><span style="color:var(--success); font-size:0.75rem;">-$${formatearPrecio(o.descuento)}</span>` : ''}
+                ${o.descuento > 0 ? `<br><span style="color:var(--success); font-size:var(--fs-md);">-$${formatearPrecio(o.descuento)}</span>` : ''}
             </td>
             <td data-label="Cupón">${o.cupon && o.cupon !== 'NINGUNO'
                 ? `<span class="estado-badge estado-pendiente">${esc(o.cupon)}</span>`
@@ -287,25 +287,25 @@ function filaPedido(o) {
             <td colspan="9">
                 <div class="pedido-detalle-grid">
                     <div>
-                        <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Productos</h4>
+                        <h4 style="margin:0 0 0.7rem; font-size:var(--fs-xl);">Productos</h4>
                         <div class="admin-pedido-items">
                             ${items.map((i) => `
                                 <div class="admin-pedido-item">
                                     <span>${esc(i.quantity)} × ${esc(i.nombre)}
-                                        ${i.variante_texto ? `<span style="color:var(--text-muted); font-size:0.75rem;">(${esc(i.variante_texto)})</span>` : ''}
+                                        ${i.variante_texto ? `<span style="color:var(--text-muted); font-size:var(--fs-md);">(${esc(i.variante_texto)})</span>` : ''}
                                     </span>
                                     <span>$${formatearPrecio(Number(i.precio_unitario) * Number(i.quantity))}</span>
                                 </div>
                             `).join('')}
                         </div>
-                        <div style="margin-top:0.7rem; font-size:0.85rem; display:flex; flex-direction:column; gap:0.2rem;">
+                        <div style="margin-top:0.7rem; font-size:var(--fs-lg); display:flex; flex-direction:column; gap:0.2rem;">
                             <span>Subtotal: <strong>$${formatearPrecio(o.subtotal)}</strong></span>
                             ${o.descuento > 0 ? `<span>Descuento (${esc(o.porcentaje)}%): <strong style="color:var(--success);">-$${formatearPrecio(o.descuento)}</strong></span>` : ''}
                             <span>Total final: <strong>$${formatearPrecio(o.total)}</strong></span>
                         </div>
                     </div>
                     <div>
-                        <h4 style="margin:0 0 0.7rem; font-size:0.9rem;">Datos del cliente</h4>
+                        <h4 style="margin:0 0 0.7rem; font-size:var(--fs-xl);">Datos del cliente</h4>
                         ${cliente ? `
                         <div class="admin-pedido-cliente">
                             <strong>${esc(cliente.nombre || '')}</strong>

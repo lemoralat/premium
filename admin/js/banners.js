@@ -124,7 +124,7 @@ function filas() {
                 ${soloImagen
                     ? '<span class="estado-badge estado-procesando" style="margin-bottom:0.3rem;">Solo imagen</span>'
                     : `<strong>${esc(b.titulo)}</strong>${b.badge ? ` · <span class="estado-badge estado-entregado">${esc(b.badge)}</span>` : ''}`}
-                ${b.link ? `<br><span style="color:var(--text-muted); font-size:0.8rem;">${esc(b.link)}</span> ${b.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
+                ${b.link ? `<br><span style="color:var(--text-muted); font-size:var(--fs-md);">${esc(b.link)}</span> ${b.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
             </td>
             <td data-label="Orden">${esc(b.position)}</td>
             <td data-label="Estado">${b.activo
