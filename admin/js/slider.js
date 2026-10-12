@@ -16,10 +16,19 @@ let slides = [];
 const MAX_SLIDES = 12;
 
 const OPCIONES_MOSTRAR = [
-    { valor: 'ambos', nombre: 'Ambos', icono: 'fa-solid fa-mobile-screen' },
-    { valor: 'mobile', nombre: 'Móvil', icono: 'fa-solid fa-mobile-screen-button' },
-    { valor: 'desktop', nombre: 'Escritorio', icono: 'fa-solid fa-desktop' }
+    // "Ambos" lleva los DOS íconos (móvil + escritorio): es la opción que cubre
+    // los dos dispositivos. Los demás van con uno solo.
+    { valor: 'ambos', nombre: 'Ambos', iconos: ['fa-solid fa-mobile-screen-button', 'fa-solid fa-desktop'] },
+    { valor: 'mobile', nombre: 'Móvil', iconos: ['fa-solid fa-mobile-screen-button'] },
+    { valor: 'desktop', nombre: 'Escritorio', iconos: ['fa-solid fa-desktop'] }
 ];
+
+// Íconos del selector "Mostrar en". Con más de uno se agrupan en un span para
+// que se lean como un par (móvil + escritorio) y no como íconos sueltos.
+function iconosDispositivo(iconos) {
+    const marcas = iconos.map((c) => `<i class="${c}"></i>`).join('');
+    return iconos.length > 1 ? `<span class="sld-dispositivo-iconos">${marcas}</span>` : marcas;
+}
 
 export async function renderizar(contenedor) {
     estadoCargando(contenedor);
@@ -175,7 +184,7 @@ function abrirModalSlide(idExistente) {
                             return `
                             <label class="sld-dispositivo ${activo ? 'activa' : ''}">
                                 <input type="radio" name="sldMostrarEn" value="${o.valor}" ${activo ? 'checked' : ''}>
-                                <i class="${o.icono}"></i>
+                                ${iconosDispositivo(o.iconos)}
                                 <span>${o.nombre}</span>
                             </label>`;
                         }).join('')}
