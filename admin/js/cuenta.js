@@ -14,9 +14,25 @@ export async function renderizar(contenedor) {
     }
 
     const email = session.user.email || '';
-    const perfil = await (async () => {
-        const { data } = await sb.from('profiles').select('full_name').eq('id', session.user.id).single();
-        return data || null;
+    const [perfil, settings] = await Promise.all([
+        sb.from('profiles').select('full_name').eq('id', session.user.id).single()
+            .then(({ data }) => data || null)
+            .catch(() => null),
+        // Nombre de la tienda (settings.id=1) para identificarla en el mensaje de baja.
+        sb.from('settings').select('site_name').eq('id', 1).maybeSingle()
+            .then(({ data }) => data || null)
+            .catch(() => null),
+    ]);
+
+    // Baja de la suscripción al plan de Lemora: link a WhatsApp de Soporte con
+    // el mensaje precargado y los datos que identifican la cuenta.
+    const urlBaja = (() => {
+        const nombreTienda = settings?.site_name || '';
+        const mensaje =
+            'Hola, quiero darme de baja de mi suscripción al plan de Lemora.' +
+            (nombreTienda ? `\n\nTienda: ${nombreTienda}` : '') +
+            `\nCorreo de la cuenta: ${email}`;
+        return `https://wa.me/5493515957014?text=${encodeURIComponent(mensaje)}`;
     })();
 
     contenedor.innerHTML = `
@@ -66,12 +82,24 @@ export async function renderizar(contenedor) {
             </form>
         </div>
 
-        <div class="admin-card" style="border-color:#fecaca;">
+        <div class="admin-card" style="border-color:var(--danger-border);">
             <h2 style="color:var(--danger);">Zona de riesgo</h2>
-            <p class="card-sub">Cerrá tu sesión cuando termines de trabajar en el panel.</p>
-            <button type="button" class="btn btn-danger" id="btnCerrarSesion">
-                <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-            </button>
+            <div class="admin-form-grid">
+                <div>
+                    <h3>Cerrar sesión</h3>
+                    <p class="card-sub">Cerrá tu sesión cuando termines de trabajar en el panel.</p>
+                    <button type="button" class="btn btn-danger" id="btnCerrarSesion">
+                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+                    </button>
+                </div>
+                <div>
+                    <h3>Darse de baja del plan</h3>
+                    <p class="card-sub">¿Querés cancelar tu suscripción al plan de Lemora? Escribinos por WhatsApp y lo gestionamos.</p>
+                    <a class="btn btn-whatsapp" href="${urlBaja}" target="_blank" rel="noopener">
+                        <i class="fa-brands fa-whatsapp"></i> Darme de baja
+                    </a>
+                </div>
+            </div>
         </div>
     `;
 

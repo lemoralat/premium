@@ -283,6 +283,11 @@ img { max-width: 100%; }
     font-size: var(--fs-xl);
 }
 
+.admin-card h3 {
+    margin: 0 0 0.4rem;
+    font-size: var(--fs-lg);
+}
+
 .admin-card .card-sub {
     color: var(--text-muted);
     font-size: var(--fs-md);
@@ -506,6 +511,14 @@ td.td-expandir .pedido-acciones {
     color: var(--danger);
 }
 .btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
+
+/* Baja de suscripción al plan de Lemora: acceso a Soporte por WhatsApp */
+.btn-whatsapp {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+}
+.btn-whatsapp:hover { background: var(--success-bg); border-color: var(--success); color: var(--success); }
 
 .btn-outline { background: transparent; border-color: var(--border); }
 
