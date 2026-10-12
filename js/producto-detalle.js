@@ -846,32 +846,44 @@ function agregarAlCarritoDetalle(id) {
 
 // Cargar productos relacionados
 function cargarProductosRelacionados() {
+    const grid = document.getElementById('relatedProducts');
+    if (!grid) return;
+
+    const productoId = obtenerIdProducto();
+    const productoActual = productos.find(p => p.id === productoId);
+
+    // Misma categoría primero; si no alcanzan 3 se completa con el resto del
+    // catálogo. Sin producto actual no hay de dónde relacionar.
+    let relacionados = [];
+    if (productoActual) {
+        relacionados = productos.filter(p =>
+            p.id !== productoId && p.categoria === productoActual.categoria
+        );
+        if (relacionados.length < 3) {
+            const otros = productos.filter(p =>
+                p.id !== productoId && !relacionados.includes(p)
+            );
+            relacionados = [...relacionados, ...otros];
+        }
+        relacionados = relacionados.slice(0, 3);
+    }
+
+    // Sin nada que mostrar (catálogo de un solo ítem, o producto inexistente)
+    // se deja oculta la sección: un título "Productos/Servicios Relacionados"
+    // colgado sobre la grilla vacía no aporta nada. La sección arranca oculta
+    // (hidden en producto.html) para no mostrar el título durante la carga.
+    const seccion = grid.closest('.related-products');
+    if (relacionados.length === 0) {
+        if (seccion) seccion.hidden = true;
+        return;
+    }
+    if (seccion) seccion.hidden = false;
+
     // En modo turnos el catálogo son servicios (misma etiqueta que usa el
     // panel en Diseño); la config ya está cargada porque el init la espera.
     const titulo = document.getElementById('relatedTitle');
     if (titulo) titulo.textContent = esModoTurnos() ? 'Servicios Relacionados' : 'Productos Relacionados';
 
-    const productoId = obtenerIdProducto();
-    const productoActual = productos.find(p => p.id === productoId);
-    
-    if (!productoActual) return;
-    
-    let relacionados = productos.filter(p => 
-        p.id !== productoId && p.categoria === productoActual.categoria
-    );
-    
-    if (relacionados.length < 3) {
-        const otros = productos.filter(p => 
-            p.id !== productoId && !relacionados.includes(p)
-        );
-        relacionados = [...relacionados, ...otros];
-    }
-    
-    relacionados = relacionados.slice(0, 3);
-    
-    const grid = document.getElementById('relatedProducts');
-    if (!grid) return;
-    
     grid.innerHTML = relacionados.map(p => generarHTMLTarjetaProducto(p)).join('');
 }
 
