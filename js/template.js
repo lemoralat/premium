@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, slugificar, obtenerMarquee, placeholderImagenPublica, esModoTurnos } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, slugificar, obtenerMarquee, obtenerPreguntasFrecuentes, placeholderImagenPublica, esModoTurnos } from './utils.js';
 
 const CARD_ASPECT_RATIOS = Object.freeze({
     '1:1': '1 / 1',
@@ -9,7 +9,9 @@ const CARD_ASPECT_RATIOS = Object.freeze({
 });
 
 // Renderizar Header
-function renderHeader(activePage = '', categorias = []) {
+// `hayPreguntas`: si false, el menú no muestra el enlace "Preguntas" (no hay
+// ninguna pregunta cargada en el panel y la página /faq queda sin contenido).
+function renderHeader(activePage = '', categorias = [], hayPreguntas = true) {
     const header = document.createElement('div');
     header.className = 'header-wrapper';
 
@@ -125,7 +127,7 @@ function renderHeader(activePage = '', categorias = []) {
                         ${submenuHTML}
                     </div>
                     <!-- <a href="/nosotros" class="nav-link ${activePage === 'nosotros' ? 'active' : ''}">Nosotros</a> -->
-                    <a href="/faq" class="nav-link ${activePage === 'faq' ? 'active' : ''}">Preguntas</a> 
+                    ${hayPreguntas ? `<a href="/faq" class="nav-link ${activePage === 'faq' ? 'active' : ''}">Preguntas</a>` : ''}
                     <!-- <a href="/#contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>-->
                     <a href="/contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a> 
                     <a href="/favoritos" class="nav-link favorites-link ${activePage === 'favoritos' ? 'active' : ''}" aria-label="Mis Favoritos">
@@ -331,16 +333,24 @@ async function initTemplate(activePage = '') {
     // favicon y metas OpenGraph/Twitter.
     aplicarDisenoGlobal();
 
-    // Obtener categorías dinámicas
+    // Obtener las categorías del menú y, en paralelo, el estado de las
+    // preguntas frecuentes (el menú oculta "Preguntas" si no hay ninguna
+    // cargada en el panel). El fetch va con el de productos para no sumar
+    // latencia: ambas consultas están cacheadas.
     let categorias = [];
+    let hayPreguntas = true;
     try {
-        const productos = await obtenerProductos();
+        const [productos, faq] = await Promise.all([obtenerProductos(), obtenerPreguntasFrecuentes()]);
         categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean);
         productosRef = productos;
-    } catch (e) { console.error("Error cargando categorías para el menú", e); }
+        // Fail-open: si Supabase no responde (faq = null) se mantiene el enlace,
+        // para no ocultarlo por un error transitorio. Solo se oculta cuando la
+        // tabla está vacía (total = 0: nada creado en el dashboard).
+        hayPreguntas = !faq || faq.total > 0;
+    } catch (e) { console.error("Error cargando datos para el menú", e); }
 
     // 1. Insertar Header
-    const header = renderHeader(activePage, categorias);
+    const header = renderHeader(activePage, categorias, hayPreguntas);
     body.insertBefore(header, body.firstChild);
     // Avisar a módulos (ej. búsqueda) de que el header ya está en el DOM
     document.dispatchEvent(new CustomEvent('lemora:header-ready'));
