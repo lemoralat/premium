@@ -1410,7 +1410,8 @@ span {
 }
 
 .cart-page h1 {
-    margin-bottom: 2rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .cart-container {
@@ -1926,7 +1927,7 @@ footer p {
 .devBy {
     /* wordmark horizontal de Lemora (img/lemora_footer.svg): altura fija con
        ancho automático — los 40px de ancho eran para la marca cuadrada. */
-    height: 16px;
+    height: 20px;
     width: auto;
     vertical-align: text-bottom;
     margin-left: 4px;
