@@ -198,6 +198,13 @@ function formatearFechaCita(iso) {
     return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+// Chart.js no acepta var() en el tamaño de fuente: leemos los tokens del panel
+// para que los gráficos compartan exactamente la escala tipográfica del CSS.
+function fuenteToken(token) {
+    const px = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(token));
+    return Number.isFinite(px) && px > 0 ? px : 12;
+}
+
 function crearChart(canvasId, config, tipo = '') {
     const canvas = document.getElementById(canvasId);
     if (!canvas || typeof window.Chart === 'undefined') return null;
@@ -552,8 +559,8 @@ export async function renderizar(contenedor) {
                     tooltip: { callbacks: { label: (ctx) => ` $${formatearPrecio(ctx.parsed.y || 0)}` } }
                 },
                 scales: {
-                    x: { grid: { display: false, color: cc.grid }, ticks: { maxTicksLimit: 10, font: { size: 10 }, color: cc.ticks } },
-                    y: { beginAtZero: true, grid: { color: cc.grid }, ticks: { callback: (v) => `$${formatearPrecio(v)}`, font: { size: 10 }, color: cc.ticks } }
+                    x: { grid: { display: false, color: cc.grid }, ticks: { maxTicksLimit: 10, font: { size: fuenteToken('--fs-xs') }, color: cc.ticks } },
+                    y: { beginAtZero: true, grid: { color: cc.grid }, ticks: { callback: (v) => `$${formatearPrecio(v)}`, font: { size: fuenteToken('--fs-xs') }, color: cc.ticks } }
                 }
             }
         }, 'line');
@@ -578,7 +585,7 @@ export async function renderizar(contenedor) {
                 maintainAspectRatio: false,
                 cutout: '62%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 }, color: cc.ticks } },
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: fuenteToken('--fs-sm') }, color: cc.ticks } },
                     tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}` } }
                 }
             }
@@ -601,12 +608,12 @@ export async function renderizar(contenedor) {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false, labels: { font: { size: 11 } } },
+                    legend: { display: false, labels: { font: { size: fuenteToken('--fs-sm') } } },
                     tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.x} un.` } }
                 },
                 scales: {
-                    x: { beginAtZero: true, grid: { color: cc.grid }, ticks: { precision: 0, font: { size: 10 }, color: cc.ticks } },
-                    y: { grid: { display: false }, ticks: { font: { size: 11 }, color: cc.ticks } }
+                    x: { beginAtZero: true, grid: { color: cc.grid }, ticks: { precision: 0, font: { size: fuenteToken('--fs-xs') }, color: cc.ticks } },
+                    y: { grid: { display: false }, ticks: { font: { size: fuenteToken('--fs-sm') }, color: cc.ticks } }
                 }
             }
         });
@@ -631,8 +638,8 @@ export async function renderizar(contenedor) {
                     tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} un.` } }
                 },
                 scales: {
-                    x: { grid: { display: false, color: cc.grid }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0, color: cc.ticks } },
-                    y: { beginAtZero: true, grid: { color: cc.grid }, ticks: { precision: 0, font: { size: 10 }, color: cc.ticks } }
+                    x: { grid: { display: false, color: cc.grid }, ticks: { font: { size: fuenteToken('--fs-xs') }, maxRotation: 45, minRotation: 0, color: cc.ticks } },
+                    y: { beginAtZero: true, grid: { color: cc.grid }, ticks: { precision: 0, font: { size: fuenteToken('--fs-xs') }, color: cc.ticks } }
                 }
             }
         });

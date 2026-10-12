@@ -43,17 +43,20 @@
     --toast-bg: #1e293b;
     --toast-text: #ffffff;
 
-    /* Escala tipográfica unificada del panel (base html/body: 1rem = 15px).
-       Antes había 22 tamaños rem sueltos entre el CSS y los estilos inline del
-       JS. Se consolidaron en 7 tokens: cada uno toma el valor más frecuente de
-       su grupo y absorbe los casi idénticos para dejar una escala corta. */
-    --fs-xs:  0.7rem;   /* 10.5px  — micro: badges diminutos, captions, th */
-    --fs-sm:  0.8rem;   /* 12px    — chicos: chips, hints, labels */
-    --fs-md:  0.85rem;  /* 12.75px — base del panel */
-    --fs-lg:  0.9rem;   /* 13.5px  — nav, inputs, cuerpo */
-    --fs-xl:  1.05rem;  /* 15.75px — títulos de card / topbar / modal */
-    --fs-2xl: 1.5rem;   /* 22.5px  — headings grandes y valores de KPI */
-    --fs-3xl: 2.2rem;   /* 33px    — ícono de estado vacío */
+    /* Escala tipográfica unificada del panel. Siete pasos con jerarquía clara:
+       metadatos (12) < secundario (13) < cuerpo (14) < énfasis (16) < títulos
+       (18) < display (24) < ícono (33). El paso más chico es 12px: el mínimo
+       legible para th/badges/captions. Cualquier tamaño de texto del panel
+       —CSS, estilos inline o JS— debe salir de estos tokens; no usar literales
+       (la única excepción es el zoom de iOS en móvil, que también usa tokens). */
+    --fs-root: 15px; /* base del panel: define a cuánto equivale 1rem (no es texto) */
+    --fs-xs:  12px;  /* metadatos: th, badges, captions, hints, celdas de calendario */
+    --fs-sm:  13px;  /* secundario: labels de formulario, chips, etiquetas de KPI */
+    --fs-md:  14px;  /* cuerpo: celdas de tabla, inputs, botones, nav, subtítulos */
+    --fs-lg:  16px;  /* énfasis / controles táctiles: marca, alertas, botones grandes */
+    --fs-xl:  18px;  /* títulos: topbar, card, modal, estado vacío */
+    --fs-2xl: 24px;  /* display: valor e ícono de KPI, título de login */
+    --fs-3xl: 33px;  /* ícono de estado vacío */
 }
 
 * { box-sizing: border-box; }
@@ -64,7 +67,7 @@ html, body {
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
-    font-size: 15px;
+    font-size: var(--fs-root);
     line-height: 1.5;
 }
 
@@ -129,7 +132,7 @@ img { max-width: 100%; }
     border-radius: 8px;
     color: var(--text);
     font-weight: 500;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
 }
 
 .admin-nav a i { width: 18px; text-align: center; color: var(--text-muted); }
@@ -525,7 +528,7 @@ td.td-expandir .pedido-acciones {
     border: 1px solid var(--border);
     border-radius: 8px;
     font-family: inherit;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
     background: var(--surface);
     color: var(--text);
 }
@@ -564,7 +567,7 @@ td.td-expandir .pedido-acciones {
     border: 1px solid var(--border);
     border-radius: 8px;
     font-family: inherit;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
     background: var(--surface);
     color: var(--text);
 }
@@ -574,7 +577,7 @@ td.td-expandir .pedido-acciones {
     border: 1px solid var(--border);
     border-radius: 8px;
     font-family: inherit;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
@@ -592,7 +595,7 @@ td.td-expandir .pedido-acciones {
     border: 1px solid var(--border);
     border-radius: 8px;
     font-family: inherit;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
     background: var(--surface);
     color: var(--text);
 }
@@ -665,7 +668,7 @@ td.td-expandir .pedido-acciones {
     border: 1px solid var(--border);
     border-radius: 8px;
     font-family: inherit;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
     background: var(--surface);
     color: var(--text);
 }
@@ -945,7 +948,7 @@ td.td-expandir .pedido-acciones {
     border: 1px solid var(--border);
     border-radius: 8px;
     font-family: inherit;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-md);
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
@@ -1481,7 +1484,6 @@ body.admin-modal-abierto { overflow: hidden; }
 
     /* Topbar compacto */
     .admin-topbar { padding: 0.6rem 0.85rem; }
-    .admin-topbar-title { font-size: var(--fs-xl); }
 
     /* Modal a pantalla completa */
     .admin-modal-panel {
@@ -1526,7 +1528,7 @@ body.admin-modal-abierto { overflow: hidden; }
     .admin-toolbar .admin-busqueda { max-width: none; width: 100%; }
 
     .admin-stat { padding: 1rem; }
-    .admin-stat i { width: 42px; height: 42px; font-size: var(--fs-2xl); }
+    .admin-stat i { width: 42px; height: 42px; }
 
     .admin-repeater-row { grid-template-columns: 1fr; }
 }
@@ -1540,12 +1542,9 @@ body.admin-modal-abierto { overflow: hidden; }
 
     .admin-img-upload { flex-direction: column; align-items: stretch; }
 
-    .admin-field input[type="text"],
-    .admin-field input[type="email"],
-    .admin-field input[type="password"],
-    .admin-field input[type="number"],
-    .admin-field select,
-    .admin-field textarea { font-size: 16px; } /* evita zoom automático en iOS */
+    /* iOS hace zoom al enfocar un control con font-size < 16px: se fuerzan
+       todos los campos al paso de énfasis (--fs-lg = 16px) en móvil. */
+    input, select, textarea { font-size: var(--fs-lg); }
 }
 
 /* ============================================================================
@@ -1843,7 +1842,6 @@ html[data-tema="dark"] {
     }
     .cal-turno::before { width: 10px; height: 10px; }
     .cal-turno-hora, .cal-turno-nombre { display: none; }
-    .cal-mas { font-size: var(--fs-xs); }
     .cal-titulo { font-size: var(--fs-lg); }
 }
 
