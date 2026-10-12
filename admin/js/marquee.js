@@ -35,12 +35,12 @@ export async function renderizarGestor(contenedor) {
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
-            <p>Se muestran en la barra animada sobre el encabezado de la tienda. Sin mensajes activos, la barra no aparece.</p>
+            <p>Puedes utilizarla para mostrar promociones, novedades o mensajes importantes. Si no hay mensajes activos, la barra no se mostrará. La activación y el color se guardan al pulsar "Guardar diseño".</p>
             <button type="button" class="btn btn-primary" id="btnNuevoMensaje" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo mensaje
             </button>
         </div>
-        <p class="hint">Máximo ${MAX_MENSAJES} mensajes. ${alTope
+        <p class="hint">Puedes agregar hasta ${MAX_MENSAJES} mensajes. ${alTope
             ? 'Límite alcanzado: borrá alguno para crear otro (desactivar no libera lugar).'
             : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">

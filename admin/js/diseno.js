@@ -24,26 +24,26 @@ const RECURSOS_IMAGEN = [
     {
         recurso: 'logo', columna: 'logo_path', carpeta: 'logo',
         label: 'Logotipo de la tienda',
-        hint: 'Se muestra en el encabezado. Recomendado: PNG/WebP con fondo transparente, hasta ~512×512 px.'
+        hint: 'Se muestra en la parte superior de la tienda.'
     },
     {
         recurso: 'favicon', columna: 'favicon_path', carpeta: 'favicon',
         label: 'Favicon',
-        hint: 'Icono del navegador. Recomendado: PNG cuadrado de 64×64 px o más (el validador no acepta SVG).',
+        hint: 'Es el pequeño icono que aparece en la pestaña del navegador cuando alguien visita tu tienda.',
         // Sin favicon cargado se muestra el logo de Lemora como preview (default de la tienda)
         defaultPreview: '../img/lemora.svg'
     },
     {
         recurso: 'og', columna: 'og_image_path', carpeta: 'og',
-        label: 'Imagen para OpenGraph',
-        hint: 'Imagen que se muestra al compartir el enlace en redes y WhatsApp. Recomendado: 1200×630 px.'
+        label: 'Imagen para compartir en redes sociales',
+        hint: 'Es la imagen que aparece cuando alguien comparte el enlace de tu tienda en redes sociales o WhatsApp..'
     }
 ];
 
 const BORDES = [
-    { valor: 'redondeado', nombre: 'Ligeramente redondeados', desc: 'Esquinas suaves. Estilo actual.', clase: 'muestra-redondeado' },
-    { valor: 'circular', nombre: 'Completamente redondos', desc: 'Botones y controles en píldora; tarjetas con esquinas redondeadas.', clase: 'muestra-circular' },
-    { valor: 'recto', nombre: 'Sin bordes', desc: 'Esquinas rectas en toda la tienda.', clase: 'muestra-recto' }
+    { valor: 'redondeado', nombre: 'Ligeramente redondeados', desc: 'Esquinas suaves. con un aspecto moderno..', clase: 'muestra-redondeado' },
+    { valor: 'circular', nombre: 'Completamente redondos', desc: 'Botones y controles con forma de píldora y tarjetas con esquinas redondeadas.', clase: 'muestra-circular' },
+    { valor: 'recto', nombre: 'Sin bordes redondeados', desc: 'Esquinas rectas en toda la tienda.', clase: 'muestra-recto' }
 ];
 
 // Tamaños del logotipo del encabezado (la tienda aplica height: 40/60/80px)
@@ -59,7 +59,7 @@ const CARD_FORMATS = [
     { valor: '4:5', nombre: 'Vertical', desc: '4:5', aspecto: '4 / 5' },
     // 0057: tienda sin fotos — los cards no muestran imagen, no hay galería y
     // el panel no permite subir (aspecto null = preview propio en el selector).
-    { valor: 'sin_imagenes', nombre: 'Sin imágenes', desc: 'Cards sin foto, sin galería y sin subida en el formulario.', aspecto: null }
+    { valor: 'sin_imagenes', nombre: 'Sin imágenes', desc: 'Los productos/servicios se mostrarán sin fotos. Tampoco se podrán agregar fotos desde el formulario de productos.', aspecto: null }
 ];
 
 // Estado por recurso de imagen: path actual, archivo nuevo pendiente y "quitar".
@@ -153,7 +153,7 @@ export async function renderizar(contenedor) {
 
         <div class="admin-card">
             <h2>Identidad visual</h2>
-            <p class="card-sub">Se aplica en toda la tienda al recargar una página.</p>
+            <p class="card-sub">Los cambios se aplican a toda la tienda cuando se actualiza la página.</p>
             <form class="admin-form" id="disenoForm">
                 <div class="admin-form-grid">
                     ${imagenesHTML}
@@ -165,21 +165,21 @@ export async function renderizar(contenedor) {
                             <input type="text" id="dsnColor" value="${esc(color)}" maxlength="7" spellcheck="false" aria-label="Color principal en formato hexadecimal">
                             <button type="button" class="btn btn-sm btn-outline" id="dsnColorRestaurar">Restaurar (#000000)</button>
                         </div>
-                        <span class="hint">Se aplica a botones, enlaces y acentos de la tienda.</span>
+                        <span class="hint">Se utiliza en los botones, enlaces y otros detalles de la tienda.</span>
                     </div>
                     <div class="admin-field full">
-                        <label for="dsnMarqueeColor">Color de fondo del marquee</label>
+                        <label for="dsnMarqueeColor">Color de fondo de la barra promocional</label>
                         <div class="diseno-color">
-                            <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" aria-label="Selector de color de fondo del marquee">
+                            <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" aria-label="Selector de color de fondo de la barra promocional">
                             <input type="text" id="dsnMarqueeColor" value="${esc(marqueeColor)}" maxlength="7" spellcheck="false" aria-label="Color del marquee en hexadecimal">
                             <button type="button" class="btn btn-sm btn-outline" id="dsnMarqueeColorRestaurar">Restaurar (#000000)</button>
                         </div>
-                        <span class="hint">Se aplica a la barra marquee superior. El texto se mantiene blanco.</span>
+                        <span class="hint">Cambia el color de fondo de la barra animada que aparece en la parte superior de la tienda. El texto siempre será blanco.</span>
                     </div>
                     <div class="admin-field full">
                         <label class="admin-check">
                             <input type="checkbox" id="dsnMarqueeActivo" ${s.marquee_activo === true ? 'checked' : ''}>
-                            Mostrar marquee en la tienda
+                            Mostrar barra promocional en la tienda
                         </label>
                     </div>
                     <div class="admin-field full">
@@ -194,8 +194,8 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Marquee promocional</h2>
-            <p class="card-sub">Barra animada sobre el encabezado. La activación y el color se guardan con "Guardar diseño".</p>
+            <h2>Barra promocional</h2>
+            <p class="card-sub">Es la barra animada que aparece sobre el encabezado de la tienda. </p>
             <div id="marqueeGestor"></div>
         </div>
     `;
@@ -294,8 +294,8 @@ function campoImagen(r, pathActual) {
 // placeholder textual.
 function campoVacioHTML(r, caption) {
     const texto = caption || (r.defaultPreview
-        ? 'Por defecto se usa el logo de Lemora'
-        : 'Sin archivo<br><small>Se usará el actual por defecto</small>');
+        ? 'Si no lo cambias, se usará el logotipo de Lemora.'
+        : 'Sin archivo<br><small>Se seguirá usando el logotipo actual.</small>');
     return r.defaultPreview
         ? `<span class="diseno-preview-vacio"><img src="${esc(r.defaultPreview)}" alt="" class="diseno-preview-defecto"><small>${esc(texto)}</small></span>`
         : `<span class="diseno-preview-vacio">${texto}</span>`;
@@ -330,7 +330,7 @@ function campoTamanoLogo(actual) {
         <div class="admin-field full">
             <label>Tamaño del logotipo</label>
             <div class="diseno-tamano">${opciones}</div>
-            <span class="hint">Altura del logotipo en el encabezado de la tienda; el ancho se ajusta solo.</span>
+            <span class="hint">Permite ajustar el tamaño del logotipo que aparece en la parte superior de la tienda. El ancho se ajusta automáticamente.</span>
         </div>`;
 }
 
@@ -356,10 +356,10 @@ function campoFormatoCard(actual) {
 
     return `
         <div class="admin-field full">
-            <label>Formato de las imágenes de los cards</label>
+            <label>Formato de las imágenes de los productos</label>
             <div class="diseno-formatos">${opciones}</div>
             <span class="hint">${valor === 'sin_imagenes'
-                ? 'Los cards no muestran imagen, el detalle no tiene galería y el formulario no permite subir fotos. Al volver a un formato con foto todo reaparece (las imágenes no se borran).'
+                ? 'Si vuelves a activar las imágenes, las fotos anteriores seguirán disponibles.'
                 : `Se aplica a los cards del catálogo, búsqueda y ${esTurnos ? 'servicios relacionados' : 'productos relacionados'}.`}</span>
         </div>`;
 }
