@@ -93,7 +93,7 @@ export async function renderizar(contenedor) {
                 padding: 0.5rem;
             }
             .diseno-preview img { max-width: 160px; max-height: 64px; object-fit: contain; }
-            .diseno-preview-vacio { color: var(--muted, #64748b); font-size: var(--fs-md); text-align: center; padding: 0.5rem; }
+            .diseno-preview-vacio { color: var(--muted, #64748b); font-size: var(--fs-sm); text-align: center; padding: 0.5rem; }
             .diseno-preview-acciones { display: flex; gap: 0.5rem; align-items: center; }
             .diseno-color { display: flex; gap: 0.7rem; align-items: center; margin-bottom: 0.3rem; }
             .diseno-color input[type="color"] { width: 46px; height: 40px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; }
@@ -109,8 +109,8 @@ export async function renderizar(contenedor) {
             .diseno-borde:has(input:checked),
             .diseno-borde.activa { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); }
             .diseno-borde input { position: absolute; opacity: 0; pointer-events: none; }
-            .diseno-borde-nombre { font-size: var(--fs-xl); font-weight: 600; }
-            .diseno-borde-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: var(--fs-md); margin-top: 0.2rem; }
+            .diseno-borde-nombre { font-size: var(--fs-lg); font-weight: 600; }
+            .diseno-borde-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: var(--fs-sm); margin-top: 0.2rem; }
             .diseno-borde-muestra { width: 56px; height: 38px; border: 2px solid #94a3b8; background: #e2e8f0; }
             .muestra-redondeado { border-radius: 10px; }
             .muestra-circular { border-radius: 999px; }
@@ -128,8 +128,8 @@ export async function renderizar(contenedor) {
             .diseno-tamano-muestra.tamano-small { height: 10px; }
             .diseno-tamano-muestra.tamano-medium { height: 15px; }
             .diseno-tamano-muestra.tamano-large { height: 20px; }
-            .diseno-tamano-nombre { font-size: var(--fs-xl); font-weight: 600; }
-            .diseno-tamano-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: var(--fs-md); margin-top: 0.15rem; }
+            .diseno-tamano-nombre { font-size: var(--fs-lg); font-weight: 600; }
+            .diseno-tamano-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: var(--fs-sm); margin-top: 0.15rem; }
             .diseno-formatos { display: flex; gap: 0.7rem; flex-wrap: wrap; }
             .diseno-formato-opcion {
                 position: relative; display: flex; gap: 0.65rem; align-items: center;
@@ -143,14 +143,14 @@ export async function renderizar(contenedor) {
             .diseno-formato-muestra--sin-imagen {
                 position: relative; display: flex; align-items: center; justify-content: center;
                 background: transparent; border: 1.5px dashed var(--muted, #94a3b8);
-                width: 42px; height: 42px; color: var(--muted, #94a3b8); font-size: var(--fs-xl);
+                width: 42px; height: 42px; color: var(--muted, #94a3b8); font-size: var(--fs-lg);
             }
             .diseno-formato-muestra--sin-imagen .fa-ban {
-                position: absolute; top: -7px; right: -7px; font-size: var(--fs-2xs); color: var(--danger, #dc2626);
+                position: absolute; top: -7px; right: -7px; font-size: var(--fs-xs); color: var(--danger, #dc2626);
                 background: var(--surface, #fff); border-radius: 50%; padding: 1px;
             }
-            .diseno-formato-nombre { font-size: var(--fs-xl); font-weight: 600; }
-            .diseno-formato-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: var(--fs-md); margin-top: 0.15rem; }
+            .diseno-formato-nombre { font-size: var(--fs-lg); font-weight: 600; }
+            .diseno-formato-nombre em { display: block; font-style: normal; font-weight: 400; color: var(--muted, #64748b); font-size: var(--fs-sm); margin-top: 0.15rem; }
         </style>
 
         <div class="admin-card">

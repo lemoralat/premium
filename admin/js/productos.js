@@ -96,7 +96,7 @@ function pintar(contenedor) {
                 <option value="activos" ${filtroActivo === 'activos' ? 'selected' : ''}>Solo activos</option>
                 <option value="inactivos" ${filtroActivo === 'inactivos' ? 'selected' : ''}>Solo inactivos</option>
             </select>
-            <span style="color:var(--text-muted); font-size:var(--fs-lg);">${filtrados.length} de ${productos.length}</span>
+            <span style="color:var(--text-muted); font-size:var(--fs-md);">${filtrados.length} de ${productos.length}</span>
         </div>
 
         ${conSeleccion ? `
@@ -229,9 +229,9 @@ function filaProducto(p) {
                         <strong>${esc(p.nombre)}</strong>
                         ${p.destacado ? ' <span class="estado-badge estado-procesando" style="margin-left:0.3rem;">⭐ Destacado</span>' : ''}
                         ${p.precio_anterior != null && Number(p.precio_anterior) > Number(p.precio)
-                            ? `<span style="color:var(--text-muted); font-size:var(--fs-md);"> antes $${formatearPrecio(p.precio_anterior)}</span>`
+                            ? `<span style="color:var(--text-muted); font-size:var(--fs-sm);"> antes $${formatearPrecio(p.precio_anterior)}</span>`
                             : ''}
-                        <br><span style="color:var(--text-muted); font-size:var(--fs-md);">#${esc(p.id)}</span>
+                        <br><span style="color:var(--text-muted); font-size:var(--fs-sm);">#${esc(p.id)}</span>
                     </div>
                 </div>
             </td>

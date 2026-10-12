@@ -83,8 +83,8 @@ function filas() {
             </td>
             <td data-label="Título">
                 <strong>${esc(s.titulo)}</strong>
-                ${s.texto_soporte ? `<br><span style="color:var(--text-muted); font-size:var(--fs-md);">${esc(recCorto(s.texto_soporte))}</span>` : ''}
-                ${s.link ? `<br><span style="color:var(--text-muted); font-size:var(--fs-md);">${esc(s.link)}</span> ${s.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
+                ${s.texto_soporte ? `<br><span style="color:var(--text-muted); font-size:var(--fs-sm);">${esc(recCorto(s.texto_soporte))}</span>` : ''}
+                ${s.link ? `<br><span style="color:var(--text-muted); font-size:var(--fs-sm);">${esc(s.link)}</span> ${s.target === 'externo' ? '<span class="estado-badge estado-procesando">Externo</span>' : ''}` : ''}
             </td>
             <td data-label="Orden">${esc(s.position)}</td>
             <td data-label="Visible en">${etiquetaMostrarEn(s.mostrar_en)}</td>
