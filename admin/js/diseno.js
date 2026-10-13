@@ -187,20 +187,25 @@ export async function renderizar(contenedor) {
                 <div class="admin-field full">
                     <label for="dsnMarqueeColor">Color de fondo de la barra promocional</label>
                     <div class="diseno-color">
-                        <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" aria-label="Selector de color de fondo de la barra promocional">
-                        <input type="text" id="dsnMarqueeColor" value="${esc(marqueeColor)}" maxlength="7" spellcheck="false" aria-label="Color del marquee en hexadecimal">
+                        <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" data-cambios aria-label="Selector de color de fondo de la barra promocional">
+                        <input type="text" id="dsnMarqueeColor" value="${esc(marqueeColor)}" maxlength="7" spellcheck="false" data-cambios aria-label="Color del marquee en hexadecimal">
                         <button type="button" class="btn btn-sm btn-outline" id="dsnMarqueeColorRestaurar">Restaurar (#000000)</button>
                     </div>
                     <span class="hint">Cambia el color de fondo de la barra animada que aparece en la parte superior de la tienda. El texto siempre será blanco.</span>
                 </div>
                 <div class="admin-field full">
                     <label class="admin-check">
-                        <input type="checkbox" id="dsnMarqueeActivo" ${s.marquee_activo === true ? 'checked' : ''}>
+                        <input type="checkbox" id="dsnMarqueeActivo" data-cambios ${s.marquee_activo === true ? 'checked' : ''}>
                         Mostrar barra promocional en la tienda
                     </label>
                 </div>
             </div>
             <div id="marqueeGestor"></div>
+            <div class="admin-modal-acciones">
+                <button type="button" class="btn btn-primary" id="btnGuardarBarraPromocional">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar barra promocional
+                </button>
+            </div>
         </div>
     `;
 
@@ -226,6 +231,23 @@ export async function renderizar(contenedor) {
     $('#dsnMarqueeColorRestaurar').addEventListener('click', () => {
         mqPicker.value = COLOR_DEFECTO;
         mqTexto.value = COLOR_DEFECTO;
+    });
+
+    // --- Guardar SOLO la barra promocional (activación + color). Vive fuera
+    // del formulario de "Identidad visual", por eso tiene su propio botón: el
+    // toggle es accionable aunque el resto de Diseño tenga validaciones o
+    // columnas pendientes. Con `data-cambios` + id `btnGuardar*` participa del
+    // aviso de cambios sin guardar (no se pierde al navegar). ---
+    $('#btnGuardarBarraPromocional').addEventListener('click', () => {
+        const btn = $('#btnGuardarBarraPromocional');
+        conCarga(btn, guardarBarraPromocional())
+            .then(() => {
+                toast('Barra promocional guardada. Recargá la tienda para ver los cambios.');
+                // Refresca el gestor de mensajes (el tope podría haber cambiado).
+                return renderizarGestorMarquee($('#marqueeGestor'))
+                    .catch((error) => console.warn('Barra guardada, pero no se pudo refrescar el gestor:', error));
+            })
+            .catch((error) => toast(error.message, 'error'));
     });
 
     // --- Bordes: resaltar la opción elegida ---
@@ -487,11 +509,9 @@ async function guardar() {
     }
     payload.card_image_format = formatoCard.value;
 
-    // Marquee: color de fondo + mostrar/ocultar
-    const marqueeHex = $('#dsnMarqueeColor').value.trim().toLowerCase();
-    if (!/^#[0-9a-f]{6}$/.test(marqueeHex)) throw new Error('Color del marquee inválido. Usá formato #RRGGBB.');
-    payload.marquee_color_fondo = marqueeHex;
-    payload.marquee_activo = $('#dsnMarqueeActivo').checked;
+    // Marquee: color de fondo + mostrar/ocultar. El mismo estado se guarda
+    // también con el botón propio "Guardar barra promocional" de su tarjeta.
+    Object.assign(payload, leerEstadoBarraPromocional());
 
     // Recursos de imagen: subir/actualizar primero y borrar el anterior
     // solo después de que la base de datos acepte el nuevo estado.
@@ -514,4 +534,19 @@ async function guardar() {
     for (const storagePath of imagenesAnteriores) {
         await eliminarImagenAdmin(storagePath);
     }
+}
+
+// Lee activación + color de la barra promocional del panel. Compartido entre
+// el submit de "Guardar diseño" y el botón "Guardar barra promocional".
+function leerEstadoBarraPromocional() {
+    const hex = $('#dsnMarqueeColor').value.trim().toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(hex)) throw new Error('Color del marquee inválido. Usá formato #RRGGBB.');
+    return { marquee_activo: $('#dsnMarqueeActivo').checked, marquee_color_fondo: hex };
+}
+
+// Guarda SOLO la barra promocional (no toca el resto del diseño).
+async function guardarBarraPromocional() {
+    const sb = await clienteAdmin();
+    const { error } = await sb.from('settings').update(leerEstadoBarraPromocional()).eq('id', 1);
+    if (error) throw new Error(error.message);
 }

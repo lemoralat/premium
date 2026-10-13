@@ -376,6 +376,10 @@ img { max-width: 100%; }
 .alerta-item.advertencia { border-left: 4px solid var(--warning); }
 .alerta-item.advertencia i { color: var(--warning); }
 
+/* Nota informativa (p. ej. barra promocional activa) */
+.alerta-item.info { border-left: 4px solid var(--primary); }
+.alerta-item.info i { color: var(--primary); }
+
 /* Contenedores de Chart.js: altura fija para que los canvas no colapsen. */
 .admin-chart {
     position: relative;

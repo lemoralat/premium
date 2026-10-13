@@ -275,6 +275,16 @@ export async function renderizar(contenedor) {
     const activos = activosR.error ? 0 : (activosR.count ?? 0);
     const totales = totalesR.error ? 0 : (totalesR.count ?? 0);
 
+    // Estado de la barra promocional (marquee, sección "Diseño") para que el
+    // dashboard refleje el cambio hecho en el panel: activa con mensajes →
+    // nota informativa; activa sin mensajes → advertencia (no se mostrará).
+    const [settingsR, marqueeR] = await Promise.all([
+        sb.from('settings').select('marquee_activo').eq('id', 1).maybeSingle(),
+        sb.from('marquee_items').select('id', { count: 'exact', head: true }).eq('activo', true)
+    ]);
+    const marqueeActivo = settingsR.error ? false : (settingsR.data?.marquee_activo === true);
+    const mensajesMarquee = marqueeR.error ? 0 : (marqueeR.count ?? 0);
+
     // ---- Métricas por modo (sobre la ventana común de 60 días) ----
     let agotadosN = 0;
     let colgados = 0;
@@ -420,6 +430,14 @@ export async function renderizar(contenedor) {
     }
     if (enTurnos && colgados > 0) {
         alertas.push({ clase: 'advertencia', icono: 'fa-calendar-day', texto: `${colgados} turno${colgados === 1 ? '' : 's'} pendiente${colgados === 1 ? '' : 's'} hace más de 48 h.`, enlace: '#/turnos', enlaceTexto: 'Ir a turnos' });
+    }
+
+    // Barra promocional: el dashboard notifica su estado para que el cambio
+    // hecho en Diseño se vea acá (activa sin mensajes = no se mostrará).
+    if (marqueeActivo && mensajesMarquee > 0) {
+        alertas.unshift({ clase: 'info', icono: 'fa-bullhorn', texto: `Barra promocional activa en la tienda con ${mensajesMarquee} mensaje${mensajesMarquee === 1 ? '' : 's'}.`, enlace: '#/diseno', enlaceTexto: 'Administrar' });
+    } else if (marqueeActivo) {
+        alertas.unshift({ clase: 'advertencia', icono: 'fa-bullhorn', texto: 'La barra promocional está activada, pero no hay mensajes activos: en la tienda no se mostrará.', enlace: '#/diseno', enlaceTexto: 'Ir a Diseño' });
     }
 
     const hayVentas30 = enTurnos

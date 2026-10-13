@@ -35,7 +35,7 @@ export async function renderizarGestor(contenedor) {
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
-            <p>Puedes utilizarla para mostrar promociones, novedades o mensajes importantes. Si no hay mensajes activos, la barra no se mostrará. La activación y el color se guardan al pulsar "Guardar diseño".</p>
+            <p>Puedes utilizarla para mostrar promociones, novedades o mensajes importantes. Si no hay mensajes activos, la barra no se mostrará. La activación y el color se guardan con el botón "Guardar barra promocional" de esta tarjeta (o con "Guardar diseño").</p>
             <button type="button" class="btn btn-primary" id="btnNuevoMensaje" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo mensaje
             </button>
