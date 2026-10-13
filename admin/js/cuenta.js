@@ -24,16 +24,18 @@ export async function renderizar(contenedor) {
             .catch(() => null),
     ]);
 
-    // Baja de la suscripción al plan de Lemora: link a WhatsApp de Soporte con
-    // el mensaje precargado y los datos que identifican la cuenta.
-    const urlBaja = (() => {
-        const nombreTienda = settings?.site_name || '';
-        const mensaje =
-            'Hola, quiero darme de baja de mi suscripción al plan de Lemora.' +
-            (nombreTienda ? `\n\nTienda: ${nombreTienda}` : '') +
-            `\nCorreo de la cuenta: ${email}`;
-        return `https://wa.me/5493515957014?text=${encodeURIComponent(mensaje)}`;
-    })();
+    // Enlaces a WhatsApp de Soporte de Lemora (baja / cambio de plan): mensaje
+    // precargado + los datos que identifican la cuenta.
+    const mensajeWhatsApp = (texto) =>
+        texto +
+        (settings?.site_name ? `\n\nTienda: ${settings.site_name}` : '') +
+        `\nCorreo de la cuenta: ${email}`;
+    const urlBaja = `https://wa.me/5493515957014?text=${encodeURIComponent(
+        mensajeWhatsApp('Hola, quiero darme de baja de mi suscripción al plan de Lemora.')
+    )}`;
+    const urlCambioPlan = `https://wa.me/5493515957014?text=${encodeURIComponent(
+        mensajeWhatsApp('Hola, quiero cambiar de plan de mi suscripción de Lemora.')
+    )}`;
 
     contenedor.innerHTML = `
         <div class="admin-card">
@@ -60,26 +62,35 @@ export async function renderizar(contenedor) {
             </div>
         </div>
 
-        <div class="admin-card">
-            <h2>Cambiar contraseña</h2>
-            <p class="card-sub">La contraseña se usa para entrar al panel.</p>
-            <form class="admin-form" id="cambiarPassForm" style="max-width:460px;">
-                <div class="admin-field">
-                    <label for="ctaPassActual">Contraseña actual</label>
-                    <input type="password" id="ctaPassActual" autocomplete="current-password" required minlength="6">
-                </div>
-                <div class="admin-field">
-                    <label for="ctaPassNueva">Contraseña nueva</label>
-                    <input type="password" id="ctaPassNueva" autocomplete="new-password" required minlength="6">
-                </div>
-                <div class="admin-field">
-                    <label for="ctaPassRepetir">Repetir contraseña nueva</label>
-                    <input type="password" id="ctaPassRepetir" autocomplete="new-password" required minlength="6">
-                </div>
-                <div class="admin-modal-acciones">
-                    <button type="submit" class="btn btn-primary">Actualizar contraseña</button>
-                </div>
-            </form>
+        <div class="dashboard-dos-col">
+            <div class="admin-card">
+                <h2>Cambiar contraseña</h2>
+                <p class="card-sub">La contraseña se usa para entrar al panel.</p>
+                <form class="admin-form" id="cambiarPassForm" style="max-width:460px;">
+                    <div class="admin-field">
+                        <label for="ctaPassActual">Contraseña actual</label>
+                        <input type="password" id="ctaPassActual" autocomplete="current-password" required minlength="6">
+                    </div>
+                    <div class="admin-field">
+                        <label for="ctaPassNueva">Contraseña nueva</label>
+                        <input type="password" id="ctaPassNueva" autocomplete="new-password" required minlength="6">
+                    </div>
+                    <div class="admin-field">
+                        <label for="ctaPassRepetir">Repetir contraseña nueva</label>
+                        <input type="password" id="ctaPassRepetir" autocomplete="new-password" required minlength="6">
+                    </div>
+                    <div class="admin-modal-acciones">
+                        <button type="submit" class="btn btn-primary">Actualizar contraseña</button>
+                    </div>
+                </form>
+            </div>
+            <div class="admin-card">
+                <h2>Cambiar de plan</h2>
+                <p class="card-sub">Cambiar de plan no afecta tu contenido. Solo se modificarán las funcionalidades y características de tu sitio web según el nuevo plan contratado. Tus productos, servicios, categorías, pedidos y demás información permanecerán intactos. No se elimina ni se pierde ningún dato de tu tienda.</p>
+                <a class="btn btn-whatsapp" href="${urlCambioPlan}" target="_blank" rel="noopener">
+                    <i class="fa-brands fa-whatsapp"></i> Cambiar de plan
+                </a>
+            </div>
         </div>
 
         <div class="admin-card" style="border-color:var(--danger-border);">
