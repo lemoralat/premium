@@ -106,7 +106,7 @@ export async function renderizar(contenedor) {
                 <div>
                     <h3>Darse de baja del plan</h3>
                     <p class="card-sub">¿Querés cancelar tu suscripción al plan de Lemora? Escribinos por WhatsApp y lo gestionamos.</p>
-                    <a class="btn btn-whatsapp" href="${urlBaja}" target="_blank" rel="noopener">
+                    <a class="btn btn-danger" href="${urlBaja}" target="_blank" rel="noopener">
                         <i class="fa-brands fa-whatsapp"></i> Darme de baja
                     </a>
                 </div>

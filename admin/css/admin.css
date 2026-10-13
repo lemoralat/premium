@@ -271,6 +271,7 @@ img { max-width: 100%; }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
+    margin-bottom: 1.25rem;
 }
 
 .dashboard-dos-col > .admin-card {
