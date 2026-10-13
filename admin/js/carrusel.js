@@ -117,13 +117,13 @@ function abrirModalElemento(idExistente) {
 
     abrirModal(`
         <h2>${item ? 'Editar elemento' : 'Nuevo elemento'}</h2>
-        <p class="modal-sub">${item ? esc(item.titulo) : 'Agregá una imagen de portada con su texto'}</p>
+        <p class="modal-sub">${item ? esc(item.titulo) : 'Agregá una imagen con un título y un texto para mostrar en el carrusel de tu tienda.'}</p>
         <form class="admin-form" id="elementoForm">
             <input type="hidden" id="sldId" value="${item ? item.id : ''}">
             <input type="hidden" id="sldStorageAnterior" value="${esc(item?.storage_path || '')}">
 
             <div class="admin-field full">
-                <label>Imagen de fondo (recomendado 1920×800)</label>
+                <label>Imagen de fondo</label>
                 <div class="admin-imagenes">
                     <img src="${esc(urlPublica(item?.storage_path || ''))}"
                          alt="" id="sldPreview"
@@ -143,22 +143,22 @@ function abrirModalElemento(idExistente) {
             </div>
             <div class="admin-field full">
                 <label for="sldTextoSoporte">Texto de apoyo</label>
-                <textarea id="sldTextoSoporte" placeholder="Texto breve que acompaña al título">${esc(item?.texto_soporte || '')}</textarea>
+                <textarea id="sldTextoSoporte" placeholder="Escribí un texto breve para acompañar el título">${esc(item?.texto_soporte || '')}</textarea>
             </div>
             <div class="admin-form-grid">
                 <div class="admin-field">
                     <label for="sldLink">Enlace (opcional)</label>
-                    <input type="url" id="sldLink" value="${esc(item?.link || '')}" placeholder="https://…">
+                    <input type="url" id="sldLink" value="${esc(item?.link || '')}" placeholder="Pegá aquí el enlace al que querés dirigir a tus clientes">
                 </div>
                 <div class="admin-field">
-                    <label for="sldTarget">Comportamiento del enlace</label>
+                    <label for="sldTarget">Cómo se abre el enlace</label>
                     <select id="sldTarget">
-                        <option value="interno" ${item?.target === 'externo' ? '' : 'selected'}>Interno (misma pestaña)</option>
-                        <option value="externo" ${item?.target === 'externo' ? 'selected' : ''}>Externo (nueva pestaña)</option>
+                        <option value="interno" ${item?.target === 'externo' ? '' : 'selected'}>Abrir en la misma pestaña</option>
+                        <option value="externo" ${item?.target === 'externo' ? 'selected' : ''}>Abrir en una pestaña nueva</option>
                     </select>
                 </div>
                 <div class="admin-field">
-                    <label for="sldPosition">Orden</label>
+                    <label for="sldPosition">Orden de aparición</label>
                     <input type="number" id="sldPosition" min="0" step="1" value="${esc(item?.position ?? (items.length + 1))}">
                 </div>
                 <div class="admin-field full">
@@ -180,7 +180,7 @@ function abrirModalElemento(idExistente) {
                             </label>`;
                         }).join('')}
                     </div>
-                    <span class="hint">Móvil = hasta 768px de ancho de pantalla; escritorio = más de 768px.</span>
+                    <span class="hint">Se adaptará automáticamente al dispositivo de tus clientes.</span>
                 </div>
             </div>
             <div class="admin-modal-acciones">

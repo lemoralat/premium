@@ -105,7 +105,7 @@ function hintModalBanner(idExistente) {
     if (deCarrito >= MAX_BANNERS_CARRITO) {
         return `<br>Ya hay un banner del carrito, así que al marcar la casilla se va a desmarcar el otro.`;
     }
-    return `<br>Quedan ${MAX_BANNERS_INICIO - enInicio} para el inicio y el del carrito está libre.`;
+    return `<br>Actualmente, podés crear hasta ${MAX_BANNERS_INICIO - enInicio} banners para la página principal y uno para el carrito.`;
 }
 
 function filas() {
@@ -149,12 +149,12 @@ function abrirModalBanner(idExistente) {
         <h2>${banner ? 'Editar banner' : 'Nuevo banner'}</h2>
         <p class="modal-sub">${banner
             ? `Banner #${banner.position + 1}`
-            : 'Banner promocional para el inicio o el carrito'}</p>
+            : 'Creá un banner para destacar tus servicios y promociones en la página principal o en el carrito de compras.'}</p>
         <form class="admin-form" id="bannerForm">
             <input type="hidden" id="bnrId" value="${banner ? banner.id : ''}">
 
             <div class="admin-field full">
-                <label>Imagen de fondo (recomendado 1200×600)</label>
+                <label>Imagen de fondo</label>
                 <div class="admin-imagenes">
                     <img src="${esc(urlPublica(banner?.imagen_path || ''))}" alt=""
                          id="bnrImagenPreview" style="max-width:100%; height:150px; object-fit:cover; border-radius:10px; border:1px solid var(--border);">
@@ -168,8 +168,8 @@ function abrirModalBanner(idExistente) {
             </div>
 
             <div class="admin-field full">
-                <label>Logo (opcional, recomendado cuadrado 240×240)</label>
-                <p class="hint">Si no cargás un logo, se mostrará un ícono de imagen en la vista previa.</p>
+                <label>Logo (opcional)</label>
+                <p class="hint">Si no agregás un logo, se mostrará un ícono en su lugar.</p>
                 <div class="admin-imagenes">
                     <div style="display:flex; gap:0.9rem; align-items:center;">
                         <div id="bnrLogoPreview" class="admin-preview admin-preview--logo">
@@ -189,8 +189,8 @@ function abrirModalBanner(idExistente) {
 
             <div class="admin-form-grid">
                 <div class="admin-field">
-                    <label for="bnrBadge">Etiqueta (badge)</label>
-                    <input type="text" id="bnrBadge" value="${esc(banner?.badge || '')}" placeholder="ej: Promociona">
+                    <label for="bnrBadge">Etiqueta</label>
+                    <input type="text" id="bnrBadge" value="${esc(banner?.badge || '')}" placeholder="ej: Promoción especial">
                 </div>
                 <div class="admin-field">
                     <label for="bnrTitulo">Título</label>
@@ -202,33 +202,34 @@ function abrirModalBanner(idExistente) {
                 </div>
                 <div class="admin-field">
                     <label for="bnrLink">Enlace del botón</label>
-                    <input type="url" id="bnrLink" value="${esc(banner?.link || '')}" placeholder="https://…">
+                    <input type="url" id="bnrLink" value="${esc(banner?.link || '')}" placeholder="Pegá aquí el enlace al que querés dirigir a tus clientes">
                 </div>
                 <div class="admin-field">
-                    <label for="bnrTarget">Comportamiento del enlace</label>
+                    <label for="bnrTarget">Como se abre el enlace</label>
                     <select id="bnrTarget">
-                        <option value="interno" ${banner?.target === 'externo' ? '' : 'selected'}>Interno (misma pestaña)</option>
-                        <option value="externo" ${banner?.target === 'externo' ? 'selected' : ''}>Externo (nueva pestaña)</option>
+                        <option value="interno" ${banner?.target === 'externo' ? '' : 'selected'}>Abrir en la misma pestaña</option>
+                        <option value="externo" ${banner?.target === 'externo' ? 'selected' : ''}>Abrir en una nueva pestaña</option>
                     </select>
                 </div>
                 <div class="admin-field">
-                    <label for="bnrPosition">Orden</label>
+                    <label for="bnrPosition">Orden de aparición</label>
                     <input type="number" id="bnrPosition" min="0" step="1" value="${esc(banner?.position ?? (banners.length + 1))}">
                 </div>
                 <div class="admin-field full" style="justify-content:flex-end; gap:1.5rem; display:flex; flex-wrap:wrap;">
                     <label class="admin-check">
                         <input type="checkbox" id="bnrActivo" ${banner?.activo === false ? '' : 'checked'}>
-                        Banner activo
+                        Mostrar banner en la tienda
                     </label>
                     <label class="admin-check">
                         <input type="checkbox" id="bnrCarrito" ${banner?.en_carrito ? 'checked' : ''}>
-                        Banner del carrito
+                        Mostrar banner en el carrito de compras
                     </label>
                 </div>
             </div>
             <p class="hint" style="margin-top:-0.6rem;">
-                Si lo marcás, este banner va en la página de carrito y deja de mostrarse en el
-                inicio. Al marcarlo se desmarca el que estuviera antes: sólo puede haber uno.
+                Si activás esta opción, el banner aparecerá en el carrito 
+                de compras en lugar de la página principal. 
+                Solo puede haber un banner en el carrito a la vez. 
                 ${hintModalBanner(idExistente)}
             </p>
 

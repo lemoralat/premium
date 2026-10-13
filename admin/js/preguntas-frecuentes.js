@@ -39,10 +39,10 @@ export async function renderizarGestor(contenedor) {
         <div class="admin-toolbar">
             <p>Se muestran en la página de ayuda (/faq). Mientras no haya preguntas activas, la tienda usa el contenido estático actual.</p>
             <button type="button" class="btn btn-primary" id="btnNuevaPregunta" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
-                <i class="fa-solid fa-plus"></i> Nueva pregunta
+                <i class="fa-solid fa-plus"></i> Agregar pregunta
             </button>
         </div>
-        <p class="hint">Máximo ${MAX_PREGUNTAS} preguntas. ${alTope
+        <p class="hint">Podés agregar hasta ${MAX_PREGUNTAS} preguntas. ${alTope
             ? 'Límite alcanzado: borrá alguna para crear otra (desactivar no libera lugar).'
             : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">

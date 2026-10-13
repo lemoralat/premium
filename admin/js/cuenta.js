@@ -39,8 +39,8 @@ export async function renderizar(contenedor) {
 
     contenedor.innerHTML = `
         <div class="admin-card">
-            <h2>Tu cuenta de administrador</h2>
-            <p class="card-sub">Acceso con Supabase Auth (correo + contraseña)</p>
+            <h2>Tu cuenta</h2>
+            <p class="card-sub">Acceso con Email (correo + contraseña)</p>
             <div class="admin-form-grid">
                 <div class="admin-field">
                     <label>Correo electrónico</label>

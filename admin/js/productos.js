@@ -319,7 +319,7 @@ function abrirModalProducto(idExistente) {
 
     abrirModal(`
         <h2>${producto ? (enServicios ? 'Editar servicio' : 'Editar producto') : (enServicios ? 'Nuevo servicio' : 'Nuevo producto')}</h2>
-        <p class="modal-sub">${producto ? esc(producto.nombre) : (enServicios ? 'Cargá un servicio nuevo en la agenda' : 'Agregá un producto nuevo a tu tienda.')}</p>
+        <p class="modal-sub">${producto ? esc(producto.nombre) : (enServicios ? 'Agregá un nuevo servicio a tu tienda' : 'Agregá un producto nuevo a tu tienda.')}</p>
         <form class="admin-form" id="productoForm">
             <input type="hidden" id="prdId" value="${producto ? producto.id : ''}">
 

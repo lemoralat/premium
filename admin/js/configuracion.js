@@ -11,7 +11,7 @@ import { exportarProductosCSV, exportarPedidosCSV, descargarCSV } from './export
 // 0055 el popup arranca DESACTIVADO: `activo` solo se enciende explícitamente.
 const DEFAULT_POPUP = {
     titulo: '¿Te vas tan pronto?',
-    descripcion: 'Antes de irte: envíos a todo el país y ofertas en la tienda. ¿Quieres echar un vistazo?',
+    descripcion: 'Antes de irte, descubrí nuestras ofertas y servicios. ¿Querés echar un vistazo?',
     cta: 'Ver productos',
     ctaUrl: '/#tienda',
     activo: false
@@ -30,13 +30,13 @@ export async function renderizar(contenedor) {
     contenedor.innerHTML = `
         <div class="admin-card">
             <h2>Datos generales</h2>
-            <p class="card-sub">Identidad y contacto de la tienda</p>
+            <p class="card-sub">Información básica y datos de contacto de tu negocio</p>
             <form class="admin-form" id="configFormGeneral">
                 <div class="admin-form-grid">
                     <div class="admin-field">
                         <label for="cfgSiteName">Nombre de la tienda</label>
                         <input type="text" id="cfgSiteName" value="${esc(s.site_name || '')}">
-                        <span class="hint">Se muestra en el footer y metas.</span>
+                        <span class="hint">Este nombre se muestra en la parte inferior de tu tienda.</span>
                     </div>
                     <div class="admin-field">
                         <label for="cfgEmail">Correo de contacto</label>
@@ -44,13 +44,13 @@ export async function renderizar(contenedor) {
                     </div>
                     <div class="admin-field full">
                         <label for="cfgAddress">Ubicación del negocio</label>
-                        <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="Pegá el enlace de Google Maps (o Apple Maps) de tu negocio">
-                        <span class="hint">Solo se acepta una URL de mapa (Google Maps, Apple Maps o un enlace válido para incrustar). Con eso se mostrará el mapa en la página de contacto.</span>
+                        <input type="text" id="cfgAddress" value="${esc(s.address || '')}" placeholder="Pegá el enlace de Google Maps o Apple Maps de tu negocio">
+                        <span class="hint">Pegá el enlace a la ubicación de tu negocio para mostrar el mapa en la página de contacto.</span>
                     </div>
                     <div class="admin-field full">
                         <label for="cfgSiteDescription">Descripción del negocio</label>
                         <textarea id="cfgSiteDescription" rows="3" maxlength="160" placeholder="${esTurnos ? 'Ej: Reservá tu turno y te confirmamos al instante.' : 'Ej: Venta de productos por encargo, con envíos a todo el país.'}">${esc(s.site_description ?? '')}</textarea>
-                        <span class="hint">Es el meta description del sitio: el texto que muestran Google y los previews al compartir un link. Google corta alrededor de los 160 caracteres, así que conviene que la idea entre ahí. Vacío = se conserva el texto genérico.</span>
+                        <span class="hint">Esta descripción puede aparecer en Google y cuando compartan el enlace de tu tienda. Escribí un resumen breve de tu negocio. Si lo dejás vacío, se usará una descripción predeterminada.</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -60,17 +60,17 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Tipo de web</h2>
-            <p class="card-sub">Elegí cómo funciona tu sitio: como tienda con carrito y pedidos, o como agenda de turnos.</p>
+            <h2>Tipo de sitio web</h2>
+            <p class="card-sub">Elegí cómo querés que funcione tu sitio: como una tienda para vender productos o como una página para recibir solicitudes de turnos.</p>
             <form class="admin-form" id="configFormTipoWeb">
                 <div class="admin-form-grid">
                     <div class="admin-field full">
                         <label for="cfgModoWeb">Modelo del sitio</label>
                         <select id="cfgModoWeb">
-                            <option value="venta" ${s.modo_web !== 'turnos' ? 'selected' : ''}>Venta de productos (carrito y checkout)</option>
-                            <option value="turnos" ${s.modo_web === 'turnos' ? 'selected' : ''}>Solicitud de turnos (agenda)</option>
+                            <option value="venta" ${s.modo_web !== 'turnos' ? 'selected' : ''}>Venta de productos</option>
+                            <option value="turnos" ${s.modo_web === 'turnos' ? 'selected' : ''}>Solicitud de turnos</option>
                         </select>
-                        <span class="hint">Venta: /carrito es un checkout con cupón, compra mínima y datos de envío; la tienda muestra precios y cantidades. Turnos: /carrito pasa a ser un formulario de solicitud de turno (sin carrito, ni totales), cada solicitud se registra y se gestiona en la sección "Turnos", y la página de gracias deja de mostrar datos de transferencia.</span>
+                        <span class="hint">Venta de productos: tus clientes podrán elegir productos, agregarlos al carrito y realizar pedidos. Podrás configurar descuentos, compras mínimas y datos de envío. Solicitud de turnos: tus clientes podrán completar un formulario para solicitar turnos. Podrás gestionar las solicitudes desde la sección "Turnos".</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -81,17 +81,17 @@ export async function renderizar(contenedor) {
 
         <div class="admin-card">
             <h2>WhatsApp</h2>
-            <p class="card-sub">Canal de contacto y de checkout. El número es el destinatario de todos los enlaces de WhatsApp de la tienda; sin número no se muestra ninguno.</p>
+            <p class="card-sub">Configurá el número de WhatsApp de tu negocio para que tus clientes puedan contactarte desde los botones de tu tienda. Si no ingresás un número, los botones de WhatsApp no se mostrarán.</p>
             <form class="admin-form" id="configFormWhatsapp">
                 <div class="admin-form-grid">
                     <div class="admin-field">
-                        <label for="cfgWhatsapp">Número de WhatsApp (código país + número)</label>
+                        <label for="cfgWhatsapp">Número de WhatsApp (con código país)</label>
                         <input type="text" id="cfgWhatsapp" value="${esc(s.whatsapp_number || '')}" placeholder="ej: 5491122334455">
                     </div>
                     <div class="admin-field full">
-                        <label for="cfgWhatsappMsg">Mensaje por defecto</label>
+                        <label for="cfgWhatsappMsg">Mensaje predeterminado</label>
                         <input type="text" id="cfgWhatsappMsg" value="${esc(s.whatsapp_default_message || '')}" placeholder="Hola, quería consultar ">
-                        <span class="hint">Se precompleta en el botón flotante, en el header y en el pie de página. Ojo: el formulario de contacto y el pedido arman su propio mensaje, así que este texto no aparece ahí.</span>
+                        <span class="hint">Este mensaje aparecerá automáticamente cuando alguien te contacte desde los botones de WhatsApp de tu tienda. No se utiliza en los mensajes del formulario de contacto ni en los pedidos.</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -102,7 +102,7 @@ export async function renderizar(contenedor) {
 
         <div class="admin-card">
             <h2>Redes sociales</h2>
-            <p class="card-sub">Se muestran en la barra superior del header. Dejá vacía la que no uses.</p>
+            <p class="card-sub">Agregá los enlaces a las redes sociales de tu negocio para que tus clientes puedan encontrarte. Dejá vacíos los campos de las redes que no uses.</p>
             <form class="admin-form" id="configFormRedes">
                 <div class="admin-form-grid">
                     <div class="admin-field">
@@ -145,8 +145,8 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Datos para la transferencia (/gracias)</h2>
-            <p class="card-sub">Se muestran al cliente después de confirmar el pedido.</p>
+            <h2>Datos para transferencias bancarias</h2>
+            <p class="card-sub">Estos datos se mostrarán a tus clientes después de realizar un pedido.</p>
             <form class="admin-form" id="configFormTransferencia">
                 <div class="admin-form-grid">
                     <div class="admin-field">
@@ -154,23 +154,23 @@ export async function renderizar(contenedor) {
                         <input type="text" id="cfgAlias" value="${esc(s.transfer_alias || '')}" placeholder="ej: mi.alias.o.cbu">
                     </div>
                     <div class="admin-field">
-                        <label for="cfgEntidad">Entidad bancaria</label>
+                        <label for="cfgEntidad">Banco</label>
                         <input type="text" id="cfgEntidad" value="${esc(s.transfer_entity || '')}" placeholder="ej: Banco de ejemplo">
                     </div>
                     <div class="admin-field full">
-                        <label for="cfgTitular">Titular</label>
-                        <input type="text" id="cfgTitular" value="${esc(s.transfer_holder || '')}" placeholder="Nombre y apellido del titular">
-                        <span class="hint">Si el Alias CBU queda vacío, la página de agradecimiento oculta el bloque de transferencia: sirve para cobrar por otro medio.</span>
+                        <label for="cfgTitular">Titular de la cuenta</label>
+                        <input type="text" id="cfgTitular" value="${esc(s.transfer_holder || '')}" placeholder="Nombre y apellido del titular de la cuenta">
+                        <span class="hint">Si dejás vacío el campo de Alias o CBU, no se mostrarán los datos bancarios. Podés hacerlo si cobrás por otro medio.</span>
                     </div>
                     <div class="admin-field full">
-                        <label for="cfgGraciasTitulo">Título del cuadro de próximos pasos</label>
+                        <label for="cfgGraciasTitulo">Título del mensaje para tus clientes</label>
                         <input type="text" id="cfgGraciasTitulo" value="${esc(s.gracias_titulo ?? '')}" placeholder="Próximos Pasos">
-                        <span class="hint">Título del cuadro informativo de /gracias. Vacío = sin título.</span>
+                        <span class="hint">Es el título del mensaje que verán tus clientes después de realizar un pedido. Si lo dejás vacío, no se mostrará ningún título.</span>
                     </div>
                     <div class="admin-field full">
-                        <label for="cfgGraciasTexto">Texto del cuadro de próximos pasos</label>
+                        <label for="cfgGraciasTexto">Mensaje para tus clientes</label>
                         <textarea id="cfgGraciasTexto" rows="3" placeholder="Te confirmaremos por WhatsApp cuando recibamos tu transferencia bancaria.">${esc(s.gracias_texto ?? '')}</textarea>
-                        <span class="hint">Se admite sólo texto; los saltos de línea se respetan. Vacío = el cuadro no se muestra.</span>
+                        <span class="hint">Escribí las indicaciones que querés mostrar a tus clientes después de realizar un pedido. Podés separar el texto en varias líneas. Si lo dejás vacío, el mensaje no se mostrará.</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
@@ -180,8 +180,8 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Popup de salida</h2>
-            <p class="card-sub">Ventana que aparece al intentar abandonar la tienda. Se puede personalizar o desactivar.</p>
+            <h2>Ventana de salida</h2>
+            <p class="card-sub">Personalizá el mensaje que aparece cuando alguien está por salir de tu tienda o desactivá esta opción si no querés mostrarlo.</p>
             <form class="admin-form" id="configFormPopup">
                 <div class="admin-form-grid">
                     <div class="admin-field">
@@ -193,18 +193,18 @@ export async function renderizar(contenedor) {
                         <input type="text" id="cfgPopupCta" value="${esc(s.popup_cta && s.popup_cta !== DEFAULT_POPUP.cta ? s.popup_cta : '')}" placeholder="${esc(esTurnos ? 'Ver servicios' : DEFAULT_POPUP.cta)}">
                     </div>
                     <div class="admin-field full">
-                        <label for="cfgPopupDescripcion">Descripción</label>
+                        <label for="cfgPopupDescripcion">Mensaje</label>
                         <textarea id="cfgPopupDescripcion" rows="3" placeholder="${esc(DEFAULT_POPUP.descripcion)}">${esc(s.popup_descripcion && s.popup_descripcion !== DEFAULT_POPUP.descripcion ? s.popup_descripcion : '')}</textarea>
                     </div>
                     <div class="admin-field full">
-                        <label for="cfgPopupCtaUrl">Destino del botón</label>
+                        <label for="cfgPopupCtaUrl">Enlace del botón</label>
                         <input type="text" id="cfgPopupCtaUrl" value="${esc(s.popup_cta_url && s.popup_cta_url !== DEFAULT_POPUP.ctaUrl ? s.popup_cta_url : '')}" placeholder="${esc(DEFAULT_POPUP.ctaUrl)}">
-                        <span class="hint">Página interna (ej. /#tienda) o URL externa completa.</span>
+                        <span class="hint">Indicá a qué página querés llevar a tus clientes cuando hagan clic en el botón. Puede ser una página de tu tienda o un sitio externo.</span>
                     </div>
                     <div class="admin-field full">
                         <label class="admin-check">
                             <input type="checkbox" id="cfgPopupActivo" ${s.popup_activo === true ? 'checked' : ''}>
-                            Popup activo (se muestra al intentar salir de la tienda)
+                            Activar ventana de salida (se mostrará cuando alguien esté por salir de la tienda)
                         </label>
                     </div>
                 </div>
@@ -216,25 +216,25 @@ export async function renderizar(contenedor) {
 
         <div class="admin-card">
             <h2>Preguntas frecuentes</h2>
-            <p class="card-sub">Preguntas y respuestas que se muestran en la página de ayuda (/faq). Mientras no haya preguntas activas, la tienda mantiene el contenido estático actual.</p>
+            <p class="card-sub">Agregá preguntas y respuestas para ayudar a tus clientes a resolver sus dudas. Se mostrarán en la sección de preguntas frecuentes de tu tienda.</p>
             <div id="gestorPreguntasFrecuentes"></div>
         </div>
 
         <div class="admin-card">
             <h2>Exportar datos</h2>
-            <p class="card-sub">Descargá tus datos en CSV (abren directo en Excel y Google Sheets). Cada export baja por separado.</p>
+            <p class="card-sub">Descargá la información de tu tienda en archivos que podés abrir con Excel o Google Sheets. Cada tipo de información se descarga por separado.</p>
             <div class="admin-form-grid">
                 <div class="admin-field">
                     <button type="button" class="btn btn-outline" id="btnExportarProductos">
                         <i class="fa-solid fa-box"></i> Exportar ${esTurnos ? 'servicios' : 'productos'} (.csv)
                     </button>
-                    <span class="hint">Catálogo: precios, stock, categoría, destacado y estado.</span>
+                    <span class="hint">Incluye los precios, las existencias, las categorías y el estado de tus servicios.</span>
                 </div>
                 <div class="admin-field">
                     <button type="button" class="btn btn-outline" id="btnExportarPedidos">
                         <i class="fa-solid fa-cart-shopping"></i> Exportar pedidos (.csv)
                     </button>
-                    <span class="hint">Pedidos con datos del cliente, totales e ítems.</span>
+                    <span class="hint">Incluye los datos de tus clientes, los importes y los detalles de cada pedido.</span>
                 </div>
             </div>
         </div>

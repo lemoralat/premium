@@ -34,14 +34,14 @@ export async function renderizar(contenedor) {
 
     contenedor.innerHTML = `
         <div class="admin-toolbar">
-            <p>Iconos que se muestran antes del footer en el inicio</p>
+            <p>Iconos que se muestran en la página principal</p>
             <button type="button" class="btn btn-primary" id="btnNuevoIcono" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo icono
             </button>
         </div>
-        <p class="hint">Máximo ${MAX_ICONOS} iconos, uno por columna del bloque. ${alTope
+        <p class="hint">Podés agregar hasta ${MAX_ICONOS} iconos. ${alTope
             ? 'Límite alcanzado: borrá alguno para crear otro (desactivar no libera lugar).'
-            : `Te quedan ${quedan}.`}</p>
+            : `Te quedan ${quedan}. disponibles.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
@@ -116,7 +116,7 @@ function abrirModalIcono(idExistente) {
                         <i class="fa-solid fa-image"></i> Imagen
                     </button>
                     <button type="button" class="admin-seg-btn ${modoInicial === 'icono' ? 'activo' : ''}" data-modo="icono" aria-pressed="${modoInicial === 'icono'}">
-                        <i class="fa-solid fa-icons"></i> Ícono FontAwesome
+                        <i class="fa-solid fa-icons"></i> Elegir icono
                     </button>
                 </div>
             </div>
@@ -141,7 +141,7 @@ function abrirModalIcono(idExistente) {
                 <input type="search" id="icoBuscar" class="admin-url-input" placeholder="Buscar ícono… (ej. camión, escudo, tarjeta)">
                 <div class="admin-iconos-grid" id="icoGrilla" role="listbox" aria-label="Catálogo de íconos"></div>
                 <p class="admin-icono-vacio" id="icoVacio" hidden>Sin resultados. Probá con otra palabra.</p>
-                <span class="hint">Catálogo curado con los íconos más usados en una tienda. Buscá en español o inglés (ej. truck).</span>
+                <span class="hint">Buscá un icono por su nombre en español o inglés. Por ejemplo: camión.</span>
             </div>
 
             <div class="admin-form-grid">
