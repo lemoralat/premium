@@ -512,11 +512,12 @@ td.td-expandir .pedido-acciones {
 }
 .btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
 
-/* Baja de suscripción al plan de Lemora: acceso a Soporte por WhatsApp */
+/* Baja de suscripción al plan de Lemora: acceso a Soporte por WhatsApp.
+   Estilo de borde (outline) con los tokens --success, igual que .btn-danger. */
 .btn-whatsapp {
-    background: var(--success);
-    border-color: var(--success);
-    color: #fff;
+    background: var(--surface);
+    border-color: var(--success-border);
+    color: var(--success);
 }
 .btn-whatsapp:hover { background: var(--success-bg); border-color: var(--success); color: var(--success); }
 
