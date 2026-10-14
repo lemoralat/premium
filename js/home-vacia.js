@@ -27,10 +27,10 @@ import {
     esAdminActual
 } from './supabase.js';
 
-const TITULO_VISITANTE = 'Estamos armando la tienda';
-const TEXTO_VISITANTE = 'Muy pronto vas a ver todo acá. Mientras tanto, escribinos por WhatsApp.';
-const TITULO_ADMIN = 'Tu tienda ya está lista. Falta cargar lo tuyo.';
-const TEXTO_ADMIN = 'Tu panel es el lugar para cargar productos, categorías y tu logo. Arrancá por ahí.';
+const TITULO_VISITANTE = 'Estamos preparando algo para vos.';
+const TEXTO_VISITANTE = 'Muy pronto vas a encontrar todo lo que esta tienda tiene para ofrecerte. Mientras tanto, si tenés alguna consulta, estamos a un mensaje de distancia.';
+const TITULO_ADMIN = 'Tu tienda está lista para empezar. Ahora es tu turno.';
+const TEXTO_ADMIN = 'Desde el panel podés cargar tus productos o servicios, organizar las categorías y personalizar tu tienda a tu manera.';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const main = document.querySelector('main');
@@ -66,7 +66,7 @@ function activarHomeVacia(main, esAdmin) {
 
     if (esAdmin) {
         seccion.innerHTML = `
-            <img src="img/login.png" alt="Tu tienda está lista" width="768" height="754" decoding="async">
+            <img src="img/login.png" alt="Tu tienda está lista para empezar" width="768" height="754" decoding="async">
             <h1>${TITULO_ADMIN}</h1>
             <p>${TEXTO_ADMIN}</p>
             <a class="btn-primary btn-border" href="/admin/">Ir a mi panel</a>
@@ -75,10 +75,10 @@ function activarHomeVacia(main, esAdmin) {
         // Sin WhatsApp configurado el botón no se muestra (convención del sitio).
         const wa = obtenerUrlWhatsApp(WHATSAPP_CONFIG.defaultMessage);
         seccion.innerHTML = `
-            <img src="img/home.png" alt="Estamos armando la tienda" width="768" height="675" decoding="async">
+            <img src="img/home.png" alt="Estamos preparando algo para vos" width="768" height="675" decoding="async">
             <h1>${TITULO_VISITANTE}</h1>
             <p>${TEXTO_VISITANTE}</p>
-            ${wa ? `<a class="btn-primary btn-border" href="${wa}" target="_blank" rel="noopener">Envíanos tu mensaje</a>` : ''}
+            ${wa ? `<a class="btn-primary btn-border" href="${wa}" target="_blank" rel="noopener">Contactanos por WhatsApp</a>` : ''}
         `;
     }
 

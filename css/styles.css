@@ -3924,7 +3924,7 @@ body.home-vacia-activa .iconos-pie {
 
 .home-vacia img {
     display: block;
-    width: min(100%, 420px);
+    width: min(100%, 550px);
     height: auto;
 }
 
@@ -3944,10 +3944,6 @@ body.home-vacia-activa .iconos-pie {
     .home-vacia {
         padding: var(--space-md) var(--space-sm);
         gap: var(--space-sm);
-    }
-
-    .home-vacia img {
-        width: min(80%, 320px);
     }
 }
 
