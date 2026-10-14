@@ -123,7 +123,7 @@ function renderHeader(activePage = '', categorias = [], hayPreguntas = true) {
                     </button>
                     <a href="/" class="nav-link ${activePage === 'inicio' ? 'active' : ''}">Inicio</a>
                     <div class="nav-item-dropdown">
-                        <a href="/#tienda" class="nav-link ${activePage === 'productos' ? 'active' : ''}">Productos <i class="fa-solid fa-chevron-down"></i></a>
+                        <a href="/#tienda" class="nav-link ${activePage === 'productos' ? 'active' : ''}">${esModoTurnos() ? 'Servicios' : 'Productos'} <i class="fa-solid fa-chevron-down"></i></a>
                         ${submenuHTML}
                     </div>
                     <!-- <a href="/nosotros" class="nav-link ${activePage === 'nosotros' ? 'active' : ''}">Nosotros</a> -->
