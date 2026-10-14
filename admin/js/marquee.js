@@ -1,6 +1,6 @@
 // marquee.js — Gestor de mensajes del marquee promocional (widget reutilizable).
 // Se monta dentro de la sección "Diseño" del panel (diseno.js), en su propia
-// card, debajo de "Identidad visual".
+// card ("Barra promocional"), al final de la sección.
 //
 // Repeater field: cada fila es un mensaje con su orden y estado. Sin mensajes
 // activos, la tienda no muestra la barra marquee (nada hardcodeado).

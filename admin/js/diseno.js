@@ -7,11 +7,15 @@
 //   - color         → color_principal (#RRGGBB → --primary-color)
 //   - bordes        → estilo_bordes  (redondeado | circular | recto)
 //   - OpenGraph     → og_image_path  (bucket branding/og)
-// Los recursos se suben a Storage y se guarda el storage_path "<bucket>/<ruta>".
+//   - formato cards → card_image_format (1:1 | 3:2 | 4:5 | sin_imagenes)
+//   - marquee       → marquee_color_fondo (#RRGGBB)
+// Guardado automático: cada control persiste apenas cambia y avisa con un
+// toast; la sección no tiene botón de guardado. Los recursos de imagen se
+// suben a Storage y se guarda el storage_path "<bucket>/<ruta>".
 // ============================================================================
 
 import {
-    $, esc, toast, confirmarBorrado, conCarga, estadoCargando,
+    $, esc, toast, confirmarBorrado, estadoCargando,
     validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, urlPublica, LIMITES_IMAGEN
 } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
@@ -24,19 +28,28 @@ const RECURSOS_IMAGEN = [
     {
         recurso: 'logo', columna: 'logo_path', carpeta: 'logo',
         label: 'Logotipo de la tienda',
-        hint: 'Se muestra en la parte superior de la tienda.'
+        hint: 'Se muestra en la parte superior de la tienda.',
+        toastOk: 'Logotipo actualizado.',
+        toastQuitar: 'Logotipo quitado.',
+        confirmarQuitar: '¿Quitar el logotipo? Se usará el archivo por defecto de la tienda.'
     },
     {
         recurso: 'favicon', columna: 'favicon_path', carpeta: 'favicon',
         label: 'Favicon',
         hint: 'Es el pequeño icono que aparece en la pestaña del navegador cuando alguien visita tu tienda.',
+        toastOk: 'Favicon actualizado.',
+        toastQuitar: 'Favicon quitado.',
+        confirmarQuitar: '¿Quitar el favicon? Se usará el logo de Lemora por defecto.',
         // Sin favicon cargado se muestra el logo de Lemora como preview (default de la tienda)
         defaultPreview: '../img/lemora.svg'
     },
     {
         recurso: 'og', columna: 'og_image_path', carpeta: 'og',
         label: 'Imagen para compartir en redes sociales',
-        hint: 'Es la imagen que aparece cuando alguien comparte el enlace de tu tienda en redes sociales o WhatsApp..'
+        hint: 'Es la imagen que aparece cuando alguien comparte el enlace de tu tienda en redes sociales o WhatsApp..',
+        toastOk: 'Imagen para compartir actualizada.',
+        toastQuitar: 'Imagen para compartir quitada.',
+        confirmarQuitar: '¿Quitar la imagen para compartir? Se usará el archivo por defecto de la tienda.'
     }
 ];
 
@@ -62,7 +75,8 @@ const CARD_FORMATS = [
     { valor: 'sin_imagenes', nombre: 'Sin imágenes', desc: 'Los productos/servicios se mostrarán sin fotos.', aspecto: null }
 ];
 
-// Estado por recurso de imagen: path actual, archivo nuevo pendiente y "quitar".
+// Estado por recurso de imagen: storage_path actual, para poder borrar el
+// archivo anterior cuando se reemplaza o se quita.
 const estadoImagenes = {};
 
 export async function renderizar(contenedor) {
@@ -156,28 +170,29 @@ export async function renderizar(contenedor) {
         <div class="admin-card">
             <h2>Identidad visual</h2>
             <p class="card-sub">Los cambios se aplican a toda la tienda cuando se actualiza la página.</p>
-            <form class="admin-form" id="disenoForm">
-                <div class="admin-form-grid">
-                    ${imagenesHTML}
-                    ${cardFormatHTML}
-                    <div class="admin-field full">
-                        <label for="dsnColor">Color principal</label>
-                        <span class="card-sub">Se utiliza en los botones, enlaces y otros detalles de la tienda.</span>
-                        <div class="diseno-color">
-                            <input type="color" id="dsnColorPicker" value="${esc(color)}" aria-label="Selector de color principal">
-                            <input type="text" id="dsnColor" value="${esc(color)}" maxlength="7" spellcheck="false" aria-label="Color principal en formato hexadecimal">
-                            <button type="button" class="btn btn-sm btn-outline" id="dsnColorRestaurar">Restaurar (#000000)</button>
-                        </div>
-                    </div>
-                    <div class="admin-field full">
-                        <label>Estilo de bordes</label>
-                        <div class="diseno-bordes">${bordesHTML}</div>
+            <div class="admin-form-grid">
+                ${imagenesHTML}
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h2>Formatos</h2>
+            <div class="admin-form-grid">
+                ${cardFormatHTML}
+                <div class="admin-field full">
+                    <label for="dsnColor">Color principal</label>
+                    <span class="card-sub">Se utiliza en los botones, enlaces y otros detalles de la tienda.</span>
+                    <div class="diseno-color">
+                        <input type="color" id="dsnColorPicker" value="${esc(color)}" aria-label="Selector de color principal">
+                        <input type="text" id="dsnColor" value="${esc(color)}" maxlength="7" spellcheck="false" aria-label="Color principal en formato hexadecimal">
+                        <button type="button" class="btn btn-sm btn-outline" id="dsnColorRestaurar">Restaurar (#000000)</button>
                     </div>
                 </div>
-                <div class="admin-modal-acciones">
-                    <button type="submit" class="btn btn-primary">Guardar diseño</button>
+                <div class="admin-field full">
+                    <label>Estilo de bordes</label>
+                    <div class="diseno-bordes">${bordesHTML}</div>
                 </div>
-            </form>
+            </div>
         </div>
 
         <div class="admin-card">
@@ -198,70 +213,95 @@ export async function renderizar(contenedor) {
         </div>
     `;
 
-    // --- Color: sincronizar picker ↔ text y restaurar ---
+    // --- Color principal: sincronizar picker ↔ text y guardar al confirmar ---
     const picker = $('#dsnColorPicker');
     const texto = $('#dsnColor');
     picker.addEventListener('input', () => { texto.value = picker.value; });
+    picker.addEventListener('change', () => {
+        texto.value = picker.value;
+        guardarAjuste({ color_principal: picker.value }, 'Color principal actualizado.');
+    });
     texto.addEventListener('input', () => {
         if (/^#[0-9a-fA-F]{6}$/.test(texto.value.trim())) picker.value = texto.value.trim();
+    });
+    texto.addEventListener('keydown', (event) => { if (event.key === 'Enter') texto.blur(); });
+    texto.addEventListener('change', () => {
+        const valor = texto.value.trim().toLowerCase();
+        if (!/^#[0-9a-f]{6}$/.test(valor)) {
+            toast('Color inválido. Usá formato #RRGGBB.', 'error');
+            texto.value = picker.value;
+            return;
+        }
+        texto.value = valor;
+        picker.value = valor;
+        guardarAjuste({ color_principal: valor }, 'Color principal actualizado.');
     });
     $('#dsnColorRestaurar').addEventListener('click', () => {
         picker.value = COLOR_DEFECTO;
         texto.value = COLOR_DEFECTO;
+        guardarAjuste({ color_principal: COLOR_DEFECTO }, 'Color principal actualizado.');
     });
 
-    // --- Color del marquee: sincronizar picker ↔ text y restaurar ---
+    // --- Color de la barra promocional: idem ---
     const mqPicker = $('#dsnMarqueeColorPicker');
     const mqTexto = $('#dsnMarqueeColor');
     mqPicker.addEventListener('input', () => { mqTexto.value = mqPicker.value; });
+    mqPicker.addEventListener('change', () => {
+        mqTexto.value = mqPicker.value;
+        guardarAjuste({ marquee_color_fondo: mqPicker.value }, 'Color de la barra promocional actualizado.');
+    });
     mqTexto.addEventListener('input', () => {
         if (/^#[0-9a-fA-F]{6}$/.test(mqTexto.value.trim())) mqPicker.value = mqTexto.value.trim();
+    });
+    mqTexto.addEventListener('keydown', (event) => { if (event.key === 'Enter') mqTexto.blur(); });
+    mqTexto.addEventListener('change', () => {
+        const valor = mqTexto.value.trim().toLowerCase();
+        if (!/^#[0-9a-f]{6}$/.test(valor)) {
+            toast('Color inválido. Usá formato #RRGGBB.', 'error');
+            mqTexto.value = mqPicker.value;
+            return;
+        }
+        mqTexto.value = valor;
+        mqPicker.value = valor;
+        guardarAjuste({ marquee_color_fondo: valor }, 'Color de la barra promocional actualizado.');
     });
     $('#dsnMarqueeColorRestaurar').addEventListener('click', () => {
         mqPicker.value = COLOR_DEFECTO;
         mqTexto.value = COLOR_DEFECTO;
+        guardarAjuste({ marquee_color_fondo: COLOR_DEFECTO }, 'Color de la barra promocional actualizado.');
     });
 
-    // --- Bordes: resaltar la opción elegida ---
+    // --- Estilo de bordes: resaltar y guardar al elegir ---
     document.querySelectorAll('input[name="estiloBordes"]').forEach((radio) => {
         radio.addEventListener('change', () => {
             document.querySelectorAll('input[name="estiloBordes"]').forEach((r) => r.closest('.diseno-borde').classList.toggle('activa', r.checked));
+            guardarAjuste({ estilo_bordes: radio.value }, 'Estilo de bordes actualizado.');
         });
     });
 
-    // --- Tamaño de logo: resaltar la opción elegida ---
+    // --- Tamaño de logo: resaltar y guardar al elegir ---
     document.querySelectorAll('input[name="logoTamano"]').forEach((radio) => {
         radio.addEventListener('change', () => {
             document.querySelectorAll('input[name="logoTamano"]').forEach((r) => r.closest('.diseno-tamano-opcion').classList.toggle('activa', r.checked));
+            guardarAjuste({ logo_tamano: radio.value }, 'Tamaño del logotipo actualizado.');
         });
     });
 
-    // --- Formato de cards: resaltar la opción elegida ---
+    // --- Formato de cards: resaltar, refrescar el texto de ayuda y guardar ---
+    const subFormato = $('#dsnFormatoSub');
     document.querySelectorAll('input[name="cardImageFormat"]').forEach((radio) => {
         radio.addEventListener('change', () => {
             document.querySelectorAll('input[name="cardImageFormat"]').forEach((r) => r.closest('.diseno-formato-opcion').classList.toggle('activa', r.checked));
+            if (subFormato) subFormato.textContent = textoFormatoSub(radio.value);
+            guardarAjuste({ card_image_format: radio.value }, 'Formato de las imágenes actualizado.');
         });
     });
 
-    // --- Imágenes: preparar estado y eventos por recurso ---
-    RECURSOS_IMAGEN.forEach((r) => prepararCampoImagen(r, s[r.columna]));
+    // --- Imágenes: subir/quitar apenas se elige (guardado automático) ---
+    RECURSOS_IMAGEN.forEach((r) => prepararCampoImagen(r, s[r.columna], contenedor));
 
     // --- Marquee: gestor de mensajes (widget propio, re-render local) ---
     renderizarGestorMarquee($('#marqueeGestor')).catch((error) => toast(error.message, 'error'));
-
-    // --- Guardar ---
-    $('#disenoForm').addEventListener('submit', (event) => {
-        event.preventDefault();
-        const submitBtn = event.submitter || $('#disenoForm').querySelector('[type="submit"]');
-        conCarga(submitBtn, guardar())
-            .then(() => {
-                toast('Diseño guardado. Recargá la tienda para ver los cambios.');
-                // Refresca los previews con el estado guardado (no debe fallar la
-                // navegación si el re-render tiene un error ajeno al guardado).
-                return renderizar(contenedor).catch((error) => console.warn('Diseño guardado, pero no se pudo refrescar la vista:', error));
-            })
-            .catch((error) => toast(error.message, 'error'));
-    });
 }
 
 // ---------- Helpers ----------
@@ -355,22 +395,25 @@ function campoFormatoCard(actual) {
     return `
         <div class="admin-field full">
             <label>Formato de las imágenes de los productos</label>
-            <span class="card-sub">${valor === 'sin_imagenes'
-                ? 'Si vuelves a activar las imágenes, las fotos anteriores seguirán disponibles.'
-                : `Se aplica a los cards del catálogo, búsqueda y ${esTurnos ? 'servicios relacionados' : 'productos relacionados'}.`}</span>
+            <span class="card-sub" id="dsnFormatoSub">${esc(textoFormatoSub(valor))}</span>
             <div class="diseno-formatos">${opciones}</div>
         </div>`;
 }
 
-// Arma el estado y los eventos de subida / reemplazo / quita por recurso.
-function prepararCampoImagen(r, pathActual) {
-    const urlOriginal = urlPublica(pathActual || '');
-    const est = estadoImagenes[r.recurso] = {
-        actual: pathActual || '',
-        archivo: null,
-        quitar: false,
-        objetoUrl: ''
-    };
+// Texto de ayuda del selector de formato. "Sin imágenes" avisa que las fotos
+// quedan guardadas; el resto menciona dónde se aplica (productos o servicios
+// según el modo de la tienda).
+function textoFormatoSub(valor) {
+    return valor === 'sin_imagenes'
+        ? 'Si vuelves a activar las imágenes, las fotos anteriores seguirán disponibles.'
+        : `Se aplica a los cards del catálogo, búsqueda y ${esTurnos ? 'servicios relacionados' : 'productos relacionados'}.`;
+}
+
+// Arma los eventos de subida / quita por recurso. Sin botón de guardado: al
+// elegir un archivo se optimiza, se sube y se persiste; al quitar se confirma
+// y se borra. Después de cada operación se refresca la sección.
+function prepararCampoImagen(r, pathActual, contenedor) {
+    estadoImagenes[r.recurso] = { actual: pathActual || '' };
 
     const bloque = document.querySelector(`[data-recurso="${esc(r.recurso)}"]`);
     if (!bloque) return;
@@ -378,135 +421,93 @@ function prepararCampoImagen(r, pathActual) {
     const archivoInput = bloque.querySelector('[data-archivo]');
     const quitarBtn = bloque.querySelector('[data-quitar]');
 
-    const mostrarVacio = (mensaje) => {
-        preview.innerHTML = campoVacioHTML(r, mensaje);
-    };
-
-    const renderDesdeEstado = () => {
-        if (est.quitar) {
-            mostrarVacio('Se quitará al guardar');
-        } else if (est.objetoUrl) {
-            preview.innerHTML = `<img src="${est.objetoUrl}" alt="">`;
-        } else if (urlOriginal) {
-            preview.innerHTML = `<img src="${esc(urlOriginal)}" alt="">`;
-        } else {
-            mostrarVacio();
-        }
-    };
-
-    const actualizarBotonQuitar = () => {
-        if (!quitarBtn) return;
-        if (est.quitar) {
-            quitarBtn.dataset.pendiente = '1';
-            quitarBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Quitar (click para deshacer)';
-            quitarBtn.classList.add('btn-outline');
-            quitarBtn.classList.remove('btn-danger');
-        } else {
-            delete quitarBtn.dataset.pendiente;
-            quitarBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Quitar';
-            quitarBtn.classList.remove('btn-outline');
-            quitarBtn.classList.add('btn-danger');
-        }
-    };
-
     archivoInput.addEventListener('change', async () => {
         const archivo = archivoInput.files[0];
         if (!archivo) return;
+        let objetoUrl = '';
         try {
-            const limite = r.recurso === 'favicon'
-                ? LIMITES_IMAGEN.favicon
-                : r.recurso === 'og'
-                    ? LIMITES_IMAGEN.openGraph
-                    : LIMITES_IMAGEN.branding;
-            const optimizado = await validarYOptimizarImagen(archivo, { maxLado: limite });
-            const lista = optimizado && optimizado.size ? optimizado : archivo;
-            if (est.objetoUrl) URL.revokeObjectURL(est.objetoUrl);
-            est.objetoUrl = URL.createObjectURL(lista);
-            est.archivo = lista;
-            est.quitar = false;
-            renderDesdeEstado();
-            actualizarBotonQuitar();
+            const optimizado = await validarYOptimizarImagen(archivo, { maxLado: limiteImagen(r) });
+            objetoUrl = URL.createObjectURL(optimizado);
+            preview.innerHTML = `<img src="${objetoUrl}" alt="">`; // preview inmediato mientras sube
+            await persistirImagen(r, optimizado);
+            toast(r.toastOk);
+            await refrescarSeccion(contenedor);
         } catch (error) {
-            toast(error.message, 'error');
             archivoInput.value = '';
+            toast(error.message, 'error');
+            await refrescarSeccion(contenedor); // vuelve al estado persistido
+        } finally {
+            if (objetoUrl) URL.revokeObjectURL(objetoUrl);
         }
     });
 
     if (quitarBtn) {
         quitarBtn.addEventListener('click', async () => {
-            if (est.quitar) {
-                // Deshacer la quita
-                est.quitar = false;
-                est.archivo = null;
-                archivoInput.value = '';
-                renderDesdeEstado();
-            } else {
-                const confirmarMsg = r.defaultPreview
-                    ? `¿Quitar el ${r.label.toLowerCase()}? Se usará el logo de Lemora por defecto.`
-                    : `¿Quitar el ${r.label.toLowerCase()}? Se usará el archivo por defecto de la tienda.`;
-                if (!(await confirmarBorrado(confirmarMsg))) return;
-                est.quitar = true;
-                est.archivo = null;
-                archivoInput.value = '';
-                renderDesdeEstado();
+            if (!(await confirmarBorrado(r.confirmarQuitar))) return;
+            try {
+                await persistirQuitaImagen(r);
+                toast(r.toastQuitar);
+                await refrescarSeccion(contenedor);
+            } catch (error) {
+                toast(error.message, 'error');
             }
-            actualizarBotonQuitar();
         });
     }
 }
 
-// Valida y persiste todo el diseño en la fila settings.
-async function guardar() {
+// Refresca la sección tras un guardado, salvo que el usuario ya haya navegado
+// a otra: en ese caso el contenedor tiene otro contenido y no se toca.
+function refrescarSeccion(contenedor) {
+    if (!contenedor.isConnected || !contenedor.querySelector('#marqueeGestor')) {
+        return Promise.resolve();
+    }
+    return renderizar(contenedor).catch(() => {});
+}
+
+// Lado máximo de redimensión según el recurso (favicon y OG son más chicos).
+function limiteImagen(r) {
+    if (r.recurso === 'favicon') return LIMITES_IMAGEN.favicon;
+    if (r.recurso === 'og') return LIMITES_IMAGEN.openGraph;
+    return LIMITES_IMAGEN.branding;
+}
+
+// ---------- Persistencia ----------
+
+// Guarda uno o más campos de `settings` (fila única id=1). Base del guardado
+// automático de la sección.
+async function persistirSettings(payload) {
     const sb = await clienteAdmin();
-    const payload = {};
-
-    // Color principal
-    const color = $('#dsnColor').value.trim().toLowerCase();
-    if (!/^#[0-9a-f]{6}$/.test(color)) throw new Error('Color inválido. Usá formato #RRGGBB.');
-    payload.color_principal = color;
-
-    // Estilo de bordes
-    const estilo = document.querySelector('input[name="estiloBordes"]:checked');
-    if (!estilo) throw new Error('Elegí un estilo de bordes.');
-    payload.estilo_bordes = estilo.value;
-
-    // Tamaño del logotipo
-    const tamano = document.querySelector('input[name="logoTamano"]:checked');
-    if (!tamano) throw new Error('Elegí un tamaño de logotipo.');
-    payload.logo_tamano = tamano.value;
-
-    const formatoCard = document.querySelector('input[name="cardImageFormat"]:checked');
-    if (!formatoCard || !CARD_FORMATS.some((formato) => formato.valor === formatoCard.value)) {
-        throw new Error('Elegí un formato válido para las imágenes de los cards.');
-    }
-    payload.card_image_format = formatoCard.value;
-
-    // Marquee: solo el color de fondo. La visibilidad la define la cantidad de
-    // mensajes activos (la barra se muestra si hay al menos uno), sin un check
-    // de "mostrar/ocultar" propio.
-    const marqueeHex = $('#dsnMarqueeColor').value.trim().toLowerCase();
-    if (!/^#[0-9a-f]{6}$/.test(marqueeHex)) throw new Error('Color del marquee inválido. Usá formato #RRGGBB.');
-    payload.marquee_color_fondo = marqueeHex;
-
-    // Recursos de imagen: subir/actualizar primero y borrar el anterior
-    // solo después de que la base de datos acepte el nuevo estado.
-    const imagenesAnteriores = [];
-    for (const r of RECURSOS_IMAGEN) {
-        const est = estadoImagenes[r.recurso];
-        if (!est) continue;
-        if (est.quitar) {
-            payload[r.columna] = null;
-            if (est.actual) imagenesAnteriores.push(est.actual);
-        } else if (est.archivo) {
-            payload[r.columna] = await subirImagenAdmin('branding', r.carpeta, est.archivo);
-            if (est.actual) imagenesAnteriores.push(est.actual);
-        }
-    }
-
     const { error } = await sb.from('settings').update(payload).eq('id', 1);
     if (error) throw new Error(error.message);
+}
 
-    for (const storagePath of imagenesAnteriores) {
-        await eliminarImagenAdmin(storagePath);
+// Auto-guardado de un ajuste puntual: persiste y avisa con un toast; si falla,
+// muestra el error sin cortar la interacción.
+function guardarAjuste(payload, mensaje) {
+    return persistirSettings(payload)
+        .then(() => { if (mensaje) toast(mensaje); })
+        .catch((error) => toast(error.message, 'error'));
+}
+
+// Sube una imagen nueva, actualiza la referencia en `settings` y recién ahí
+// borra el archivo anterior (así nunca se pierde el actual si algo falla).
+async function persistirImagen(r, archivo) {
+    const nuevoPath = await subirImagenAdmin('branding', r.carpeta, archivo);
+    try {
+        await persistirSettings({ [r.columna]: nuevoPath });
+    } catch (error) {
+        await eliminarImagenAdmin(nuevoPath); // no dejar huérfano en Storage
+        throw error;
     }
+    const anterior = estadoImagenes[r.recurso]?.actual;
+    estadoImagenes[r.recurso] = { actual: nuevoPath };
+    if (anterior) await eliminarImagenAdmin(anterior);
+}
+
+// Quita la imagen: limpia la referencia en `settings` y borra el archivo.
+async function persistirQuitaImagen(r) {
+    await persistirSettings({ [r.columna]: null });
+    const anterior = estadoImagenes[r.recurso]?.actual;
+    estadoImagenes[r.recurso] = { actual: '' };
+    if (anterior) await eliminarImagenAdmin(anterior);
 }
