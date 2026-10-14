@@ -37,6 +37,9 @@ html {
     --primary-soft-border: #bfdbfe;
     --primary-soft-hover: #dbeafe;
     --primary-tint: color-mix(in srgb, var(--primary-color) 10%, #ffffff);
+    /* Fondo claro de marca (estado vacío del Home y usos afines): versión clara
+       del color principal, así acompaña cualquier color configurado. */
+    --primary-light: color-mix(in srgb, var(--primary-color) 15%, #ffffff);
     --product-card-aspect-ratio: 1 / 1;
 
     /* Sombras */
@@ -3896,6 +3899,11 @@ body.zoom-active {
    .home-vacia-activa: se ocultan las secciones del Home y se muestra el
    mensaje (distinto para visitante y para administrador). */
 
+/* La página vacía toma el fondo claro de marca. */
+body.home-vacia-activa {
+    background-color: var(--primary-light);
+}
+
 body.home-vacia-activa .hero-carrusel,
 body.home-vacia-activa #tienda,
 body.home-vacia-activa .testimonios-carousel,
@@ -3920,9 +3928,14 @@ body.home-vacia-activa .iconos-pie {
     height: auto;
 }
 
+.home-vacia h1 {
+    color: var(--text-color);
+    line-height: 1.2;
+}
+
 .home-vacia p {
     max-width: 46ch;
-    color: var(--text-color);
+    color: var(--secondary-color);
     font-size: var(--fs-body);
     line-height: 1.6;
 }
