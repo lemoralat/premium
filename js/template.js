@@ -13,7 +13,9 @@ const CARD_ASPECT_RATIOS = Object.freeze({
 // ninguna pregunta cargada en el panel y la página /faq queda sin contenido).
 // `hayProductos`: si false, el menú no muestra "Productos"/"Servicios" (no hay
 // ningún producto o servicio activo en la tienda).
-function renderHeader(activePage = '', categorias = [], hayPreguntas = true, hayProductos = true) {
+// `hayWhatsApp`: si false, el menú no muestra "Contacto" (la página de contacto
+// gira en torno al WhatsApp y, sin número, queda sin su vía de contacto).
+function renderHeader(activePage = '', categorias = [], hayPreguntas = true, hayProductos = true, hayWhatsApp = true) {
     const header = document.createElement('div');
     header.className = 'header-wrapper';
 
@@ -131,7 +133,7 @@ function renderHeader(activePage = '', categorias = [], hayPreguntas = true, hay
                     <!-- <a href="/nosotros" class="nav-link ${activePage === 'nosotros' ? 'active' : ''}">Nosotros</a> -->
                     ${hayPreguntas ? `<a href="/faq" class="nav-link ${activePage === 'faq' ? 'active' : ''}">Preguntas</a>` : ''}
                     <!-- <a href="/#contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>-->
-                    <a href="/contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a> 
+                    ${hayWhatsApp ? `<a href="/contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>` : ''}
                     <a href="/favoritos" class="nav-link favorites-link ${activePage === 'favoritos' ? 'active' : ''}" aria-label="Mis Favoritos">
                         <i class="fa-solid fa-heart"></i>
                         <span class="nav-label">Favoritos</span>
@@ -342,6 +344,9 @@ async function initTemplate(activePage = '') {
     let categorias = [];
     let hayPreguntas = true;
     let hayProductos = true;
+    // "Contacto" gira en torno al WhatsApp: sin número configurado no hay vía de
+    // contacto, así que el enlace se oculta del menú.
+    const hayWhatsApp = Boolean(WHATSAPP_CONFIG.number);
     try {
         const [productos, faq] = await Promise.all([obtenerProductos(), obtenerPreguntasFrecuentes()]);
         categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean);
@@ -356,7 +361,7 @@ async function initTemplate(activePage = '') {
     } catch (e) { console.error("Error cargando datos para el menú", e); }
 
     // 1. Insertar Header
-    const header = renderHeader(activePage, categorias, hayPreguntas, hayProductos);
+    const header = renderHeader(activePage, categorias, hayPreguntas, hayProductos, hayWhatsApp);
     body.insertBefore(header, body.firstChild);
     // Avisar a módulos (ej. búsqueda) de que el header ya está en el DOM
     document.dispatchEvent(new CustomEvent('lemora:header-ready'));
