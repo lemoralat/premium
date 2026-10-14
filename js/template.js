@@ -356,18 +356,16 @@ async function initTemplate(activePage = '') {
     document.dispatchEvent(new CustomEvent('lemora:header-ready'));
 
     // 2. Marquee promocional (sección "Diseño" del panel): se inserta ANTES
-    // del header para quedar como barra superior. Solo se muestra si está
-    // activo y hay mensajes (vacíos no renderiza nada).
-    if (CONFIG_APP.marqueeActivo) {
-        const textos = await obtenerMarquee();
-        if (textos.length > 0) {
-            const marquee = crearMarquee(textos, CONFIG_APP.marqueeColorFondo);
-            body.insertBefore(marquee, header);
-            // Con pocos mensajes el contenido duplicado puede medir menos que
-            // la barra (un solo ítem = solo una fracción del ancho animado).
-            // Se ajusta tras insertar, con las medidas reales del DOM.
-            asegurarCoberturaMarquee(marquee, textos);
-        }
+    // del header para quedar como barra superior. Se muestra si hay al menos
+    // un mensaje activo (igual que otros elementos); sin mensajes, se oculta.
+    const textosMarquee = await obtenerMarquee();
+    if (textosMarquee.length > 0) {
+        const marquee = crearMarquee(textosMarquee, CONFIG_APP.marqueeColorFondo);
+        body.insertBefore(marquee, header);
+        // Con pocos mensajes el contenido duplicado puede medir menos que
+        // la barra (un solo ítem = solo una fracción del ancho animado).
+        // Se ajusta tras insertar, con las medidas reales del DOM.
+        asegurarCoberturaMarquee(marquee, textosMarquee);
     }
 
     // Insertar footer al final del body

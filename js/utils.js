@@ -77,9 +77,8 @@ export const CONFIG_APP = {
     popupCta: 'Ver productos',
     popupCtaUrl: '/#tienda',
     popupActivo: false,
-    // Marquee promocional (sección "Diseño" del panel). Conservadores: antes de
-    // la migración 0017 (columna ausente) la barra queda oculta.
-    marqueeActivo: false,
+    // Marquee promocional (sección "Diseño" del panel). La barra se muestra si
+    // hay mensajes activos (lo decide template.js); acá solo va el color.
     marqueeColorFondo: '#000000'
 };
 
@@ -168,17 +167,15 @@ export async function cargarConfiguracionGlobal() {
             CONFIG_APP.socialOtra = c.social_otra || '';
 
             // Popup de salida (Configuración → Popup de salida). `=== true`:
-            // default apagado (0055), solo un valor explícito enciende el
-            // popup — mismo criterio conservador que marqueeActivo.
+            // default apagado (0055), solo un valor explícito enciende el popup.
             CONFIG_APP.popupTitulo = c.popup_titulo || CONFIG_APP.popupTitulo;
             CONFIG_APP.popupDescripcion = c.popup_descripcion || CONFIG_APP.popupDescripcion;
             CONFIG_APP.popupCta = c.popup_cta || CONFIG_APP.popupCta;
             CONFIG_APP.popupCtaUrl = c.popup_cta_url || CONFIG_APP.popupCtaUrl;
             CONFIG_APP.popupActivo = c.popup_activo === true;
 
-            // Marquee (sección "Diseño" del panel). `=== true`: sin la
-            // migración 0017 la columna no existe → barra oculta.
-            CONFIG_APP.marqueeActivo = c.marquee_activo === true;
+            // Marquee (sección "Diseño" del panel): solo el color de fondo. La
+            // visibilidad depende de que haya mensajes activos (template.js).
             if (/^#[0-9a-fA-F]{6}$/.test(c.marquee_color_fondo || '')) {
                 CONFIG_APP.marqueeColorFondo = c.marquee_color_fondo.toLowerCase();
             }
