@@ -209,9 +209,9 @@ img { max-width: 100%; }
     white-space: nowrap;
 }
 
-/* Botones de acción del topbar: tema del panel (sol/luna), Ver tienda y
-   Cerrar sesión. Iconos puros de 34px; usan variables → se adaptan a cada
-   tema. */
+/* Botones de acción del topbar: Ver tienda, tema del panel (sol/luna) y
+   Cerrar sesión (último, en rojo). Iconos puros de 34px; usan variables → se
+   adaptan a cada tema. */
 .admin-tema-switch,
 .admin-topbar-icono {
     display: inline-flex;
@@ -240,7 +240,13 @@ img { max-width: 100%; }
 .admin-tema-switch:active,
 .admin-topbar-icono:active { transform: translateY(0); }
 
-/* Cerrar sesión: el hover avisa el carácter destructivo de la acción */
+/* Cerrar sesión: es la acción destructiva del topbar, así que va en rojo
+   (--danger) ya en reposo y no solo al pasar el mouse. */
+.admin-topbar-icono-peligro {
+    border-color: var(--danger-border);
+    color: var(--danger);
+}
+
 .admin-topbar-icono-peligro:hover {
     border-color: var(--danger);
     color: var(--danger);
@@ -1380,10 +1386,12 @@ body.admin-modal-abierto { overflow: hidden; }
 }
 
 @media (max-width: 600px) {
-    .admin-topbar-user span:first-child { display: none; }
+    /* En pantallas angostas el topbar deja solo los iconos: se ocultan el
+       correo y el chip "Admin" para que el título respire. */
+    .admin-topbar-user span:first-child,
+    .admin-role-badge { display: none; }
 
-    /* Tres iconos en el topbar (Ver tienda, Cerrar sesión, tema):
-       se compactan para que el título no sufra en pantallas angostas */
+    /* Los tres iconos (Ver tienda, tema, Cerrar sesión) se compactan */
     .admin-topbar-user { gap: 0.5rem; }
     .admin-tema-switch,
     .admin-topbar-icono { width: 32px; height: 32px; }
