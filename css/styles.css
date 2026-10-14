@@ -1184,10 +1184,10 @@ span {
 .sin-imagenes .product-detail-grid .product-detail-image-container { display: none; }
 .sin-imagenes .product-detail-grid { grid-template-columns: 1fr; }
 
-/* Catálogo (productos/servicios): sin fotos, el listado no necesita el ancho
-   completo. Pasa al contenedor angosto y centrado (--container-sm, como el
-   resto de las vistas de lectura) en vez de --container-lg. */
-.sin-imagenes #tienda.contenedor { width: min(92%, var(--container-sm)); }
+/* Detalle de producto/servicio: sin la columna de imagen la ficha se estiraba
+   al ancho completo (--container-lg). Pasa al contenedor angosto y centrado
+   (--container-sm, como el resto de las vistas de lectura). */
+.sin-imagenes .product-detail-page { width: min(92%, var(--container-sm)); }
 
 .product-info {
     padding: 1.25rem;
