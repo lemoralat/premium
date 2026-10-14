@@ -129,7 +129,11 @@ export async function cargarConfiguracionGlobal() {
         const r = await cargarConfiguracion();
         if (r.ok && r.datos) {
             const c = r.datos;
-            CONFIG_APP.siteName = c.site_name ?? CONFIG_APP.siteName;
+            // Nombre de la tienda: a diferencia de WhatsApp, acá el vacío NO
+            // vale. Si el dueño deja el campo en blanco se mantiene el default
+            // ("Mi Tienda Online"), que es lo que el header muestra como texto
+            // mientras no haya un logotipo cargado.
+            CONFIG_APP.siteName = (c.site_name || '').trim() || CONFIG_APP.siteName;
             CONFIG_APP.siteDescription = c.site_description ?? CONFIG_APP.siteDescription;
             CONFIG_APP.modoWeb = c.modo_web === 'turnos' ? 'turnos' : 'venta';
             // El número de WhatsApp es SOLO dígitos: se sanitiza al cargar para
@@ -208,9 +212,11 @@ export async function cargarConfiguracionGlobal() {
     }
 }
 
-// Nombre del sitio (configurable desde supabase settings)
+// Nombre del sitio (Configuración → Datos generales). Sin nombre cargado se
+// usa el default "Mi Tienda Online": el header lo muestra como texto cuando
+// todavía no hay un logotipo (template.js → renderHeader).
 export function obtenerNombreSitio() {
-    return CONFIG_APP.siteName;
+    return (CONFIG_APP.siteName || '').trim() || 'Mi Tienda Online';
 }
 
 // Construir URL de WhatsApp con el número centralizado.
