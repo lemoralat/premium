@@ -34,14 +34,14 @@ export async function renderizarGestor(contenedor) {
     const quedan = MAX_MENSAJES - items.length;
 
     contenedor.innerHTML = `
-        <div class="admin-toolbar admin-toolbar--derecha">
+        <div class="admin-toolbar">
+            <p class="hint">Puedes agregar hasta ${MAX_MENSAJES} mensajes. ${alTope
+                ? 'Límite alcanzado: borrá alguno para crear otro (desactivar no libera lugar).'
+                : `Te quedan ${quedan}.`}</p>
             <button type="button" class="btn btn-primary" id="btnNuevoMensaje" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo mensaje
             </button>
         </div>
-        <p class="hint">Puedes agregar hasta ${MAX_MENSAJES} mensajes. ${alTope
-            ? 'Límite alcanzado: borrá alguno para crear otro (desactivar no libera lugar).'
-            : `Te quedan ${quedan}.`}</p>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
