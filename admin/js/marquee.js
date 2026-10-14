@@ -34,8 +34,7 @@ export async function renderizarGestor(contenedor) {
     const quedan = MAX_MENSAJES - items.length;
 
     contenedor.innerHTML = `
-        <div class="admin-toolbar">
-            <p>Puedes utilizarla para mostrar promociones, novedades o mensajes importantes. La barra se muestra en la tienda si hay al menos un mensaje activo; sin mensajes activos, se oculta. El color de fondo se guarda con "Guardar diseño".</p>
+        <div class="admin-toolbar admin-toolbar--derecha">
             <button type="button" class="btn btn-primary" id="btnNuevoMensaje" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Nuevo mensaje
             </button>

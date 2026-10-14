@@ -1606,6 +1606,9 @@ body.admin-modal-abierto { overflow: hidden; }
 
 .admin-toolbar p { margin: 0; color: var(--text-muted); }
 
+/* Toolbar sin texto a la izquierda: mantiene la acción principal a la derecha. */
+.admin-toolbar--derecha { justify-content: flex-end; }
+
 /* ============================================================================
    DETALLE DE PEDIDO (grid de 2 columnas, colapsa en móvil)
    ============================================================================ */
