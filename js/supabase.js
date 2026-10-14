@@ -652,3 +652,58 @@ export async function cargarConfiguracion() {
         return { ok: false, error };
     }
 }
+
+// ============================================================================
+// SESIÓN DEL PANEL (¿el visitante actual es el administrador?)
+// ============================================================================
+// La tienda pública es anónima (obtenerClienteSupabase usa persistSession:false),
+// así que NO ve la sesión del panel. La cookie que el panel espeja es HttpOnly y
+// Path=/admin: el front no puede leerla ni enviarla. La vía disponible es la
+// sesión que el propio SDK de Supabase persiste en localStorage (mismo origen):
+// este cliente aparte la lee y la valida con el RPC es_admin() — la misma
+// verificación que hace admin/js/auth.js. Sin sesión, sin ser admin o sin
+// Supabase configurado/caído => false (se trata como visitante).
+let clienteAuth = null;
+let promesaAuth = null;
+
+function obtenerClienteAuth() {
+    if (clienteAuth) return Promise.resolve(clienteAuth);
+    if (promesaAuth) return promesaAuth;
+
+    if (!SUPABASE_CONFIG || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.publishableKey) {
+        return Promise.resolve(null);
+    }
+
+    // Mismo SDK (el navegador ya lo tiene cacheado por obtenerClienteSupabase);
+    // persistSession:true para LEER la sesión del panel, sin auto-refresco para
+    // no pisar el ciclo de token del panel.
+    promesaAuth = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm')
+        .then((mod) => {
+            clienteAuth = mod.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey, {
+                auth: { persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+            });
+            return clienteAuth;
+        })
+        .catch(() => null);
+
+    return promesaAuth;
+}
+
+// ¿El visitante actual es un administrador con sesión activa?
+export async function esAdminActual() {
+    try {
+        const sb = await obtenerClienteAuth();
+        if (!sb) return false;
+
+        const { data } = await sb.auth.getSession();
+        if (!data || !data.session) return false;
+
+        // es_admin() está concedido a `authenticated` (0049): con el JWT adjunto
+        // devuelve si auth.uid() figura en public.admins.
+        const { data: esAdmin, error } = await sb.rpc('es_admin');
+        return error ? false : esAdmin === true;
+    } catch (error) {
+        console.warn('No se pudo verificar la sesión del panel:', error);
+        return false;
+    }
+}

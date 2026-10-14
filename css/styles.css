@@ -3889,6 +3889,56 @@ body.zoom-active {
 
 
 /* ===================================
+   HOME VACÍO (tienda sin contenido)
+   ===================================
+   Cuando la tienda todavía no tiene nada que mostrar (sin productos,
+   carrusel, reseñas ni iconos), home-vacia.js marca <body> con
+   .home-vacia-activa: se ocultan las secciones del Home y se muestra el
+   mensaje (distinto para visitante y para administrador). */
+
+body.home-vacia-activa .hero-carrusel,
+body.home-vacia-activa #tienda,
+body.home-vacia-activa .testimonios-carousel,
+body.home-vacia-activa .iconos-pie {
+    display: none;
+}
+
+.home-vacia {
+    width: min(92%, var(--container-sm));
+    margin-inline: auto;
+    padding: var(--space-lg) var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+}
+
+.home-vacia img {
+    display: block;
+    width: min(100%, 420px);
+    height: auto;
+}
+
+.home-vacia p {
+    max-width: 46ch;
+    color: var(--text-color);
+    font-size: var(--fs-body);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .home-vacia {
+        padding: var(--space-md) var(--space-sm);
+        gap: var(--space-sm);
+    }
+
+    .home-vacia img {
+        width: min(80%, 320px);
+    }
+}
+
+/* ===================================
    CARRUSEL DEL HERO - ESTILOS
    =================================== */
 
