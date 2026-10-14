@@ -36,8 +36,7 @@ export async function renderizarGestor(contenedor) {
     const quedan = MAX_PREGUNTAS - preguntas.length;
 
     contenedor.innerHTML = `
-        <div class="admin-toolbar">
-            <p>Se muestran en la página de ayuda (/faq). Mientras no haya preguntas activas, la tienda usa el contenido estático actual.</p>
+        <div class="admin-toolbar admin-toolbar--derecha">
             <button type="button" class="btn btn-primary" id="btnNuevaPregunta" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Agregar pregunta
             </button>
