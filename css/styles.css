@@ -3924,13 +3924,14 @@ body.home-vacia-activa .iconos-pie {
 
 .home-vacia img {
     display: block;
-    width: min(100%, 550px);
+    width: min(100%, 320px);
     height: auto;
 }
 
 .home-vacia h1 {
     color: var(--text-color);
     line-height: 1.2;
+    font-weight: bold;
 }
 
 .home-vacia p {
