@@ -5,9 +5,9 @@
    ============================================================================ */
 
 :root {
-    --primary: #E2D9FF;
-    --primary-hover: #664FD3;
-    --primary-light: #B9ABF0;
+    --primary: #664FD3;
+    --primary-hover: #5140B5;
+    --primary-light: #E2D9FF;
     --secondary: #64748b;
     --success: #00a650;
     --success-bg: #e6f6ec;
@@ -1386,12 +1386,10 @@ body.admin-modal-abierto { overflow: hidden; }
 }
 
 @media (max-width: 600px) {
-    /* En pantallas angostas el topbar deja solo los iconos: se ocultan el
-       correo y el chip "Admin" para que el título respire. */
-    .admin-topbar-user span:first-child,
-    .admin-role-badge { display: none; }
+    .admin-topbar-user span:first-child { display: none; }
 
-    /* Los tres iconos (Ver tienda, tema, Cerrar sesión) se compactan */
+    /* Tres iconos en el topbar (Ver tienda, tema, Cerrar sesión):
+       se compactan para que el título no sufra en pantallas angostas */
     .admin-topbar-user { gap: 0.5rem; }
     .admin-tema-switch,
     .admin-topbar-icono { width: 32px; height: 32px; }
