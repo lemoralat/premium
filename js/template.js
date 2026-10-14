@@ -11,7 +11,9 @@ const CARD_ASPECT_RATIOS = Object.freeze({
 // Renderizar Header
 // `hayPreguntas`: si false, el menú no muestra el enlace "Preguntas" (no hay
 // ninguna pregunta cargada en el panel y la página /faq queda sin contenido).
-function renderHeader(activePage = '', categorias = [], hayPreguntas = true) {
+// `hayProductos`: si false, el menú no muestra "Productos"/"Servicios" (no hay
+// ningún producto o servicio activo en la tienda).
+function renderHeader(activePage = '', categorias = [], hayPreguntas = true, hayProductos = true) {
     const header = document.createElement('div');
     header.className = 'header-wrapper';
 
@@ -122,10 +124,10 @@ function renderHeader(activePage = '', categorias = [], hayPreguntas = true) {
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                     <a href="/" class="nav-link ${activePage === 'inicio' ? 'active' : ''}">Inicio</a>
-                    <div class="nav-item-dropdown">
+                    ${hayProductos ? `<div class="nav-item-dropdown">
                         <a href="/#tienda" class="nav-link ${activePage === 'productos' ? 'active' : ''}">${esModoTurnos() ? 'Servicios' : 'Productos'} <i class="fa-solid fa-chevron-down"></i></a>
                         ${submenuHTML}
-                    </div>
+                    </div>` : ''}
                     <!-- <a href="/nosotros" class="nav-link ${activePage === 'nosotros' ? 'active' : ''}">Nosotros</a> -->
                     ${hayPreguntas ? `<a href="/faq" class="nav-link ${activePage === 'faq' ? 'active' : ''}">Preguntas</a>` : ''}
                     <!-- <a href="/#contacto" class="nav-link ${activePage === 'contacto' ? 'active' : ''}">Contacto</a>-->
@@ -339,10 +341,14 @@ async function initTemplate(activePage = '') {
     // latencia: ambas consultas están cacheadas.
     let categorias = [];
     let hayPreguntas = true;
+    let hayProductos = true;
     try {
         const [productos, faq] = await Promise.all([obtenerProductos(), obtenerPreguntasFrecuentes()]);
         categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean);
         productosRef = productos;
+        // El menú "Productos/Servicios" se oculta si no hay ninguno activo
+        // (obtenerProductos ya filtra activo = true).
+        hayProductos = productos.length > 0;
         // Fail-open: si Supabase no responde (faq = null) se mantiene el enlace,
         // para no ocultarlo por un error transitorio. Solo se oculta cuando la
         // tabla está vacía (total = 0: nada creado en el dashboard).
@@ -350,7 +356,7 @@ async function initTemplate(activePage = '') {
     } catch (e) { console.error("Error cargando datos para el menú", e); }
 
     // 1. Insertar Header
-    const header = renderHeader(activePage, categorias, hayPreguntas);
+    const header = renderHeader(activePage, categorias, hayPreguntas, hayProductos);
     body.insertBefore(header, body.firstChild);
     // Avisar a módulos (ej. búsqueda) de que el header ya está en el DOM
     document.dispatchEvent(new CustomEvent('lemora:header-ready'));
