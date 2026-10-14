@@ -162,12 +162,12 @@ export async function renderizar(contenedor) {
                     ${cardFormatHTML}
                     <div class="admin-field full">
                         <label for="dsnColor">Color principal</label>
+                        <span class="hint">Se utiliza en los botones, enlaces y otros detalles de la tienda.</span>
                         <div class="diseno-color">
                             <input type="color" id="dsnColorPicker" value="${esc(color)}" aria-label="Selector de color principal">
                             <input type="text" id="dsnColor" value="${esc(color)}" maxlength="7" spellcheck="false" aria-label="Color principal en formato hexadecimal">
                             <button type="button" class="btn btn-sm btn-outline" id="dsnColorRestaurar">Restaurar (#000000)</button>
                         </div>
-                        <span class="hint">Se utiliza en los botones, enlaces y otros detalles de la tienda.</span>
                     </div>
                     <div class="admin-field full">
                         <label>Estilo de bordes</label>
@@ -186,12 +186,12 @@ export async function renderizar(contenedor) {
             <div class="admin-form-grid diseno-marquee-config">
                 <div class="admin-field full">
                     <label for="dsnMarqueeColor">Color de fondo de la barra promocional</label>
+                    <span class="hint">Cambia el color de fondo de la barra animada. La barra se muestra en la tienda solo si hay al menos un mensaje activo.</span>
                     <div class="diseno-color">
                         <input type="color" id="dsnMarqueeColorPicker" value="${esc(marqueeColor)}" aria-label="Selector de color de fondo de la barra promocional">
                         <input type="text" id="dsnMarqueeColor" value="${esc(marqueeColor)}" maxlength="7" spellcheck="false" aria-label="Color del marquee en hexadecimal">
                         <button type="button" class="btn btn-sm btn-outline" id="dsnMarqueeColorRestaurar">Restaurar (#000000)</button>
                     </div>
-                    <span class="hint">Cambia el color de fondo de la barra animada. La barra se muestra en la tienda solo si hay al menos un mensaje activo.</span>
                 </div>
             </div>
             <div id="marqueeGestor"></div>
@@ -271,6 +271,7 @@ function campoImagen(r, pathActual) {
     return `
         <div class="admin-field full">
             <label>${esc(r.label)}</label>
+            <span class="hint">${esc(r.hint)}</span>
             <div class="diseno-imagen" data-recurso="${esc(r.recurso)}">
                 <div class="diseno-preview" data-preview>
                     ${url ? `<img src="${esc(url)}" alt="">` : campoVacioHTML(r)}
@@ -282,7 +283,6 @@ function campoImagen(r, pathActual) {
                     </label>
                     ${url ? '<button type="button" class="btn btn-sm btn-danger" data-quitar><i class="fa-solid fa-trash-can"></i> Quitar</button>' : ''}
                 </div>
-                <span class="hint">${esc(r.hint)}</span>
             </div>
         </div>`;
 }
@@ -327,8 +327,8 @@ function campoTamanoLogo(actual) {
     return `
         <div class="admin-field full">
             <label>Tamaño del logotipo</label>
-            <div class="diseno-tamano">${opciones}</div>
             <span class="hint">Permite ajustar el tamaño del logotipo que aparece en la parte superior de la tienda. El ancho se ajusta automáticamente.</span>
+            <div class="diseno-tamano">${opciones}</div>
         </div>`;
 }
 
@@ -355,10 +355,10 @@ function campoFormatoCard(actual) {
     return `
         <div class="admin-field full">
             <label>Formato de las imágenes de los productos</label>
-            <div class="diseno-formatos">${opciones}</div>
             <span class="hint">${valor === 'sin_imagenes'
                 ? 'Si vuelves a activar las imágenes, las fotos anteriores seguirán disponibles.'
                 : `Se aplica a los cards del catálogo, búsqueda y ${esTurnos ? 'servicios relacionados' : 'productos relacionados'}.`}</span>
+            <div class="diseno-formatos">${opciones}</div>
         </div>`;
 }
 
