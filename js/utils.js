@@ -467,16 +467,48 @@ export function renderPrecioAnterior(producto) {
 // ¿El producto tiene variantes seleccionables? (opción + al menos un valor)
 // En modo turnos nunca: los productos se gestionan como servicios sin variantes
 // (migración 0053+), aunque algún producto histórico conserve opciones en la BD.
+// Producto VARIABLE (0059): tiene combinaciones con precio/stock propios. Se
+// elige la variante en la ficha y el quick-add redirige allí.
+export function esProductoVariable(producto) {
+    return producto?.tipo === 'variable';
+}
+
 export function tieneVariantes(producto) {
     if (esModoTurnos()) return false;
-    return Array.isArray(producto.variantes)
-        && producto.variantes.some(v => v && v.opcion && Array.isArray(v.valores) && v.valores.length > 0);
+    if (esProductoVariable(producto)) {
+        return Array.isArray(producto.variantes) && producto.variantes.length > 0;
+    }
+    // Sistema anterior (cosmético): atributos sin impacto en precio ni stock.
+    return Array.isArray(producto.opcionesLegacy) && producto.opcionesLegacy.length > 0;
+}
+
+// Busca la variante cuya combinación coincide EXACTAMENTE con los valores
+// elegidos (en el orden de los atributos). null si no existe tal combinación.
+export function buscarVariante(producto, valores) {
+    if (!esProductoVariable(producto) || !Array.isArray(producto.variantes)) return null;
+    const clave = JSON.stringify((valores || []).map((v) => String(v)));
+    return producto.variantes.find((v) => JSON.stringify(v.combinacion) === clave) || null;
 }
 
 // Clave única de línea de carrito: mismo producto + misma variante se agrupan;
 // mismo producto con variante distinta quedan en líneas separadas.
-export function claveItemCarrito(id, varianteTexto = '') {
-    return `${id}||${varianteTexto || ''}`;
+export function claveItemCarrito(id, varianteTexto = '', variantId = '') {
+    return `${id}||${variantId || ''}||${varianteTexto || ''}`;
+}
+
+// Stock relevante de una línea de carrito: el de la variante elegida cuando el
+// producto es variable (0059); si no, el stock del producto. 999999 en turnos
+// (los servicios no manejan stock). Compartido por carrito.js y template.js.
+export function stockDeLineaCarrito(productoRef, item) {
+    if (esModoTurnos()) return 999999;
+    if (!productoRef) return 0;
+    if (esProductoVariable(productoRef) && item && item.variantId) {
+        const v = (productoRef.variantes || []).find((x) => x.id === Number(item.variantId));
+        // La variante ya no existe (se borró): la línea queda sin stock para que
+        // el cliente la elimine, en vez de vender algo inexistente.
+        return v ? (Number(v.stock) || 0) : 0;
+    }
+    return Number(productoRef.stock) || 0;
 }
 
 // Bloque neutro para productos sin imagen en la tienda pública.
@@ -535,6 +567,7 @@ export function generarHTMLFavoritoItem(producto, opciones = {}) {
 export function generarHTMLTarjetaProducto(producto) {
     const esAgotado = !esModoTurnos() && producto.stock === 0;
     const conHorarios = Array.isArray(producto.servicioHorarios) && producto.servicioHorarios.length > 0;
+    const esVariable = esProductoVariable(producto);
 
     // Quitar descripción de las cards: solo imagen, nombre y precio.
     const nombre = escaparHtml(recortarTexto(producto.nombre));
@@ -551,7 +584,7 @@ export function generarHTMLTarjetaProducto(producto) {
             </div>
             <div class="product-info">
                 <h3 class="product-title">${nombre}</h3>
-                <p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
+                <p class="product-price">${esVariable ? 'Desde ' : ''}${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
                 ${conHorarios ? '<p class="product-price product-schedule-hint"><i class="fa-solid fa-calendar-check"></i> Horarios disponibles</p>' : ''}
             </div>
         </a>

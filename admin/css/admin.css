@@ -726,6 +726,117 @@ td.td-expandir .pedido-acciones {
     justify-content: center;
 }
 
+/* ============================================================================
+   PRODUCTO SIMPLE / VARIABLE (0059)
+   ============================================================================ */
+/* Pestañas de tipo de producto */
+.tipo-producto-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.tipo-producto-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: var(--fs-md);
+    font-weight: 600;
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.tipo-producto-tab:hover { color: var(--text); background: var(--surface-hover); }
+
+.tipo-producto-tab.activo {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tipo-producto-ayuda {
+    margin: 0 0 1rem;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+/* Visibilidad de los paneles según la pestaña activa. */
+#productoForm[data-tipo="simple"] [data-tipo-panel="variable"] { display: none; }
+#productoForm[data-tipo="variable"] [data-tipo-panel="simple"] { display: none; }
+
+/* Tabla de variaciones generadas */
+.variaciones-tabla-wrap { overflow-x: auto; }
+
+.variaciones-tabla {
+    display: flex;
+    flex-direction: column;
+    min-width: 640px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.variaciones-fila {
+    display: grid;
+    grid-template-columns: 1.4fr 1.1fr 1fr 1.1fr 0.8fr 0.6fr;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.variaciones-fila:last-child { border-bottom: none; }
+.variaciones-fila:nth-child(even) { background: var(--surface-alt); }
+
+.variaciones-head {
+    background: var(--surface-alt);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: none;
+}
+
+.variaciones-fila input[type="text"],
+.variaciones-fila input[type="number"] {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: var(--fs-md);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.variacion-etiqueta {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.variacion-activo { justify-content: center; }
+
+@media (max-width: 640px) {
+    .variaciones-tabla { min-width: 0; }
+    .variaciones-fila {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem 0.6rem;
+        padding: 0.7rem;
+    }
+    .variaciones-head { display: none; }
+    .variacion-etiqueta { grid-column: 1 / -1; }
+    .variaciones-fila input::placeholder { color: var(--placeholder-text); }
+}
+
+
 /* Carrusel: selector "Mostrar en" (ambos / móvil / escritorio) */
 .carrusel-dispositivos {
     display: flex;

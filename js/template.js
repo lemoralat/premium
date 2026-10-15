@@ -1,6 +1,6 @@
 // Template dinámico para Header y Footer
 
-import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, mostrarNotificacion, slugificar, obtenerMarquee, obtenerPreguntasFrecuentes, placeholderImagenPublica, esModoTurnos } from './utils.js';
+import { WHATSAPP_CONFIG, CONFIG_APP, CONFIG_DISENO, obtenerProductos, obtenerNombreSitio, cargarConfiguracionGlobal, formatearPrecio, calcularTotales, escaparHtml, urlSegura, claveItemCarrito, stockDeLineaCarrito, mostrarNotificacion, slugificar, obtenerMarquee, obtenerPreguntasFrecuentes, placeholderImagenPublica, esModoTurnos } from './utils.js';
 
 const CARD_ASPECT_RATIOS = Object.freeze({
     '1:1': '1 / 1',
@@ -504,8 +504,9 @@ function renderSidemenuCarrito() {
         // En modo turnos los servicios no manejan stock ni cantidad: nunca se
         // marcan agotados y la cantidad queda fija en 1 (sin stepper).
         const enTurnos = esModoTurnos();
-        const sinStock = !enTurnos && ref && ref.stock === 0;
-        const clave = claveItemCarrito(item.id, item.varianteTexto);
+        const stockLinea = stockDeLineaCarrito(ref, item);
+        const sinStock = !enTurnos && ref && stockLinea === 0;
+        const clave = claveItemCarrito(item.id, item.varianteTexto, item.variantId);
         const claveEscapada = escaparHtml(clave);
 
         return `
@@ -566,17 +567,18 @@ function sideCambiarCantidad(clave, cambio) {
     if (esModoTurnos()) return;
 
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto) === clave);
+    const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto, i.variantId) === clave);
     if (!item) return;
 
     if (cambio > 0 && !esModoTurnos()) {
         const ref = productosRef.find(p => p.id === item.id);
         if (ref) {
+            const tope = stockDeLineaCarrito(ref, item);
             const enCarrito = cart
-                .filter(i => i.id === item.id)
+                .filter(i => i.id === item.id && (i.variantId || '') === (item.variantId || ''))
                 .reduce((sum, i) => sum + i.quantity, 0);
-            if (enCarrito + cambio > ref.stock) {
-                mostrarNotificacion(`Límite de stock alcanzado (${ref.stock} disponibles)`);
+            if (enCarrito + cambio > tope) {
+                mostrarNotificacion(`Límite de stock alcanzado (${tope} disponibles)`);
                 return;
             }
         }
@@ -584,7 +586,7 @@ function sideCambiarCantidad(clave, cambio) {
 
     item.quantity += cambio;
     if (item.quantity <= 0) {
-        cart = cart.filter(i => claveItemCarrito(i.id, i.varianteTexto) !== clave);
+        cart = cart.filter(i => claveItemCarrito(i.id, i.varianteTexto, i.variantId) !== clave);
     }
 
     localStorage.setItem('cart', JSON.stringify(cart));
@@ -594,7 +596,7 @@ function sideCambiarCantidad(clave, cambio) {
 
 function sideEliminarItem(clave) {
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    cart = cart.filter(i => claveItemCarrito(i.id, i.varianteTexto) !== clave);
+    cart = cart.filter(i => claveItemCarrito(i.id, i.varianteTexto, i.variantId) !== clave);
     localStorage.setItem('cart', JSON.stringify(cart));
     if (window.actualizarContadorCarrito) window.actualizarContadorCarrito();
     renderSidemenuCarrito();

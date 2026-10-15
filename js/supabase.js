@@ -55,9 +55,15 @@ export function invalidarCacheProductos() {
 }
 
 // Firma compacta: resume lo que las páginas muestran. Cambia solo si cambió
-// algo visible en pantalla (stock, precios, imagen/galería, destacado).
+// algo visible en pantalla (stock, precios, imagen/galería, destacado). En
+// productos variables incluye el stock/precio/visibilidad de cada combinación
+// (0059): el agregado del producto puede no cambiar aunque cambie una variante.
 function firmaProducto(p) {
-    return [p.id, p.stock, p.precio, p.precioAnterior, p.imagen, (p.galeria || []).join(','), p.destacado ? 1 : 0].join('|');
+    const base = [p.id, p.stock, p.precio, p.precioAnterior, p.imagen, (p.galeria || []).join(','), p.destacado ? 1 : 0];
+    if (p.tipo === 'variable' && Array.isArray(p.variantes)) {
+        base.push(p.variantes.map((v) => `${v.id}:${v.precio}:${v.stock}:${v.activo ? 1 : 0}`).join(','));
+    }
+    return base.join('|');
 }
 
 function firmaCatalogo(datos) {
@@ -254,10 +260,11 @@ export async function cargarProductos() {
             .from('products')
             .select(`
                 id, nombre, descripcion_detallada, precio, precio_anterior,
-                stock, caracteristicas, activo, destacado,
+                stock, caracteristicas, activo, destacado, tipo,
                 servicio_duracion_min, servicio_horarios,
                 categoria:categories(id, name),
                 opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
+                variantes:product_variants(id, sku, precio, precio_anterior, stock, activo, position, combinacion),
                 imagenes:product_images(id, storage_path, es_principal, position)
             `)
             .eq('activo', true)
@@ -300,12 +307,41 @@ function mapaProducto(p) {
         ? [principal, ...ordenadas.filter(i => i.id !== principal.id)]
         : ordenadas;
 
+    const tipo = p.tipo === 'variable' ? 'variable' : 'simple';
+
+    // Atributos (grupos de opción + valores) — reutilizan product_options.
     const opciones = Array.isArray(p.opciones) ? p.opciones : [];
-    const variantes = opciones.length > 0
-        ? opciones.map(o => ({
+    const atributos = [...opciones]
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map(o => ({
+            id: o.id,
             opcion: o.opcion,
-            valores: (Array.isArray(o.valores) ? o.valores : []).map(v => v.valor)
-        }))
+            position: o.position ?? 0,
+            valores: [...(Array.isArray(o.valores) ? o.valores : [])]
+                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map(v => ({ id: v.id, valor: v.valor }))
+        }));
+
+    // Combinaciones del producto variable (0059): cada una con su precio/stock.
+    const variantes = tipo === 'variable'
+        ? [...(Array.isArray(p.variantes) ? p.variantes : [])]
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            .map(v => ({
+                id: Number(v.id),
+                sku: v.sku || '',
+                precio: Number(v.precio),
+                precioAnterior: v.precio_anterior != null ? Number(v.precio_anterior) : null,
+                stock: Number(v.stock),
+                activo: v.activo !== false,
+                combinacion: Array.isArray(v.combinacion) ? v.combinacion.map(String) : []
+            }))
+        : [];
+
+    // Atributos "cosméticos" del sistema anterior (productos históricos en
+    // 'simple'): se conservan para no romper su selector ni el texto de variante
+    // que viaja en el pedido. No afectan precio ni stock.
+    const opcionesLegacy = tipo !== 'variable' && atributos.length > 0
+        ? atributos.map(a => ({ opcion: a.opcion, valores: a.valores.map(v => v.valor) }))
         : null;
 
     const imagenUrl = principal ? urlImagen(principal) : '';
@@ -319,7 +355,10 @@ function mapaProducto(p) {
         precioAnterior: p.precio_anterior != null ? Number(p.precio_anterior) : null,
         // Sin categoría (o con nombre vacío) → etiqueta explícita, nunca ''.
         categoria: p.categoria?.name?.trim() || CATEGORIA_SIN_ASIGNAR,
+        tipo,
+        atributos,
         variantes,
+        opcionesLegacy,
         stock: Number(p.stock),
         caracteristicas: Array.isArray(p.caracteristicas) ? p.caracteristicas : [],
         destacado: Boolean(p.destacado),

@@ -1,6 +1,6 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, esProductoVariable, buscarVariante, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
@@ -35,9 +35,11 @@ function actualizarProductoEnPantalla(datos) {
     if (!fresco) return;
 
     const anterior = productos.find(p => p.id === productoId);
-    const huboStock = !anterior || anterior.stock !== fresco.stock;
+    const variantesCambiaron = (a, b) => JSON.stringify(a?.variantes || []) !== JSON.stringify(b?.variantes || []);
+    const huboStock = !anterior || anterior.stock !== fresco.stock || variantesCambiaron(anterior, fresco);
     const huboPrecio = !anterior || anterior.precio !== fresco.precio
-        || anterior.precioAnterior !== fresco.precioAnterior;
+        || anterior.precioAnterior !== fresco.precioAnterior
+        || variantesCambiaron(anterior, fresco);
     const huboGaleria = !anterior || anterior.imagen !== fresco.imagen
         || JSON.stringify(anterior.galeria) !== JSON.stringify(fresco.galeria);
 
@@ -61,25 +63,24 @@ function actualizarStockEnPantalla(producto) {
     // renderizó y el botón queda siempre disponible; acá se mantiene esa regla
     // ante un refresco de catálogo.
     const enTurnos = esModoTurnos();
+
+    // Producto variable (0059): el stock y el botón dependen de la combinación
+    // elegida, así que se recalcula todo con la variante vigente.
+    if (!enTurnos && esProductoVariable(producto)) {
+        actualizarVarianteUI();
+        inyectarDatosEstructurados(producto);
+        return;
+    }
+
     const stockEl = document.querySelector('.product-stock');
     if (stockEl) {
         if (enTurnos) {
             stockEl.style.display = 'none';
         } else {
             stockEl.style.display = '';
-            let stockClass = '';
-            let stockText = '';
-            if (producto.stock > 10) {
-                stockText = `En stock (${producto.stock} disponibles)`;
-            } else if (producto.stock > 0) {
-                stockClass = 'low';
-                stockText = `¡Últimas unidades! (${producto.stock} disponibles)`;
-            } else {
-                stockClass = 'out';
-                stockText = 'Agotado';
-            }
-            stockEl.className = `product-stock ${stockClass}`;
-            stockEl.textContent = stockText;
+            const s = estadoStockTexto(producto.stock);
+            stockEl.className = `product-stock ${s.clase}`;
+            stockEl.textContent = s.texto;
         }
     }
 
@@ -94,6 +95,11 @@ function actualizarStockEnPantalla(producto) {
 }
 
 function actualizarPrecioEnPantalla(producto) {
+    // En variable el precio lo gobierna la combinación elegida.
+    if (esProductoVariable(producto)) {
+        actualizarVarianteUI();
+        return;
+    }
     const priceEl = document.querySelector('.product-detail-price');
     if (priceEl) {
         priceEl.innerHTML = `${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}`;
@@ -164,6 +170,14 @@ function inyectarDatosEstructurados(producto) {
 // Días de la semana en orden de agenda (etiquetas tal cual se guardan).
 const DIAS_AGENDA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
+// Texto + clase del estado de stock para N unidades (misma escala de siempre).
+function estadoStockTexto(n) {
+    const cantidad = Math.max(0, Number(n) || 0);
+    if (cantidad > 10) return { clase: '', texto: `En stock (${cantidad} disponibles)` };
+    if (cantidad > 0) return { clase: 'low', texto: `¡Últimas unidades! (${cantidad} disponibles)` };
+    return { clase: 'out', texto: 'Agotado' };
+}
+
 // Horarios disponibles del servicio (0053), agrupados por día y ordenados de
 // Lunes a Domingo: [{ dia, desde, hasta }] →
 //   '<li><strong>Lunes:</strong> 09:00–13:00 · 15:00–18:00</li>…'
@@ -203,20 +217,18 @@ function renderizarDetalleProducto(producto) {
     // stock no se renderiza y el botón queda siempre disponible.
     const enTurnos = esModoTurnos();
 
+    // Producto variable (0059): el precio y el stock dependen de la combinación
+    // elegida. Hasta que se elija, se muestra "Desde" el precio mínimo y el
+    // stock total (suma de las variantes, que mantiene el trigger de la BD).
+    const esVariable = !enTurnos && esProductoVariable(producto);
+
     // Determinar estado del stock
     let stockClass = '';
     let stockText = '';
     if (!enTurnos) {
-        if (producto.stock > 10) {
-            stockClass = '';
-            stockText = `En stock (${producto.stock} disponibles)`;
-        } else if (producto.stock > 0) {
-            stockClass = 'low';
-            stockText = `¡Últimas unidades! (${producto.stock} disponibles)`;
-        } else {
-            stockClass = 'out';
-            stockText = 'Agotado';
-        }
+        const s = estadoStockTexto(producto.stock);
+        stockClass = s.clase;
+        stockText = s.texto;
     }
     
     // Navegación entre productos
@@ -290,9 +302,9 @@ function renderizarDetalleProducto(producto) {
                     </button>
                 </div>
                 
-                ${enTurnos ? '' : `<p class="product-stock ${stockClass}">${stockText}</p>`}
+                ${enTurnos ? '' : `<p class="product-stock ${stockClass}" id="productStockDisplay">${stockText}</p>`}
                 
-                <p class="product-detail-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
+                <p class="product-detail-price" id="productPriceDisplay">${esVariable ? 'Desde ' : ''}${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
                 
                 <p class="product-detail-description">${escaparHtml(recortarTexto(producto.descripcionDetallada))}</p>
                 
@@ -312,11 +324,28 @@ function renderizarDetalleProducto(producto) {
                     ${producto.servicioDuracionMin ? `<p class="product-schedule-duracion">Duración estimada: ${producto.servicioDuracionMin} minutos</p>` : ''}
                 </div>` : ''}
 
-                ${tieneVariantes(producto) ? `
+                ${esVariable ? `
                 <div class="variant-selector">
                     <h3>Elegí tu opción:</h3>
                     <div class="variant-grid">
-                        ${producto.variantes.map((v, i) => `
+                        ${producto.atributos.map((v, i) => `
+                            <div class="variant-group">
+                                <label for="variantSelect${i}">${escaparHtml(v.opcion)}:</label>
+                                <select id="variantSelect${i}" class="variant-select" onchange="actualizarVarianteUI()">
+                                    <option value="">Seleccioná ${escaparHtml(v.opcion)}</option>
+                                    ${v.valores.map(val => `
+                                        <option value="${escaparHtml(val.valor)}">${escaparHtml(val.valor)}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : (tieneVariantes(producto) ? `
+                <div class="variant-selector">
+                    <h3>Elegí tu opción:</h3>
+                    <div class="variant-grid">
+                        ${producto.opcionesLegacy.map((v, i) => `
                             <div class="variant-group">
                                 <label for="variantSelect${i}">${escaparHtml(v.opcion)}:</label>
                                 <select id="variantSelect${i}" class="variant-select">
@@ -329,7 +358,7 @@ function renderizarDetalleProducto(producto) {
                         `).join('')}
                     </div>
                 </div>
-                ` : ''}
+                ` : '')}
                 
                 ${enTurnos ? '' : `
                 <div class="quantity-selector">
@@ -343,8 +372,8 @@ function renderizarDetalleProducto(producto) {
                 `}
 
                 <div class="product-actions-detail">
-                    <button class="btn-add-cart btn-border" id="btnAddCart" onclick="agregarAlCarritoDetalle(${producto.id})" ${enTurnos ? '' : (producto.stock === 0 ? 'disabled' : '')}>
-                        ${enTurnos ? 'Agregar al Carrito' : (producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito')}
+                    <button class="btn-add-cart btn-border" id="btnAddCart" onclick="agregarAlCarritoDetalle(${producto.id})" ${enTurnos ? '' : (esVariable || producto.stock === 0 ? 'disabled' : '')}>
+                        ${enTurnos ? 'Agregar al Carrito' : (esVariable ? 'Elegí una opción' : (producto.stock === 0 ? 'Agotado' : 'Agregar al Carrito'))}
                     </button>
                     <a href="/carrito" class="btn-go-cart btn-border hidden" id="btnGoCart">
                         Ir al Carrito →
@@ -389,8 +418,71 @@ function renderizarDetalleProducto(producto) {
         </div>
     `;
 
-    // Inicializar controles de cantidad según stock real
-    setTimeout(() => cambiarCantidad(0), 0);
+    // Inicializar controles: en variable, resolver la combinación (y el estado
+    // del botón) antes de calcular la cantidad.
+    setTimeout(() => {
+        if (esVariable) actualizarVarianteUI();
+        cambiarCantidad(0);
+    }, 0);
+}
+
+// Producto variable (0059): con la combinación elegida actualiza el precio, el
+// stock y el botón. Sin combinación completa (o inexistente / sin stock / no
+// disponible) deja el botón bloqueado. Devuelve la variante vigente o null.
+function varianteSeleccionada(producto) {
+    if (!esProductoVariable(producto)) return null;
+    const valores = producto.atributos.map((a, i) => {
+        const sel = document.getElementById(`variantSelect${i}`);
+        return sel ? sel.value : '';
+    });
+    if (valores.some((v) => v === '')) return null;
+    return buscarVariante(producto, valores);
+}
+
+function actualizarVarianteUI() {
+    const producto = productos.find(p => p.id === obtenerIdProducto());
+    if (!producto || !esProductoVariable(producto)) return;
+
+    const variante = varianteSeleccionada(producto);
+    const priceEl = document.getElementById('productPriceDisplay');
+    const stockEl = document.getElementById('productStockDisplay');
+    const btn = document.getElementById('btnAddCart');
+
+    const disponible = variante && variante.activo && variante.stock > 0;
+
+    if (priceEl) {
+        priceEl.innerHTML = variante
+            ? `${renderPrecioAnterior({ precio: variante.precio, precioAnterior: variante.precioAnterior })}$${formatearPrecio(variante.precio)}`
+            : `Desde ${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}`;
+    }
+
+    if (stockEl) {
+        const s = variante
+            ? estadoStockTexto(variante.activo ? variante.stock : 0)
+            : { clase: '', texto: 'Elegí una opción para ver la disponibilidad' };
+        stockEl.className = `product-stock ${s.clase}`;
+        stockEl.textContent = s.texto;
+    }
+
+    if (btn) {
+        if (!variante) {
+            btn.disabled = true;
+            btn.textContent = 'Elegí una opción';
+        } else if (!variante.activo) {
+            btn.disabled = true;
+            btn.textContent = 'Opción no disponible';
+        } else if (variante.stock === 0) {
+            btn.disabled = true;
+            btn.textContent = 'Agotado';
+        } else {
+            btn.disabled = false;
+            btn.textContent = 'Agregar al Carrito';
+        }
+    }
+
+    // Recalcular el tope de cantidad contra el stock de la combinación elegida.
+    cantidadSeleccionada = 1;
+    cambiarCantidad(0);
 }
 
 // Cambiar imagen en la galería
@@ -741,12 +833,16 @@ function cambiarCantidad(cambio) {
     // carrito en todas sus líneas).
     const enTurnos = esModoTurnos();
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    // En variable se cuenta lo que ya hay en el carrito de ESA variante.
+    const variante = varianteSeleccionada(producto);
+    const variantId = variante ? variante.id : '';
     const cantidadEnCarrito = cart
-        .filter(item => item.id === producto.id)
+        .filter(item => item.id === producto.id && (item.variantId || '') === variantId)
         .reduce((sum, item) => sum + item.quantity, 0);
+    const stockBase = variante ? variante.stock : producto.stock;
     const stockDisponibleReal = enTurnos
         ? 999999
-        : producto.stock - cantidadEnCarrito;
+        : stockBase - cantidadEnCarrito;
 
     if (stockDisponibleReal <= 0) {
         cantidadSeleccionada = 0;
@@ -780,10 +876,35 @@ function agregarAlCarritoDetalle(id) {
     const enTurnos = esModoTurnos();
     const cantidad = enTurnos ? 1 : cantidadSeleccionada;
 
-    // Validar que estén elegidas todas las variantes del producto
+    // Producto variable (0059): la variante elegida define precio, stock y la
+    // identidad de la línea (variantId + texto de la combinación).
+    let variante = null;
     let varianteTexto = '';
-    if (tieneVariantes(producto)) {
-        const elegidas = producto.variantes.map((v, i) => {
+    let variantId = null;
+
+    if (esProductoVariable(producto)) {
+        const valores = producto.atributos.map((a, i) => {
+            const sel = document.getElementById(`variantSelect${i}`);
+            return { opcion: a.opcion, valor: sel ? sel.value.trim() : '' };
+        });
+
+        const pendientes = valores.filter(x => !x.valor);
+        if (pendientes.length > 0) {
+            mostrarNotificacion(`Elegí ${pendientes.map(x => x.opcion).join(', ')} para continuar`, 'error');
+            return false;
+        }
+
+        variante = buscarVariante(producto, valores.map(x => x.valor));
+        if (!variante || !variante.activo) {
+            mostrarNotificacion('Esa combinación no está disponible.', 'error');
+            return false;
+        }
+
+        variantId = variante.id;
+        varianteTexto = valores.map(x => `${x.opcion}: ${x.valor}`).join(', ');
+    } else if (tieneVariantes(producto)) {
+        // Sistema anterior (cosmético): solo se registra el texto de la opción.
+        const elegidas = producto.opcionesLegacy.map((v, i) => {
             const select = document.getElementById(`variantSelect${i}`);
             return { opcion: v.opcion, valor: select ? select.value.trim() : '' };
         });
@@ -796,15 +917,18 @@ function agregarAlCarritoDetalle(id) {
         varianteTexto = elegidas.map(x => `${x.opcion}: ${x.valor}`).join(', ');
     }
 
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const clave = claveItemCarrito(id, varianteTexto);
-    const existingItem = cart.find(item => claveItemCarrito(item.id, item.varianteTexto) === clave);
+    const precioUnitario = variante ? variante.precio : producto.precio;
 
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const clave = claveItemCarrito(id, varianteTexto, variantId || '');
+    const existingItem = cart.find(item => claveItemCarrito(item.id, item.varianteTexto, item.variantId || '') === clave);
+
+    const stockTope = variante ? variante.stock : producto.stock;
     const cantidadDeEsteProducto = cart
-        .filter(item => item.id === id)
+        .filter(item => item.id === id && (item.variantId || '') === (variantId || ''))
         .reduce((sum, item) => sum + item.quantity, 0);
 
-    if (!enTurnos && cantidadDeEsteProducto + cantidad > producto.stock) {
+    if (!enTurnos && cantidadDeEsteProducto + cantidad > stockTope) {
         mostrarNotificacion('No puedes agregar más de este producto (límite de stock)', 'error');
         return false;
     }
@@ -815,11 +939,12 @@ function agregarAlCarritoDetalle(id) {
         const nuevoItem = {
             id: producto.id,
             nombre: producto.nombre,
-            precio: producto.precio,
+            precio: precioUnitario,
             imagen: producto.imagen,
             quantity: cantidad
         };
         if (varianteTexto) nuevoItem.varianteTexto = varianteTexto;
+        if (variantId) nuevoItem.variantId = variantId;
         cart.push(nuevoItem);
     }
 
@@ -970,3 +1095,4 @@ window.seleccionarImagenZoom = seleccionarImagenZoom;
 window.toggleFavorito = toggleFavorito;
 window.cambiarCantidad = cambiarCantidad;
 window.agregarAlCarritoDetalle = agregarAlCarritoDetalle;
+window.actualizarVarianteUI = actualizarVarianteUI;

@@ -19,13 +19,17 @@ let modoWeb = 'venta';
 let cardSinImagenes = false;
 
 // Estado del formulario abierto
-let variantesModal = [];
+let variantesModal = [];        // atributos del producto variable: [{ opcion, valores }]
+let variacionesModal = [];      // combinaciones generadas: [{ clave, valores, sku, precio, precioAnterior, stock, activo }]
+let tipoModal = 'simple';       // pestaña activa: 'simple' | 'variable'
+let tipoOriginal = 'simple';    // tipo con el que se abrió (para saber si hubo conversión)
 let caracteristicasModal = [];
 let imagenesModal = [];
 let horariosModal = [];
 
 // Límites de cantidad por producto
-const MAX_VARIANTES = 4;
+const MAX_VARIANTES = 4;        // máximo de ATRIBUTOS de un producto variable
+const MAX_VARIACIONES = 60;     // tope de combinaciones generadas (4 atributos × valores)
 const MAX_CARACTERISTICAS = 8;
 const MAX_HORARIOS = 21; // 7 días × hasta 3 franjas por día
 const DIAS_AGENDA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -39,11 +43,12 @@ export async function renderizar(contenedor) {
     const [productosR, categoriasR, settingsR] = await Promise.all([
         sb.from('products').select(`
             id, nombre, descripcion_detallada, precio, precio_anterior, stock,
-            caracteristicas, activo, destacado,
+            caracteristicas, activo, destacado, tipo, modo,
             servicio_duracion_min, servicio_horarios,
             category_id,
             categoria:categories(id, name),
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
+            variantes:product_variants(id, sku, precio, precio_anterior, stock, activo, position, combinacion),
             imagenes:product_images(id, storage_path, es_principal, position)
         `).order('id', { ascending: true }),
         sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true }),
@@ -117,7 +122,7 @@ function pintar(contenedor) {
                 <thead>
                     <tr>
                         <th class="th-check"><label class="admin-check" title="Seleccionar todos los visibles"><input type="checkbox" id="selTodosProductos" aria-label="Seleccionar todos los visibles" ${todosVisibles ? 'checked' : ''}></label></th>
-                        <th>${enServicios ? 'Servicio' : 'Producto'}</th><th>Categoría</th><th>Precio</th>${enServicios ? '<th>Duración estimada</th>' : '<th>Stock</th><th>Variantes</th>'}<th>Visible</th><th></th>
+                        <th>${enServicios ? 'Servicio' : 'Producto'}</th><th>Categoría</th><th>Precio</th>${enServicios ? '<th>Duración estimada</th>' : '<th>Stock</th><th>Variaciones</th>'}<th>Visible</th><th></th>
                     </tr>
                 </thead>
                 <tbody>${filtrados.map((p) => filaProducto(p)).join('')}</tbody>
@@ -213,7 +218,8 @@ function imagenPrincipalDe(p) {
 
 function filaProducto(p) {
     const enServicios = modoWeb === 'turnos';
-    const nroVariantes = Array.isArray(p.opciones) ? p.opciones.length : 0;
+    const esVariable = p.tipo === 'variable';
+    const nroVariantes = esVariable && Array.isArray(p.variantes) ? p.variantes.length : 0;
     const stockClase = p.stock === 0 ? 'admin-stock-bajo' : p.stock < 5 ? 'admin-stock-medio' : 'admin-stock-ok';
     return `
         <tr>
@@ -228,6 +234,7 @@ function filaProducto(p) {
                     <div>
                         <strong>${esc(p.nombre)}</strong>
                         ${p.destacado ? ' <span class="estado-badge estado-procesando" style="margin-left:0.3rem;">⭐ Destacado</span>' : ''}
+                        ${!enServicios && esVariable ? ' <span class="estado-badge estado-enviado" style="margin-left:0.3rem;">Variable</span>' : ''}
                         ${p.precio_anterior != null && Number(p.precio_anterior) > Number(p.precio)
                             ? `<span style="color:var(--text-muted); font-size:var(--fs-sm);"> antes $${formatearPrecio(p.precio_anterior)}</span>`
                             : ''}
@@ -236,7 +243,7 @@ function filaProducto(p) {
                 </div>
             </td>
             <td data-label="Categoría">${esc(p.categoria?.name || '—')}</td>
-            <td data-label="Precio"><strong>$${formatearPrecio(p.precio)}</strong></td>
+            <td data-label="Precio">${esVariable ? '<span style="color:var(--text-muted);">Desde </span>' : ''}<strong>$${formatearPrecio(p.precio)}</strong></td>
             ${enServicios
                 ? `<td data-label="Duración estimada">${Number(p.servicio_duracion_min) > 0
                     ? `${Number(p.servicio_duracion_min)} min`
@@ -276,12 +283,41 @@ async function toggleActivo(id, activo) {
 function abrirModalProducto(idExistente) {
     const producto = idExistente ? productos.find((p) => p.id === idExistente) : null;
 
-    // Estado inicial de variantes
-    variantesModal = (producto?.opciones || []).map((o) => ({
-        opcion: o.opcion,
-        valores: (Array.isArray(o.valores) ? o.valores : []).map((v) => v.valor).join(', ')
-    }));
+    // Estado inicial
+    const esVariableGuardado = producto?.tipo === 'variable';
+    tipoOriginal = esVariableGuardado ? 'variable' : 'simple';
+    tipoModal = tipoOriginal;
+
+    // Atributos del producto variable (reutilizan el repeater de siempre:
+    // opcion + valores separados por comas). Para un producto simple histórico
+    // con opciones del sistema viejo se precargan, pero solo se usan/editan si
+    // el admin pasa a la pestaña "Producto variable".
+    variantesModal = [...(producto?.opciones || [])]
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map((o) => ({
+            opcion: o.opcion,
+            valores: [...(Array.isArray(o.valores) ? o.valores : [])]
+                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map((v) => v.valor)
+                .join(', ')
+        }));
     if (variantesModal.length === 0) variantesModal = [{ opcion: '', valores: '' }];
+
+    // Combinaciones ya guardadas (solo existen en productos variables). Se
+    // ordenan como las generó el panel (position) para conservar el orden.
+    variacionesModal = esVariableGuardado
+        ? [...(producto?.variantes || [])]
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            .map((v) => ({
+                clave: combinacionClave(Array.isArray(v.combinacion) ? v.combinacion.map(String) : []),
+                valores: Array.isArray(v.combinacion) ? v.combinacion.map(String) : [],
+                sku: v.sku || '',
+                precio: v.precio != null ? String(v.precio) : '',
+                precioAnterior: v.precio_anterior != null ? String(v.precio_anterior) : '',
+                stock: v.stock != null ? String(v.stock) : '0',
+                activo: v.activo !== false
+            }))
+        : [];
 
     // Estado inicial de imágenes
     imagenesModal = [...(producto?.imagenes || [])]
@@ -323,6 +359,18 @@ function abrirModalProducto(idExistente) {
         <form class="admin-form" id="productoForm">
             <input type="hidden" id="prdId" value="${producto ? producto.id : ''}">
 
+            ${enServicios ? '' : `
+            <div class="tipo-producto-tabs" role="tablist" aria-label="Tipo de producto">
+                <button type="button" class="tipo-producto-tab" data-tipo-tab="simple" role="tab">
+                    <i class="fa-solid fa-cube"></i> Producto simple
+                </button>
+                <button type="button" class="tipo-producto-tab" data-tipo-tab="variable" role="tab">
+                    <i class="fa-solid fa-cubes"></i> Producto variable
+                </button>
+            </div>
+            <p class="tipo-producto-ayuda" data-tipo-panel="simple">Un solo precio y un solo stock. Ideal para productos sin opciones.</p>
+            <p class="tipo-producto-ayuda" data-tipo-panel="variable">Con atributos (color, talle…) que generan combinaciones, cada una con su propio SKU, precio y stock.</p>`}
+
             <div class="admin-field full">
                 <label for="prdNombre">Nombre *</label>
                 <input type="text" id="prdNombre" required value="${esc(producto?.nombre || '')}" placeholder="${enServicios ? 'ej: Corte de pelo y barba' : 'ej: Zapatillas urbanas unisex'}">
@@ -354,15 +402,15 @@ function abrirModalProducto(idExistente) {
                     <span class="hint">Si escribís una categoría que ya existe, se seleccionará la que ya está creada para evitar repetirla.</span>
                 </div>
                 ${enServicios ? '' : `
-                <div class="admin-field">
+                <div class="admin-field" data-tipo-panel="simple">
                     <label for="prdStock">Cantidad disponible *</label>
-                    <input type="number" id="prdStock" required min="0" step="1" value="${esc(producto?.stock ?? 0)}">
+                    <input type="number" id="prdStock" min="0" step="1" value="${esc(producto?.stock ?? 0)}">
                 </div>`}
-                <div class="admin-field">
+                <div class="admin-field" data-tipo-panel="simple">
                     <label for="prdPrecio">Precio ($) *</label>
-                    <input type="number" id="prdPrecio" required min="0" step="1" value="${esc(producto?.precio ?? '')}">
+                    <input type="number" id="prdPrecio" min="0" step="1" value="${esc(producto?.precio ?? '')}">
                 </div>
-                <div class="admin-field">
+                <div class="admin-field" data-tipo-panel="simple">
                     <label for="prdPrecioAnterior">Precio anterior ($) </label>
                     <input type="number" id="prdPrecioAnterior" min="0" step="1" value="${esc(producto?.precio_anterior ?? '')}" placeholder="Dejá este campo vacío si el producto no está en oferta">
                 </div>
@@ -404,12 +452,18 @@ function abrirModalProducto(idExistente) {
             </div>
 
             ${enServicios ? '' : `
-            <div class="admin-field full">
-                <label>Variantes <span class="hint">(Agregá opciones como talle o color y escribí sus valores separados por comas. Podés incluir hasta 4 opciones; ej: Talles → 40, 41, 42, 43, 44 · máx. ${MAX_VARIANTES})</span></label>
+            <div class="admin-field full" data-tipo-panel="variable">
+                <label>Atributos <span class="hint">(Agregá atributos como color o talle y escribí sus valores separados por comas. Máx. ${MAX_VARIANTES}; ej: Color → Rojo, Azul · Talle → S, M, L)</span></label>
                 <div class="admin-repeater" id="variantesRepeater"></div>
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarVariante" style="align-self:flex-start; margin-top:0.5rem;">
-                    <i class="fa-solid fa-plus"></i> Agregar variante
+                    <i class="fa-solid fa-plus"></i> Agregar atributo
                 </button>
+                <span class="hint">Cada combinación de valores se convierte en una variante con su propio SKU, precio y stock.</span>
+            </div>
+
+            <div class="admin-field full" data-tipo-panel="variable">
+                <label>Variaciones <span class="hint">(se generan solas a partir de los atributos; completá SKU, precio y stock de cada una)</span></label>
+                <div class="variaciones-tabla-wrap" id="variacionesTabla"></div>
             </div>`}
 
             ${cardSinImagenes ? `
@@ -439,6 +493,24 @@ function abrirModalProducto(idExistente) {
     if (!cardSinImagenes) renderImagenes();
     if (enServicios) renderHorarios();
 
+    // Tipo de producto (pestañas). En modo turnos no hay pestañas ni productos
+    // variables: el servicio es siempre "simple".
+    const formProducto = $('#productoForm');
+    if (enServicios) {
+        formProducto.dataset.tipo = 'simple';
+    } else {
+        aplicarTipoModal(tipoModal);
+        document.querySelectorAll('[data-tipo-tab]').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                if (tab.dataset.tipoTab === tipoModal) return;
+                capturarVariantes();
+                capturarVariaciones();
+                tipoModal = tab.dataset.tipoTab;
+                aplicarTipoModal(tipoModal);
+            });
+        });
+    }
+
     // Crear categoría inline (sin anidar modales: el producto ya está en el
     // modal; un segundo modal lo reemplazaría y perdería los cambios).
     const catBox = $('#nuevaCategoriaBox');
@@ -462,7 +534,7 @@ function abrirModalProducto(idExistente) {
         btnAgregarVariante.addEventListener('click', () => {
             capturarVariantes();
             if (variantesModal.length >= MAX_VARIANTES) {
-                toast(`Máximo ${MAX_VARIANTES} variantes por ${enServicios ? 'servicio' : 'producto'}.`, 'error');
+                toast(`Máximo ${MAX_VARIANTES} atributos por ${enServicios ? 'servicio' : 'producto'}.`, 'error');
                 return;
             }
             variantesModal.push({ opcion: '', valores: '' });
@@ -536,32 +608,92 @@ function abrirModalProducto(idExistente) {
         if (enServicios) capturarHorarios();
 
         const idValor = $('#prdId').value;
-        const precio = Number($('#prdPrecio').value);
-        const precioAnteriorValor = $('#prdPrecioAnterior').value;
-        // En modo turnos los servicios no manejan stock (0053+): el campo no se
-        // muestra y siempre se guarda 0.
-        const stock = enServicios ? 0 : Number($('#prdStock').value);
 
-        if (!Number.isFinite(precio) || precio < 0) {
-            toast('Ingresá un precio válido.', 'error');
-            return;
-        }
-        if (!Number.isInteger(stock) || stock < 0) {
-            toast('Ingresá un stock válido.', 'error');
-            return;
-        }
+        // Atributos (solo producto variable).
+        const atributos = enServicios ? [] : atributosValidos();
+        const esVariable = !enServicios && tipoModal === 'variable';
 
-        // Eliminar variantes vacías. En modo turnos los servicios no tienen variantes:
-        // se guarda sin opciones (al actualizar se borran las históricas que
-        // hubiera traído del modo venta).
-        const variantes = enServicios
-            ? []
-            : variantesModal
-                .map((v) => ({
-                    opcion: (v.opcion || '').trim(),
-                    valores: (v.valores || '').split(',').map((x) => x.trim()).filter(Boolean)
-                }))
-                .filter((v) => v.opcion && v.valores.length > 0);
+        let precio = 0;
+        let precioAnteriorValor = '';
+        let stock = 0;
+        let variaciones = [];
+
+        if (esVariable) {
+            // Producto variable: el precio/stock del producto salen de las
+            // combinaciones (el trigger de la BD los recalcula igual).
+            capturarVariaciones();
+
+            if (atributos.length === 0) {
+                toast('Agregá al menos un atributo con sus valores para el producto variable.', 'error');
+                return;
+            }
+            const nombres = atributos.map((a) => a.opcion.toLowerCase());
+            if (new Set(nombres).size !== nombres.length) {
+                toast('Los atributos no pueden repetir el nombre.', 'error');
+                return;
+            }
+            if (variacionesModal.length === 0) {
+                toast('No se generó ninguna variación. Revisá los valores de los atributos.', 'error');
+                return;
+            }
+
+            // Validar cada combinación.
+            variaciones = [];
+            const skusVistos = new Set();
+            for (const v of variacionesModal) {
+                const p = Number(v.precio);
+                const pa = v.precioAnterior !== '' ? Number(v.precioAnterior) : null;
+                const s = Number(v.stock);
+                if (!Number.isFinite(p) || p < 0) {
+                    toast(`Precio inválido en la variante «${v.valores.join(' · ')}».`, 'error');
+                    return;
+                }
+                if (pa !== null && (!Number.isFinite(pa) || pa < 0)) {
+                    toast(`Precio anterior inválido en la variante «${v.valores.join(' · ')}».`, 'error');
+                    return;
+                }
+                if (!Number.isInteger(s) || s < 0) {
+                    toast(`Stock inválido en la variante «${v.valores.join(' · ')}».`, 'error');
+                    return;
+                }
+                const sku = (v.sku || '').trim();
+                if (sku && skusVistos.has(sku.toLowerCase())) {
+                    toast(`El SKU «${sku}» está repetido entre variantes.`, 'error');
+                    return;
+                }
+                if (sku) skusVistos.add(sku.toLowerCase());
+                variaciones.push({
+                    combinacion: [...v.valores].map((x) => String(x)),
+                    sku,
+                    precio: p,
+                    precio_anterior: pa,
+                    stock: s,
+                    activo: v.activo !== false
+                });
+            }
+
+            // Precio y stock del producto (informativo; el trigger los ajusta).
+            const activas = variaciones.filter((v) => v.activo);
+            const base = activas.length ? activas : variaciones;
+            precio = Math.min(...base.map((v) => v.precio));
+            stock = base.reduce((n, v) => n + v.stock, 0);
+            precioAnteriorValor = '';
+        } else {
+            // Producto simple (y servicios): precio y stock únicos.
+            precio = Number($('#prdPrecio').value);
+            precioAnteriorValor = $('#prdPrecioAnterior').value;
+            // En modo turnos los servicios no manejan stock (0053+): siempre 0.
+            stock = enServicios ? 0 : Number($('#prdStock').value);
+
+            if (!Number.isFinite(precio) || precio < 0) {
+                toast('Ingresá un precio válido.', 'error');
+                return;
+            }
+            if (!Number.isInteger(stock) || stock < 0) {
+                toast('Ingresá un stock válido.', 'error');
+                return;
+            }
+        }
 
         const categoriaValue = $('#prdCategoria').value;
 
@@ -571,6 +703,7 @@ function abrirModalProducto(idExistente) {
             precio,
             precio_anterior: precioAnteriorValor !== '' ? Number(precioAnteriorValor) : null,
             stock,
+            tipo: esVariable ? 'variable' : 'simple',
             caracteristicas: caracteristicasModal
                 .map((c) => String(c || '').trim())
                 .filter(Boolean),
@@ -612,7 +745,13 @@ function abrirModalProducto(idExistente) {
             return;
         }
 
-        conCarga(submitBtn, guardarProducto(payload, idValor ? Number(idValor) : null, variantes))
+        conCarga(submitBtn, guardarProducto(payload, idValor ? Number(idValor) : null, {
+            tipo: payload.tipo,
+            tipoOriginal,
+            atributos,
+            variaciones,
+            enServicios
+        }))
             .then(() => { cerrarModal(); renderizar(contenedorActual || $('#adminView')); })
             .catch((error) => toast(error.message, 'error'));
     });
@@ -771,11 +910,152 @@ function renderVariantes() {
     // Sincronizar el estado a medida que se edita (guardando en variables para el submit)
     repeater.querySelectorAll('input').forEach((input) => {
         input.addEventListener('input', () => capturarVariantes());
+        // Al terminar de editar un atributo se regeneran las combinaciones.
+        input.addEventListener('change', () => { capturarVariantes(); generarVariaciones(); renderVariaciones(); });
     });
 
     // Deshabilitar "Agregar" al llegar al máximo
     const btnAgregarVar = $('#btnAgregarVariante');
     if (btnAgregarVar) btnAgregarVar.disabled = variantesModal.length >= MAX_VARIANTES;
+}
+
+// ---------- Productos variables (0059): atributos -> combinaciones ----------
+
+// Clave canónica de una combinación: los valores, en el orden de los atributos.
+function combinacionClave(valores) {
+    return (valores || []).map((v) => String(v)).join(' \u0001 ');
+}
+
+// Atributos "válidos" del formulario (nombre + al menos un valor).
+function atributosValidos() {
+    return variantesModal
+        .map((a) => ({
+            opcion: (a.opcion || '').trim(),
+            valores: String(a.valores || '').split(',').map((x) => x.trim()).filter(Boolean)
+        }))
+        .filter((a) => a.opcion && a.valores.length > 0);
+}
+
+// Genera las combinaciones (producto cartesiano) de los atributos, conservando
+// los datos ya cargados de las combinaciones que siguen existiendo.
+function generarVariaciones() {
+    const atributos = atributosValidos();
+    const previas = new Map(variacionesModal.map((v) => [v.clave, v]));
+
+    if (atributos.length === 0) {
+        variacionesModal = [];
+        return;
+    }
+
+    let combos = [[]];
+    for (const a of atributos) {
+        const siguiente = [];
+        for (const base of combos) {
+            for (const valor of a.valores) {
+                siguiente.push([...base, valor]);
+                if (siguiente.length > MAX_VARIACIONES) break;
+            }
+            if (siguiente.length > MAX_VARIACIONES) break;
+        }
+        combos = siguiente;
+    }
+    combos = combos.slice(0, MAX_VARIACIONES);
+
+    const precioBase = $('#prdPrecio')?.value ?? '';
+    variacionesModal = combos.map((valores) => {
+        const clave = combinacionClave(valores);
+        const previa = previas.get(clave);
+        return previa || {
+            clave,
+            valores,
+            sku: '',
+            precio: precioBase,
+            precioAnterior: '',
+            stock: '0',
+            activo: true
+        };
+    });
+
+    // Si se superó el tope, avisar (se generan las primeras MAX_VARIACIONES).
+    const total = atributos.reduce((n, a) => n * a.valores.length, 1);
+    if (total > MAX_VARIACIONES) {
+        toast(`Hay ${total} combinaciones y el máximo es ${MAX_VARIACIONES}. Se generaron las primeras; reducí valores para abarcarlas todas.`, 'error');
+    }
+}
+
+function capturarVariaciones() {
+    document.querySelectorAll('[data-variacion-row]').forEach((fila) => {
+        const idx = Number(fila.dataset.variacionRow);
+        if (!variacionesModal[idx]) return;
+        variacionesModal[idx].sku = fila.querySelector('[data-campo="sku"]').value;
+        variacionesModal[idx].precio = fila.querySelector('[data-campo="precio"]').value;
+        variacionesModal[idx].precioAnterior = fila.querySelector('[data-campo="precioAnterior"]').value;
+        variacionesModal[idx].stock = fila.querySelector('[data-campo="stock"]').value;
+        variacionesModal[idx].activo = fila.querySelector('[data-campo="activo"]').checked;
+    });
+}
+
+function renderVariaciones() {
+    const cont = $('#variacionesTabla');
+    if (!cont) return;
+
+    if (variacionesModal.length === 0) {
+        cont.innerHTML = `<p class="hint">Completá al menos un atributo con sus valores para generar las variaciones.</p>`;
+        return;
+    }
+
+    // Encabezado con los nombres de los atributos vigentes.
+    const atributos = atributosValidos();
+    const etiquetas = atributos.map((a) => esc(a.opcion));
+
+    cont.innerHTML = `
+        <div class="variaciones-tabla">
+            <div class="variaciones-fila variaciones-head">
+                <span>Combinación</span>
+                <span>SKU</span>
+                <span>Precio ($) *</span>
+                <span>Precio anterior ($)</span>
+                <span>Stock *</span>
+                <span>Activo</span>
+            </div>
+            ${variacionesModal.map((v, idx) => `
+                <div class="variaciones-fila" data-variacion-row="${idx}">
+                    <span class="variacion-etiqueta">${(v.valores || []).map((x) => esc(x)).join(' · ')}</span>
+                    <input type="text" data-campo="sku" placeholder="SKU" value="${esc(v.sku)}" aria-label="SKU de ${esc(etiquetas.length ? (v.valores || []).join(' ') : 'la variante')}">
+                    <input type="number" data-campo="precio" min="0" step="1" placeholder="0" value="${esc(v.precio)}" aria-label="Precio">
+                    <input type="number" data-campo="precioAnterior" min="0" step="1" placeholder="—" value="${esc(v.precioAnterior)}" aria-label="Precio anterior">
+                    <input type="number" data-campo="stock" min="0" step="1" placeholder="0" value="${esc(v.stock)}" aria-label="Stock">
+                    <label class="admin-check variacion-activo"><input type="checkbox" data-campo="activo" ${v.activo ? 'checked' : ''} aria-label="Activo"></label>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    // Mantener el estado al escribir (y revalidar al salir del campo).
+    cont.querySelectorAll('[data-variacion-row] input').forEach((input) => {
+        input.addEventListener('input', () => capturarVariaciones());
+    });
+    // Re-render del encabezado si cambian los nombres de los atributos no hace
+    // falta: la clave de cada fila sigue siendo sus valores.
+    if (atributos.length === 0) {
+        cont.innerHTML = `<p class="hint">Completá al menos un atributo con sus valores para generar las variaciones.</p>`;
+    }
+}
+
+// Aplica la pestaña activa: clases de las tabs + visibilidad de los paneles.
+function aplicarTipoModal(tipo) {
+    const form = $('#productoForm');
+    if (form) form.dataset.tipo = tipo;
+    document.querySelectorAll('[data-tipo-tab]').forEach((tab) => {
+        const activo = tab.dataset.tipoTab === tipo;
+        tab.classList.toggle('activo', activo);
+        tab.setAttribute('aria-selected', activo ? 'true' : 'false');
+    });
+    if (tipo === 'variable') {
+        // Regenerar las combinaciones con lo que haya cargado y dibujarlas.
+        generarVariaciones();
+        renderVariaciones();
+    }
 }
 
 // ---------- Horarios (solo en modo turnos, 0053) ----------
@@ -904,7 +1184,8 @@ function renderImagenes() {
 // Guardado
 // ============================================================================
 
-async function guardarProducto(payload, id, variantes) {
+async function guardarProducto(payload, id, opciones = {}) {
+    const { tipo = 'simple', tipoOriginal = 'simple', atributos = [], variaciones = [], enServicios = false } = opciones;
     const sb = await clienteAdmin();
 
     // 1) Producto
@@ -918,22 +1199,88 @@ async function guardarProducto(payload, id, variantes) {
         productoId = data.id;
     }
 
-    // 2) Variantes (reemplazo completo)
-    await sb.from('product_options').delete().eq('product_id', productoId);
-    let posOpt = 0;
-    for (const v of variantes) {
-        const { data: optData, error: optError } = await sb.from('product_options')
-            .insert({ product_id: productoId, opcion: v.opcion, position: posOpt })
-            .select('id').single();
-        if (optError) throw new Error(optError.message);
-        let posVal = 0;
-        for (const valor of v.valores) {
-            const { error: valError } = await sb.from('product_option_values')
-                .insert({ product_option_id: optData.id, valor, position: posVal });
-            if (valError) throw new Error(valError.message);
-            posVal++;
+    // 2) Atributos + variaciones
+    //    · Producto variable: se reescriben los atributos (nada los referencia
+    //      por id) y se SINCRONIZAN las variaciones por combinación: las que ya
+    //      existían se ACTUALIZAN (conservan su id) y solo se borran las que
+    //      desaparecieron. Así un pedido viejo conserva su variant_id.
+    //    · Producto simple: si ANTES era variable (el admin lo convirtió), se
+    //      limpia todo. Si siempre fue simple, NO se tocan las `product_options`
+    //      históricas (productos con opciones del sistema viejo): así ningún
+    //      producto simple existente pierde datos.
+    if (tipo === 'variable') {
+        // 2a) Atributos: reemplazo completo.
+        await sb.from('product_options').delete().eq('product_id', productoId);
+        let posOpt = 0;
+        for (const a of atributos) {
+            const { data: optData, error: optError } = await sb.from('product_options')
+                .insert({ product_id: productoId, opcion: a.opcion, position: posOpt })
+                .select('id').single();
+            if (optError) throw new Error(optError.message);
+            let posVal = 0;
+            for (const valor of a.valores) {
+                const { error: valError } = await sb.from('product_option_values')
+                    .insert({ product_option_id: optData.id, valor, position: posVal });
+                if (valError) throw new Error(valError.message);
+                posVal++;
+            }
+            posOpt++;
         }
-        posOpt++;
+
+        // 2b) Variaciones: leer las existentes para reutilizar su id.
+        const { data: existentes, error: errExistentes } = await sb.from('product_variants')
+            .select('id, combinacion').eq('product_id', productoId);
+        if (errExistentes) throw new Error(errExistentes.message);
+        const idPorCombinacion = new Map(
+            (existentes || []).map((v) => [combinacionClave(Array.isArray(v.combinacion) ? v.combinacion.map(String) : []), v.id])
+        );
+
+        const idsConservados = new Set();
+        const lanzarErrorVariante = (error, valores) => {
+            // 23505 en el SKU: índice único global (lower(sku) where sku <> '').
+            if (error.code === '23505' && /sku/i.test(error.message || '')) {
+                throw new Error(`El SKU está repetido (variante «${(valores || []).join(' · ')}»): ya lo usa otra variante.`);
+            }
+            throw new Error(error.message);
+        };
+
+        let posVar = 0;
+        for (const v of variaciones) {
+            const clave = combinacionClave(v.combinacion);
+            const fila = {
+                product_id: productoId,
+                sku: v.sku || '',
+                precio: v.precio,
+                precio_anterior: v.precio_anterior,
+                stock: v.stock,
+                activo: v.activo !== false,
+                position: posVar,
+                combinacion: v.combinacion
+            };
+            if (idPorCombinacion.has(clave)) {
+                const idVar = idPorCombinacion.get(clave);
+                idsConservados.add(idVar);
+                const { error } = await sb.from('product_variants').update(fila).eq('id', idVar);
+                if (error) lanzarErrorVariante(error, v.combinacion);
+            } else {
+                const { data, error } = await sb.from('product_variants').insert(fila).select('id').single();
+                if (error) lanzarErrorVariante(error, v.combinacion);
+                idsConservados.add(data.id);
+            }
+            posVar++;
+        }
+
+        // 2c) Borrar solo las combinaciones que ya no existen.
+        const aBorrar = (existentes || [])
+            .map((v) => v.id)
+            .filter((vid) => !idsConservados.has(vid));
+        if (aBorrar.length) {
+            await sb.from('product_variants').delete().in('id', aBorrar);
+        }
+    } else if (tipoOriginal === 'variable') {
+        // Conversión variable → simple: se eliminan atributos y variaciones.
+        await sb.from('product_variants').delete().eq('product_id', productoId);
+        await sb.from('product_options').delete().eq('product_id', productoId);
     }
 
     // 3) Imágenes

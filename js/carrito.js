@@ -1,6 +1,6 @@
 // Gestión del carrito de compras
 
-import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, esBannerSoloImagen, recortarTexto, atributosEnlace, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos, obtenerTurnosOcupados } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, calcularTotales, estadoCompraMinima, CONFIG_DESCUENTO, CONFIG_CUPONES, obtenerProductos, obtenerCupones, obtenerBanners, escaparHtml, urlSegura, claveItemCarrito, stockDeLineaCarrito, esBannerSoloImagen, recortarTexto, atributosEnlace, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos, obtenerTurnosOcupados } from './utils.js';
 
 let productosGlobales = [];
 
@@ -14,6 +14,10 @@ function guardarCarrito(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
     if (window.actualizarContadorCarrito) window.actualizarContadorCarrito();
 }
+
+// Stock relevante de una línea: el de la variante elegida cuando el producto es
+// variable (0059); si no, el stock del producto (helper compartido con template.js).
+const stockDeLinea = stockDeLineaCarrito;
 
 // Renderizar items del carrito
 function renderizarCarrito() {
@@ -40,9 +44,11 @@ function renderizarCarrito() {
         // En modo turnos los servicios no manejan stock ni cantidad: nunca se
         // marcan como agotados ni de última unidad y la cantidad queda fija en
         // 1 (el turno no se multiplica), así que no hay stepper de cantidad.
-        const sinStock = !enTurnos && productoRef && productoRef.stock === 0;
-        const stockBajo = !enTurnos && productoRef && productoRef.stock > 0 && productoRef.stock < 5;
-        const clave = claveItemCarrito(item.id, item.varianteTexto);
+        // En producto variable el stock relevante es el de la variante elegida.
+        const stockLinea = stockDeLinea(productoRef, item);
+        const sinStock = !enTurnos && productoRef && stockLinea === 0;
+        const stockBajo = !enTurnos && productoRef && stockLinea > 0 && stockLinea < 5;
+        const clave = claveItemCarrito(item.id, item.varianteTexto, item.variantId);
 
         // V-2: el nombre del producto (contenido administrado) viaja en el
         // carrito → escapar antes de interpolar en HTML.
@@ -58,7 +64,7 @@ function renderizarCarrito() {
                 <h3 class="item-title">${nombreSeguro}</h3>
                 ${item.varianteTexto ? `<p class="item-variant">${escaparHtml(item.varianteTexto)}</p>` : ''}
                 ${sinStock ? `<p class="stock-alert stock-alert-danger">⚠️ Este producto se agotó. Debes eliminarlo para continuar.</p>` : ''}
-                ${stockBajo ? `<p class="stock-alert stock-alert-warn">⚠️ ¡Últimas unidades disponibles! (Quedan ${productoRef.stock})</p>` : ''}
+                ${stockBajo ? `<p class="stock-alert stock-alert-warn">⚠️ ¡Últimas unidades disponibles! (Quedan ${stockLinea})</p>` : ''}
                 <p class="item-price">$${formatearPrecio(item.precio)}</p>
             </div>
             <div class="item-controls">
@@ -86,20 +92,21 @@ function actualizarCantidad(clave, cambio) {
     if (esModoTurnos()) return;
 
     let cart = obtenerCarrito();
-    const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto) === clave);
+    const item = cart.find(i => claveItemCarrito(i.id, i.varianteTexto, i.variantId) === clave);
 
     if (item) {
         // Validar stock solo si se intenta aumentar la cantidad (sumado entre
-        // líneas del mismo producto). En modo turnos no aplica: los servicios
-        // no manejan stock.
+        // líneas del mismo producto Y misma variante). En modo turnos no aplica:
+        // los servicios no manejan stock.
         if (cambio > 0 && !esModoTurnos()) {
             const productoRef = productosGlobales.find(p => p.id === item.id);
             if (productoRef) {
+                const tope = stockDeLinea(productoRef, item);
                 const enCarrito = cart
-                    .filter(i => i.id === item.id)
+                    .filter(i => i.id === item.id && (i.variantId || '') === (item.variantId || ''))
                     .reduce((sum, i) => sum + i.quantity, 0);
-                if (enCarrito + cambio > productoRef.stock) {
-                    mostrarNotificacion(`Límite de stock alcanzado (${productoRef.stock} disponibles)`);
+                if (enCarrito + cambio > tope) {
+                    mostrarNotificacion(`Límite de stock alcanzado (${tope} disponibles)`);
                     return;
                 }
             }
@@ -120,7 +127,7 @@ function actualizarCantidad(clave, cambio) {
 // Eliminar producto del carrito (por clave de línea)
 function eliminarDelCarrito(clave) {
     let cart = obtenerCarrito();
-    cart = cart.filter(item => claveItemCarrito(item.id, item.varianteTexto) !== clave);
+    cart = cart.filter(item => claveItemCarrito(item.id, item.varianteTexto, item.variantId) !== clave);
     guardarCarrito(cart);
     renderizarCarrito();
 }
@@ -219,7 +226,7 @@ function actualizarTotales() {
 
     const haySinStock = cart.some(item => {
         const ref = productosGlobales.find(p => p.id === item.id);
-        return ref && ref.stock === 0;
+        return ref && stockDeLinea(ref, item) === 0;
     });
 
     const { subtotal, descuento, total, esCupon, porcentaje } = calcularTotales(cart, cupon);
@@ -676,7 +683,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const cart = obtenerCarrito();
     const tieneSinStock = !esModoTurnos() && cart.some(item => {
         const ref = productosGlobales.find(p => p.id === item.id);
-        return ref && ref.stock === 0;
+        return ref && stockDeLinea(ref, item) === 0;
     });
 
     if (tieneSinStock) {

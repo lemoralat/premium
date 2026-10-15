@@ -81,10 +81,17 @@ module.exports = async function handler(request, response) {
         const items = body.productos.map((item) => ({
             product_id: Number(item.id),
             quantity: Number(item.quantity),
+            // Variante (producto variable, 0059): el RPC valida que pertenezca
+            // al producto y descuenta SU stock. Se manda como null cuando el
+            // producto es simple (o el ítem histórico no trae variante).
+            variant_id: (item.variantId === null || item.variantId === undefined || item.variantId === '')
+                ? null
+                : Number(item.variantId),
             variante_texto: typeof item.varianteTexto === 'string' ? String(item.varianteTexto).slice(0, 300) : ''
         }));
 
-        if (items.some(i => !Number.isInteger(i.product_id) || !Number.isInteger(i.quantity) || i.quantity <= 0)) {
+        if (items.some(i => !Number.isInteger(i.product_id) || !Number.isInteger(i.quantity) || i.quantity <= 0
+            || (i.variant_id !== null && !Number.isInteger(i.variant_id)))) {
             return response.status(400).json({ status: 'error', message: 'Datos de productos inválidos.' });
         }
 
@@ -107,10 +114,10 @@ module.exports = async function handler(request, response) {
         const detalle = String(error.message || '');
         // Solo exponemos mensajes de la RPC que controlamos nosotros; el resto
         // (errores de BD, etc.) se devuelve genérico pero se loguea completo.
-        const amistoso = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida|demasiados pedidos|intentá de nuevo|mínimo)/i.test(detalle)
+        const amistoso = /(stock insuficiente|cantidad inválida|producto|inactivo|elegí una opción|estructura de pedido inválida|demasiados pedidos|intentá de nuevo|mínimo)/i.test(detalle)
             ? detalle
             : 'No se pudo registrar el pedido.';
-        const conflicto = /(stock insuficiente|cantidad inválida|producto|inactivo|estructura de pedido inválida|mínimo)/i.test(detalle);
+        const conflicto = /(stock insuficiente|cantidad inválida|producto|inactivo|elegí una opción|estructura de pedido inválida|mínimo)/i.test(detalle);
         const limiteTasa = /demasiados pedidos|intentá de nuevo/i.test(detalle);
         console.error('❌ Error registrando pedido en Supabase:', detalle);
         return response.status(limiteTasa ? 429 : (conflicto ? 409 : 500)).json({ status: 'error', message: amistoso });
