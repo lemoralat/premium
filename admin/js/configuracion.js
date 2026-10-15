@@ -3,7 +3,7 @@
 import { $, esc, toast, conCarga, estadoCargando, confirmarDialogo } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
 import { renderizarGestor as renderizarGestorPreguntas } from './preguntas-frecuentes.js';
-import { exportarProductosCSV, exportarPedidosCSV, descargarCSV } from './exportar-datos.js';
+import { exportarProductosCSV, exportarPedidosCSV, importarProductosCSV, importarPedidosCSV, descargarCSV } from './exportar-datos.js';
 
 // Defaults del popup de salida (replican el contenido que la tienda mostraba
 // antes de que fuese configurable). Se usan si la columna aún no existe (la
@@ -221,20 +221,32 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
-            <h2>Exportar datos</h2>
-            <p class="card-sub">Descargá la información de tu tienda en archivos que podés abrir con Excel o Google Sheets. Cada tipo de información se descarga por separado.</p>
+            <h2>Importar / Exportar datos</h2>
+            <p class="card-sub">Descargá la información de tu tienda en archivos que podés abrir con Excel o Google Sheets, o importá datos desde un archivo CSV para agilizar la carga. Cada tipo de información se procesa por separado.</p>
             <div class="admin-form-grid">
                 <div class="admin-field">
                     <button type="button" class="btn btn-outline" id="btnExportarProductos">
                         <i class="fa-solid fa-box"></i> Exportar ${esTurnos ? 'servicios' : 'productos'} (.csv)
                     </button>
-                    <span class="hint">Incluye los precios, las existencias, las categorías y el estado de tus servicios.</span>
+                    <span class="hint">Incluye los precios, las existencias, las categorías y el estado de tus ${esTurnos ? 'servicios' : 'productos'}.</span>
                 </div>
                 <div class="admin-field">
                     <button type="button" class="btn btn-outline" id="btnExportarPedidos">
                         <i class="fa-solid fa-cart-shopping"></i> Exportar pedidos (.csv)
                     </button>
                     <span class="hint">Incluye los datos de tus clientes, los importes y los detalles de cada pedido.</span>
+                </div>
+                <div class="admin-field">
+                    <button type="button" class="btn btn-outline" id="btnImportarProductos">
+                        <i class="fa-solid fa-upload"></i> Importar ${esTurnos ? 'servicios' : 'productos'} (.csv)
+                    </button>
+                    <span class="hint">Importá ${esTurnos ? 'servicios' : 'productos'} desde un CSV compatible con la plantilla de exportación.</span>
+                </div>
+                <div class="admin-field">
+                    <button type="button" class="btn btn-outline" id="btnImportarPedidos">
+                        <i class="fa-solid fa-file-import"></i> Importar pedidos (.csv)
+                    </button>
+                    <span class="hint">Importá pedidos históricos desde un archivo CSV.</span>
                 </div>
             </div>
         </div>
@@ -442,6 +454,46 @@ export async function renderizar(contenedor) {
         exportarPedidosCSV,
         'No hay pedidos para exportar.',
         (n) => `Pedidos exportados: ${n} filas.`
+    );
+
+    // Importar datos (CSV)
+    const importar = (boton, promesaFn, textoSeleccion, mensajeOk) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv,text/csv,application/csv';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        boton.addEventListener('click', () => {
+            input.value = '';
+            input.click();
+        });
+        input.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                conCarga(boton, promesaFn(file))
+                    .then((res) => {
+                        toast(mensajeOk(res.procesados, res.creados, res.actualizados, res.errores || 0));
+                        // Recargar para reflejar cambios
+                        setTimeout(() => window.location.reload(), 700);
+                    })
+                    .catch((error) => toast(error.message, 'error'));
+            } catch (err) {
+                toast(err.message || 'Error al importar el archivo', 'error');
+            }
+        });
+    };
+    importar(
+        $('#btnImportarProductos'),
+        importarProductosCSV,
+        'Seleccioná el CSV de productos/servicios',
+        (p, c, a, e) => `${esTurnos ? 'Servicios' : 'Productos'} procesados: ${p} (creados: ${c}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
+    );
+    importar(
+        $('#btnImportarPedidos'),
+        importarPedidosCSV,
+        'Seleccioná el CSV de pedidos',
+        (p, c, a, e) => `Pedidos procesados: ${p} (creados: ${c}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
     );
 
     // Gestor de preguntas frecuentes (widget que se re-renderiza a sí mismo).
