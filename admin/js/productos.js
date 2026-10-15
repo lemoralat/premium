@@ -43,7 +43,7 @@ export async function renderizar(contenedor) {
     const [productosR, categoriasR, settingsR] = await Promise.all([
         sb.from('products').select(`
             id, nombre, descripcion_detallada, precio, precio_anterior, stock,
-            caracteristicas, activo, destacado, tipo, modo,
+            caracteristicas, activo, destacado, tipo,
             servicio_duracion_min, servicio_horarios,
             category_id,
             categoria:categories(id, name),
