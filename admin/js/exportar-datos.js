@@ -107,6 +107,43 @@ function esVerdadero(valor) {
     return v === 'sí' || v === 'si' || v === 'true' || v === '1' || v === 'x';
 }
 
+// Horarios de un servicio ([{dia, desde, hasta}], migración 0053) a texto:
+// "Lunes 09:00-18:00 | Sábado 10:00-14:00". Una fila sin horario (solo día)
+// se exporta como "Lunes".
+function serializarHorarios(horarios) {
+    if (!Array.isArray(horarios)) return '';
+    return horarios.map((h) => {
+        const dia = String(h?.dia || '').trim();
+        const desde = String(h?.desde || '').trim();
+        const hasta = String(h?.hasta || '').trim();
+        if (!dia) return '';
+        return desde && hasta ? `${dia} ${desde}-${hasta}` : dia;
+    }).filter(Boolean).join(' | ');
+}
+
+function normalizarHora(hora) {
+    const [hh, mm] = String(hora).split(':');
+    return `${String(Number(hh)).padStart(2, '0')}:${mm}`;
+}
+
+// "Lunes 09:00-18:00 | Sábado" → [{dia, desde, hasta}].
+function parsearHorarios(texto) {
+    return String(texto || '').split('|')
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .map((x) => {
+            const m = x.match(/^(.+?)\s+(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/);
+            if (!m) return { dia: x, desde: '', hasta: '' };
+            return { dia: m[1].trim(), desde: normalizarHora(m[2]), hasta: normalizarHora(m[3]) };
+        })
+        .filter((h) => h.dia);
+}
+
+// Lista simple (características) separada por "|".
+function parsearLista(texto) {
+    return String(texto || '').split('|').map((x) => x.trim()).filter(Boolean);
+}
+
 // ----------------------------------------------------------------------------
 // Descarga del archivo ya armado ({ nombre, contenido, filas }).
 // ----------------------------------------------------------------------------
@@ -124,18 +161,19 @@ export function descargarCSV({ nombre, contenido }) {
 
 // ----------------------------------------------------------------------------
 // PRODUCTOS (.csv) — columnas: id, nombre, categoría, precio, precio anterior,
-// stock, destacado, activo, descripción y fecha de creación. Orden: id asc.
+// stock, destacado, activo, descripción, duración estimada y horarios (solo en
+// modo turnos, migración 0053), características y fecha de creación. Orden: id asc.
 // ----------------------------------------------------------------------------
 export async function exportarProductosCSV() {
     const sb = await clienteAdmin();
     const { data, error } = await sb.from('products').select(`
         id, nombre, descripcion_detallada, precio, precio_anterior, stock, activo,
-        destacado, created_at,
+        destacado, created_at, caracteristicas, servicio_duracion_min, servicio_horarios,
         categoria:categories(name)
     `).order('id', { ascending: true });
     if (error) throw new Error(error.message);
 
-    const encabezados = ['id', 'nombre', 'categoría', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'fecha_creacion'];
+    const encabezados = ['id', 'nombre', 'categoría', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'duracion_estimada', 'horarios', 'caracteristicas', 'fecha_creacion'];
     const filas = data.map((p) => [
         p.id,
         p.nombre,
@@ -146,6 +184,9 @@ export async function exportarProductosCSV() {
         siono(p.destacado),
         siono(p.activo),
         p.descripcion_detallada || '',
+        Number(p.servicio_duracion_min) > 0 ? Number(p.servicio_duracion_min) : '',
+        serializarHorarios(p.servicio_horarios),
+        Array.isArray(p.caracteristicas) ? p.caracteristicas.join(' | ') : '',
         fechaISO(p.created_at)
     ]);
 
@@ -218,7 +259,7 @@ export async function importarProductosCSV(file) {
     const cols = normalizarEncabezados(encabezado, sep);
 
     const map = {};
-    ['id', 'nombre', 'categoria', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'descripcion_detallada'].forEach((k) => {
+    ['id', 'nombre', 'categoria', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'descripcion_detallada', 'duracion_estimada', 'horarios', 'caracteristicas'].forEach((k) => {
         const i = cols.indexOf(k);
         if (i >= 0) map[k] = i;
     });
@@ -226,7 +267,7 @@ export async function importarProductosCSV(file) {
     // Diagnóstico explícito: si falta la columna clave, se informa qué llegó
     // y qué se espera, en vez de "procesar" cero filas sin aviso.
     if (map.nombre === undefined) {
-        throw new Error(`No se encontró la columna "nombre". Encabezado recibido: "${encabezado}". Columnas esperadas: id;nombre;categoría;precio;precio_anterior;stock;destacado;activo;descripcion`);
+        throw new Error(`No se encontró la columna "nombre". Encabezado recibido: "${encabezado}". Columnas esperadas: id;nombre;categoría;precio;precio_anterior;stock;destacado;activo;descripcion;duracion_estimada;horarios;caracteristicas`);
     }
 
     // creadosConId: filas que traían un id que no existe y se crearon como
@@ -274,6 +315,18 @@ export async function importarProductosCSV(file) {
 
             const base = { nombre, descripcion_detallada, precio, precio_anterior, stock, destacado, activo, category_id };
             if (tieneModo) base.modo = modoWeb;
+            // Campos de servicio y listas (0053): solo se escriben si el CSV trae
+            // la columna, para no pisar duración/horarios/características al
+            // importar un archivo que no las incluye.
+            if (map.duracion_estimada !== undefined) {
+                base.servicio_duracion_min = Number(limpiarCelda(v[map.duracion_estimada]).replace(',', '.')) || 0;
+            }
+            if (map.horarios !== undefined) {
+                base.servicio_horarios = parsearHorarios(limpiarCelda(v[map.horarios]));
+            }
+            if (map.caracteristicas !== undefined) {
+                base.caracteristicas = parsearLista(limpiarCelda(v[map.caracteristicas]));
+            }
 
             if (id) {
                 // El id actualiza la fila existente. Si el id no existe (archivo
