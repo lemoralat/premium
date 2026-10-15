@@ -473,9 +473,16 @@ export async function renderizar(contenedor) {
             try {
                 conCarga(boton, promesaFn(file))
                     .then((res) => {
-                        toast(mensajeOk(res.procesados, res.creados, res.actualizados, res.errores || 0));
+                        const resumen = mensajeOk(res.procesados, res.creados, res.actualizados, res.errores || 0);
+                        if (res.errores > 0) {
+                            // Mostrar el error real: sin esto, un fallo de inserción
+                            // (p. ej. columna faltante) pasaba como "procesado".
+                            toast(res.mensaje ? `${resumen} — ${res.mensaje}` : resumen, 'error');
+                        } else {
+                            toast(resumen);
+                        }
                         // Recargar para reflejar cambios
-                        setTimeout(() => window.location.reload(), 700);
+                        setTimeout(() => window.location.reload(), 1400);
                     })
                     .catch((error) => toast(error.message, 'error'));
             } catch (err) {
