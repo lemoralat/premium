@@ -457,7 +457,7 @@ export async function renderizar(contenedor) {
     );
 
     // Importar datos (CSV)
-    const importar = (boton, promesaFn, textoSeleccion, mensajeOk) => {
+    const importar = (boton, promesaFn, mensajeOk) => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.csv,text/csv,application/csv';
@@ -467,7 +467,7 @@ export async function renderizar(contenedor) {
             input.value = '';
             input.click();
         });
-        input.addEventListener('change', async (e) => {
+        input.addEventListener('change', (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             try {
@@ -486,13 +486,11 @@ export async function renderizar(contenedor) {
     importar(
         $('#btnImportarProductos'),
         importarProductosCSV,
-        'Seleccioná el CSV de productos/servicios',
         (p, c, a, e) => `${esTurnos ? 'Servicios' : 'Productos'} procesados: ${p} (creados: ${c}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
     );
     importar(
         $('#btnImportarPedidos'),
         importarPedidosCSV,
-        'Seleccioná el CSV de pedidos',
         (p, c, a, e) => `Pedidos procesados: ${p} (creados: ${c}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
     );
 
