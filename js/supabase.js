@@ -264,7 +264,7 @@ export async function cargarProductos() {
                 servicio_duracion_min, servicio_horarios,
                 categoria:categories(id, name),
                 opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
-                variantes:product_variants(id, sku, precio, precio_anterior, stock, activo, position, combinacion),
+                variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion),
                 imagenes:product_images(id, storage_path, es_principal, position)
             `)
             .eq('activo', true)
@@ -328,7 +328,6 @@ function mapaProducto(p) {
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
             .map(v => ({
                 id: Number(v.id),
-                sku: v.sku || '',
                 precio: Number(v.precio),
                 precioAnterior: v.precio_anterior != null ? Number(v.precio_anterior) : null,
                 stock: Number(v.stock),

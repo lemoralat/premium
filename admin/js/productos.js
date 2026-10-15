@@ -2,6 +2,7 @@
 
 import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, formatearPrecio, placeholderImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin } from './admin-supabase.js';
+import { claveCombinacion, guardarVariantesProducto, calcularPrecioStock } from './variantes.js';
 
 let productos = [];
 let categorias = [];
@@ -20,7 +21,7 @@ let cardSinImagenes = false;
 
 // Estado del formulario abierto
 let variantesModal = [];        // atributos del producto variable: [{ opcion, valores }]
-let variacionesModal = [];      // combinaciones generadas: [{ clave, valores, sku, precio, precioAnterior, stock, activo }]
+let variacionesModal = [];      // combinaciones generadas: [{ clave, valores, precio, precioAnterior, stock, activo }]
 let tipoModal = 'simple';       // pestaña activa: 'simple' | 'variable'
 let tipoOriginal = 'simple';    // tipo con el que se abrió (para saber si hubo conversión)
 let caracteristicasModal = [];
@@ -48,7 +49,7 @@ export async function renderizar(contenedor) {
             category_id,
             categoria:categories(id, name),
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
-            variantes:product_variants(id, sku, precio, precio_anterior, stock, activo, position, combinacion),
+            variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion),
             imagenes:product_images(id, storage_path, es_principal, position)
         `).order('id', { ascending: true }),
         sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true }),
@@ -309,9 +310,8 @@ function abrirModalProducto(idExistente) {
         ? [...(producto?.variantes || [])]
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
             .map((v) => ({
-                clave: combinacionClave(Array.isArray(v.combinacion) ? v.combinacion.map(String) : []),
+                clave: claveCombinacion(Array.isArray(v.combinacion) ? v.combinacion.map(String) : []),
                 valores: Array.isArray(v.combinacion) ? v.combinacion.map(String) : [],
-                sku: v.sku || '',
                 precio: v.precio != null ? String(v.precio) : '',
                 precioAnterior: v.precio_anterior != null ? String(v.precio_anterior) : '',
                 stock: v.stock != null ? String(v.stock) : '0',
@@ -369,7 +369,7 @@ function abrirModalProducto(idExistente) {
                 </button>
             </div>
             <p class="tipo-producto-ayuda" data-tipo-panel="simple">Un solo precio y un solo stock. Ideal para productos sin opciones.</p>
-            <p class="tipo-producto-ayuda" data-tipo-panel="variable">Con atributos (color, talle…) que generan combinaciones, cada una con su propio SKU, precio y stock.</p>`}
+            <p class="tipo-producto-ayuda" data-tipo-panel="variable">Con atributos (color, talle…) que generan combinaciones, cada una con su propio precio y stock.</p>`}
 
             <div class="admin-field full">
                 <label for="prdNombre">Nombre *</label>
@@ -458,11 +458,11 @@ function abrirModalProducto(idExistente) {
                 <button type="button" class="btn btn-sm btn-outline" id="btnAgregarVariante" style="align-self:flex-start; margin-top:0.5rem;">
                     <i class="fa-solid fa-plus"></i> Agregar atributo
                 </button>
-                <span class="hint">Cada combinación de valores se convierte en una variante con su propio SKU, precio y stock.</span>
+                <span class="hint">Cada combinación de valores se convierte en una variación con su propio precio y stock.</span>
             </div>
 
             <div class="admin-field full" data-tipo-panel="variable">
-                <label>Variaciones <span class="hint">(se generan solas a partir de los atributos; completá SKU, precio y stock de cada una)</span></label>
+                <label>Variaciones <span class="hint">(se generan solas a partir de los atributos; completá precio y stock de cada una, el SKU lo crea el sistema solo)</span></label>
                 <div class="variaciones-tabla-wrap" id="variacionesTabla"></div>
             </div>`}
 
@@ -639,7 +639,6 @@ function abrirModalProducto(idExistente) {
 
             // Validar cada combinación.
             variaciones = [];
-            const skusVistos = new Set();
             for (const v of variacionesModal) {
                 const p = Number(v.precio);
                 const pa = v.precioAnterior !== '' ? Number(v.precioAnterior) : null;
@@ -656,15 +655,8 @@ function abrirModalProducto(idExistente) {
                     toast(`Stock inválido en la variante «${v.valores.join(' · ')}».`, 'error');
                     return;
                 }
-                const sku = (v.sku || '').trim();
-                if (sku && skusVistos.has(sku.toLowerCase())) {
-                    toast(`El SKU «${sku}» está repetido entre variantes.`, 'error');
-                    return;
-                }
-                if (sku) skusVistos.add(sku.toLowerCase());
                 variaciones.push({
                     combinacion: [...v.valores].map((x) => String(x)),
-                    sku,
                     precio: p,
                     precio_anterior: pa,
                     stock: s,
@@ -673,10 +665,10 @@ function abrirModalProducto(idExistente) {
             }
 
             // Precio y stock del producto (informativo; el trigger los ajusta).
-            const activas = variaciones.filter((v) => v.activo);
-            const base = activas.length ? activas : variaciones;
-            precio = Math.min(...base.map((v) => v.precio));
-            stock = base.reduce((n, v) => n + v.stock, 0);
+            // El SKU de cada variante lo genera la base (migración 0060).
+            const agregados = calcularPrecioStock(variaciones);
+            precio = agregados.precio;
+            stock = agregados.stock;
             precioAnteriorValor = '';
         } else {
             // Producto simple (y servicios): precio y stock únicos.
@@ -921,11 +913,6 @@ function renderVariantes() {
 
 // ---------- Productos variables (0059): atributos -> combinaciones ----------
 
-// Clave canónica de una combinación: los valores, en el orden de los atributos.
-function combinacionClave(valores) {
-    return (valores || []).map((v) => String(v)).join(' \u0001 ');
-}
-
 // Atributos "válidos" del formulario (nombre + al menos un valor).
 function atributosValidos() {
     return variantesModal
@@ -963,12 +950,11 @@ function generarVariaciones() {
 
     const precioBase = $('#prdPrecio')?.value ?? '';
     variacionesModal = combos.map((valores) => {
-        const clave = combinacionClave(valores);
+        const clave = claveCombinacion(valores);
         const previa = previas.get(clave);
         return previa || {
             clave,
             valores,
-            sku: '',
             precio: precioBase,
             precioAnterior: '',
             stock: '0',
@@ -987,7 +973,6 @@ function capturarVariaciones() {
     document.querySelectorAll('[data-variacion-row]').forEach((fila) => {
         const idx = Number(fila.dataset.variacionRow);
         if (!variacionesModal[idx]) return;
-        variacionesModal[idx].sku = fila.querySelector('[data-campo="sku"]').value;
         variacionesModal[idx].precio = fila.querySelector('[data-campo="precio"]').value;
         variacionesModal[idx].precioAnterior = fila.querySelector('[data-campo="precioAnterior"]').value;
         variacionesModal[idx].stock = fila.querySelector('[data-campo="stock"]').value;
@@ -1004,15 +989,14 @@ function renderVariaciones() {
         return;
     }
 
-    // Encabezado con los nombres de los atributos vigentes.
+    // El encabezado de cada fila es la combinación de valores; no hace falta
+    // repetir los nombres de los atributos (ya están arriba, en el repetidor).
     const atributos = atributosValidos();
-    const etiquetas = atributos.map((a) => esc(a.opcion));
 
     cont.innerHTML = `
         <div class="variaciones-tabla">
             <div class="variaciones-fila variaciones-head">
                 <span>Combinación</span>
-                <span>SKU</span>
                 <span>Precio ($) *</span>
                 <span>Precio anterior ($)</span>
                 <span>Stock *</span>
@@ -1021,7 +1005,6 @@ function renderVariaciones() {
             ${variacionesModal.map((v, idx) => `
                 <div class="variaciones-fila" data-variacion-row="${idx}">
                     <span class="variacion-etiqueta">${(v.valores || []).map((x) => esc(x)).join(' · ')}</span>
-                    <input type="text" data-campo="sku" placeholder="SKU" value="${esc(v.sku)}" aria-label="SKU de ${esc(etiquetas.length ? (v.valores || []).join(' ') : 'la variante')}">
                     <input type="number" data-campo="precio" min="0" step="1" placeholder="0" value="${esc(v.precio)}" aria-label="Precio">
                     <input type="number" data-campo="precioAnterior" min="0" step="1" placeholder="—" value="${esc(v.precioAnterior)}" aria-label="Precio anterior">
                     <input type="number" data-campo="stock" min="0" step="1" placeholder="0" value="${esc(v.stock)}" aria-label="Stock">
@@ -1199,89 +1182,13 @@ async function guardarProducto(payload, id, opciones = {}) {
         productoId = data.id;
     }
 
-    // 2) Atributos + variaciones
-    //    · Producto variable: se reescriben los atributos (nada los referencia
-    //      por id) y se SINCRONIZAN las variaciones por combinación: las que ya
-    //      existían se ACTUALIZAN (conservan su id) y solo se borran las que
-    //      desaparecieron. Así un pedido viejo conserva su variant_id.
-    //    · Producto simple: si ANTES era variable (el admin lo convirtió), se
-    //      limpia todo. Si siempre fue simple, NO se tocan las `product_options`
-    //      históricas (productos con opciones del sistema viejo): así ningún
-    //      producto simple existente pierde datos.
-    if (tipo === 'variable') {
-        // 2a) Atributos: reemplazo completo.
-        await sb.from('product_options').delete().eq('product_id', productoId);
-        let posOpt = 0;
-        for (const a of atributos) {
-            const { data: optData, error: optError } = await sb.from('product_options')
-                .insert({ product_id: productoId, opcion: a.opcion, position: posOpt })
-                .select('id').single();
-            if (optError) throw new Error(optError.message);
-            let posVal = 0;
-            for (const valor of a.valores) {
-                const { error: valError } = await sb.from('product_option_values')
-                    .insert({ product_option_id: optData.id, valor, position: posVal });
-                if (valError) throw new Error(valError.message);
-                posVal++;
-            }
-            posOpt++;
-        }
-
-        // 2b) Variaciones: leer las existentes para reutilizar su id.
-        const { data: existentes, error: errExistentes } = await sb.from('product_variants')
-            .select('id, combinacion').eq('product_id', productoId);
-        if (errExistentes) throw new Error(errExistentes.message);
-        const idPorCombinacion = new Map(
-            (existentes || []).map((v) => [combinacionClave(Array.isArray(v.combinacion) ? v.combinacion.map(String) : []), v.id])
-        );
-
-        const idsConservados = new Set();
-        const lanzarErrorVariante = (error, valores) => {
-            // 23505 en el SKU: índice único global (lower(sku) where sku <> '').
-            if (error.code === '23505' && /sku/i.test(error.message || '')) {
-                throw new Error(`El SKU está repetido (variante «${(valores || []).join(' · ')}»): ya lo usa otra variante.`);
-            }
-            throw new Error(error.message);
-        };
-
-        let posVar = 0;
-        for (const v of variaciones) {
-            const clave = combinacionClave(v.combinacion);
-            const fila = {
-                product_id: productoId,
-                sku: v.sku || '',
-                precio: v.precio,
-                precio_anterior: v.precio_anterior,
-                stock: v.stock,
-                activo: v.activo !== false,
-                position: posVar,
-                combinacion: v.combinacion
-            };
-            if (idPorCombinacion.has(clave)) {
-                const idVar = idPorCombinacion.get(clave);
-                idsConservados.add(idVar);
-                const { error } = await sb.from('product_variants').update(fila).eq('id', idVar);
-                if (error) lanzarErrorVariante(error, v.combinacion);
-            } else {
-                const { data, error } = await sb.from('product_variants').insert(fila).select('id').single();
-                if (error) lanzarErrorVariante(error, v.combinacion);
-                idsConservados.add(data.id);
-            }
-            posVar++;
-        }
-
-        // 2c) Borrar solo las combinaciones que ya no existen.
-        const aBorrar = (existentes || [])
-            .map((v) => v.id)
-            .filter((vid) => !idsConservados.has(vid));
-        if (aBorrar.length) {
-            await sb.from('product_variants').delete().in('id', aBorrar);
-        }
-    } else if (tipoOriginal === 'variable') {
-        // Conversión variable → simple: se eliminan atributos y variaciones.
-        await sb.from('product_variants').delete().eq('product_id', productoId);
-        await sb.from('product_options').delete().eq('product_id', productoId);
-    }
+    // 2) Atributos + variaciones → lógica compartida (ver admin/js/variantes.js).
+    //    · Producto variable: atributos reescritos + variaciones sincronizadas
+    //      por combinación (conservan su id, así un pedido viejo no pierde su
+    //      variant_id). El SKU no se manda: lo genera la base (migración 0060).
+    //    · Producto simple que ANTES era variable: se limpia todo. Si siempre
+    //      fue simple, no se tocan las product_options históricas.
+    await guardarVariantesProducto(sb, productoId, { tipo, tipoOriginal, atributos, variaciones });
 
     // 3) Imágenes
     // 3a) Borrar las marcadas (fila + archivo de Storage)

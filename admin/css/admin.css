@@ -778,15 +778,17 @@ td.td-expandir .pedido-acciones {
 .variaciones-tabla {
     display: flex;
     flex-direction: column;
-    min-width: 640px;
+    min-width: 540px;
     border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
 }
 
+/* Columnas: combinación, precio, precio anterior, stock, activo (el SKU se
+   genera solo — migración 0060 —, así que no lleva columna). */
 .variaciones-fila {
     display: grid;
-    grid-template-columns: 1.4fr 1.1fr 1fr 1.1fr 0.8fr 0.6fr;
+    grid-template-columns: 1.4fr 1fr 1.1fr 0.8fr 0.6fr;
     gap: 0.5rem;
     align-items: center;
     padding: 0.5rem 0.7rem;
