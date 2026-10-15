@@ -536,9 +536,8 @@ export function generarHTMLTarjetaProducto(producto) {
     const esAgotado = !esModoTurnos() && producto.stock === 0;
     const conHorarios = Array.isArray(producto.servicioHorarios) && producto.servicioHorarios.length > 0;
 
-    // V-2: todo texto/URL administrado se escapa antes de interpolarse en HTML.
+    // Quitar descripción de las cards: solo imagen, nombre y precio.
     const nombre = escaparHtml(recortarTexto(producto.nombre));
-    const descripcion = escaparHtml(recortarTexto(producto.descripcion));
     const imagen = escaparHtml(producto.imagen);
 
     return `
@@ -552,7 +551,6 @@ export function generarHTMLTarjetaProducto(producto) {
             </div>
             <div class="product-info">
                 <h3 class="product-title">${nombre}</h3>
-                <p class="product-description">${descripcion}</p>
                 <p class="product-price">${renderPrecioAnterior(producto)}$${formatearPrecio(producto.precio)}</p>
                 ${conHorarios ? '<p class="product-price product-schedule-hint"><i class="fa-solid fa-calendar-check"></i> Horarios disponibles</p>' : ''}
             </div>

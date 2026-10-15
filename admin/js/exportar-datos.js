@@ -80,7 +80,7 @@ export function descargarCSV({ nombre, contenido }) {
 export async function exportarProductosCSV() {
     const sb = await clienteAdmin();
     const { data, error } = await sb.from('products').select(`
-        id, nombre, descripcion, precio, precio_anterior, stock, activo,
+        id, nombre, descripcion_detallada, precio, precio_anterior, stock, activo,
         destacado, created_at,
         categoria:categories(name)
     `).order('id', { ascending: true });
@@ -96,7 +96,7 @@ export async function exportarProductosCSV() {
         p.stock,
         siono(p.destacado),
         siono(p.activo),
-        p.descripcion || '',
+        p.descripcion_detallada || '',
         fechaISO(p.created_at)
     ]);
 

@@ -253,7 +253,7 @@ export async function cargarProductos() {
         const { data: filas, error } = await sb
             .from('products')
             .select(`
-                id, nombre, descripcion, descripcion_detallada, precio, precio_anterior,
+                id, nombre, descripcion_detallada, precio, precio_anterior,
                 stock, caracteristicas, activo, destacado,
                 servicio_duracion_min, servicio_horarios,
                 categoria:categories(id, name),
@@ -314,7 +314,6 @@ function mapaProducto(p) {
     return {
         id: Number(p.id),
         nombre: p.nombre,
-        descripcion: p.descripcion || '',
         descripcionDetallada: p.descripcion_detallada || '',
         precio: Number(p.precio),
         precioAnterior: p.precio_anterior != null ? Number(p.precio_anterior) : null,

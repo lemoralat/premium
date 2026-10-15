@@ -99,7 +99,7 @@ function buscarProductos(query) {
     // Filtrar productos por nombre, descripción o categoría
     const productosFiltrados = productos.filter(producto => {
         return normalizarTexto(producto.nombre).includes(queryNormalizado) ||
-               normalizarTexto(producto.descripcion).includes(queryNormalizado) ||
+               normalizarTexto(producto.descripcionDetallada || producto.descripcion || '').includes(queryNormalizado) ||
                normalizarTexto(producto.categoria).includes(queryNormalizado);
     });
 

@@ -38,7 +38,7 @@ export async function renderizar(contenedor) {
 
     const [productosR, categoriasR, settingsR] = await Promise.all([
         sb.from('products').select(`
-            id, nombre, descripcion, descripcion_detallada, precio, precio_anterior, stock,
+            id, nombre, descripcion_detallada, precio, precio_anterior, stock,
             caracteristicas, activo, destacado,
             servicio_duracion_min, servicio_horarios,
             category_id,
@@ -328,11 +328,7 @@ function abrirModalProducto(idExistente) {
                 <input type="text" id="prdNombre" required value="${esc(producto?.nombre || '')}" placeholder="${enServicios ? 'ej: Corte de pelo y barba' : 'ej: Zapatillas urbanas unisex'}">
             </div>
             <div class="admin-field full">
-                <label for="prdDescripcion">Descripción corta</label>
-                <input type="text" id="prdDescripcion" value="${esc(producto?.descripcion || '')}" placeholder="Es el texto breve que aparece junto al producto en la tienda">
-            </div>
-            <div class="admin-field full">
-                <label for="prdDetallada">Descripción detallada</label>
+                <label for="prdDetallada">Descripción</label>
                 <textarea id="prdDetallada">${esc(producto?.descripcion_detallada || '')}</textarea>
             </div>
 
@@ -571,7 +567,6 @@ function abrirModalProducto(idExistente) {
 
         const payload = {
             nombre: $('#prdNombre').value.trim(),
-            descripcion: $('#prdDescripcion').value.trim(),
             descripcion_detallada: $('#prdDetallada').value.trim(),
             precio,
             precio_anterior: precioAnteriorValor !== '' ? Number(precioAnteriorValor) : null,

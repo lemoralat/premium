@@ -138,7 +138,7 @@ function inyectarDatosEstructurados(producto) {
         "@type": "Product",
         "name": producto.nombre,
         "image": producto.imagen,
-        "description": producto.descripcion,
+        "description": producto.descripcionDetallada || "",
         "sku": `PROD-${producto.id}`,
         "offers": {
             "@type": "Offer",
