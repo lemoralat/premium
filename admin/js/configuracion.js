@@ -204,8 +204,9 @@ export async function renderizar(contenedor) {
                     <div class="admin-field full">
                         <label class="admin-check">
                             <input type="checkbox" id="cfgPopupActivo" ${s.popup_activo === true ? 'checked' : ''}>
-                            Activar ventana de salida (se mostrará cuando alguien esté por salir de la tienda)
+                            Activar ventana de salida
                         </label>
+                        <span class="hint">Se mostrará cuando alguien esté por salir de la tienda. Podés personalizar el mensaje y el botón más arriba.</span>
                     </div>
                 </div>
                 <div class="admin-modal-acciones">
