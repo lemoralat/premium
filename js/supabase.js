@@ -61,7 +61,10 @@ export function invalidarCacheProductos() {
 function firmaProducto(p) {
     const base = [p.id, p.stock, p.precio, p.precioAnterior, p.imagen, (p.galeria || []).join(','), p.destacado ? 1 : 0];
     if (p.tipo === 'variable' && Array.isArray(p.variantes)) {
-        base.push(p.variantes.map((v) => `${v.id}:${v.precio}:${v.stock}:${v.activo ? 1 : 0}`).join(','));
+        // La imagen de la variación (0061) entra en la firma: si el panel la
+        // cambia, la ficha abierta se actualiza sola. `v.imagen` es la URL ya
+        // resuelta del producto mapeado (no la ruta de Storage).
+        base.push(p.variantes.map((v) => `${v.id}:${v.precio}:${v.stock}:${v.activo ? 1 : 0}:${v.imagen || ''}`).join(','));
     }
     return base.join('|');
 }
@@ -264,7 +267,7 @@ export async function cargarProductos() {
                 servicio_duracion_min, servicio_horarios,
                 categoria:categories(id, name),
                 opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
-                variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion),
+                variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion, imagen_storage_path),
                 imagenes:product_images(id, storage_path, es_principal, position)
             `)
             .eq('activo', true)
@@ -323,6 +326,8 @@ function mapaProducto(p) {
         }));
 
     // Combinaciones del producto variable (0059): cada una con su precio/stock.
+    // Desde 0061 cada variación puede tener su propia imagen: en la ficha, al
+    // elegirla, la galería cambia sola a esa foto (js/producto-detalle.js).
     const variantes = tipo === 'variable'
         ? [...(Array.isArray(p.variantes) ? p.variantes : [])]
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -332,7 +337,8 @@ function mapaProducto(p) {
                 precioAnterior: v.precio_anterior != null ? Number(v.precio_anterior) : null,
                 stock: Number(v.stock),
                 activo: v.activo !== false,
-                combinacion: Array.isArray(v.combinacion) ? v.combinacion.map(String) : []
+                combinacion: Array.isArray(v.combinacion) ? v.combinacion.map(String) : [],
+                imagen: urlImagen({ storage_path: v.imagen_storage_path }) || ''
             }))
         : [];
 

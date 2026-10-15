@@ -778,21 +778,28 @@ td.td-expandir .pedido-acciones {
 .variaciones-tabla {
     display: flex;
     flex-direction: column;
-    min-width: 540px;
+    min-width: 640px;
     border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
 }
 
-/* Columnas: combinación, precio, precio anterior, stock, activo (el SKU se
-   genera solo — migración 0060 —, así que no lleva columna). */
+/* Columnas: combinación, imagen, precio, precio anterior, stock, activo (el SKU
+   se genera solo — migración 0060 —, así que no lleva columna). En modo "Sin
+   imágenes" no se ofrece la foto de la variación y queda en 5 columnas. */
 .variaciones-fila {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1.1fr 0.8fr 0.6fr;
+    grid-template-columns: 1.4fr 0.7fr 1fr 1.1fr 0.8fr 0.6fr;
     gap: 0.5rem;
     align-items: center;
     padding: 0.5rem 0.7rem;
     border-bottom: 1px solid var(--border);
+}
+
+.variaciones-tabla.sin-imagen { min-width: 540px; }
+
+.variaciones-tabla.sin-imagen .variaciones-fila {
+    grid-template-columns: 1.4fr 1fr 1.1fr 0.8fr 0.6fr;
 }
 
 .variaciones-fila:last-child { border-bottom: none; }
@@ -823,6 +830,64 @@ td.td-expandir .pedido-acciones {
     font-weight: 600;
     overflow-wrap: anywhere;
 }
+
+/* Imagen propia de la variación (0061): miniatura + botón para subir/cambiar. */
+.variacion-imagen {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.variacion-img-btn {
+    display: block;
+    cursor: pointer;
+    line-height: 0;
+    border-radius: 8px;
+}
+
+.variacion-img-btn input[type="file"] { display: none; }
+
+.variacion-img-btn .variacion-img-vacio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: var(--fs-md);
+    background: var(--surface);
+}
+
+.variacion-img-btn:hover .variacion-img-vacio {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.variacion-img-thumb {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-alt);
+}
+
+.variacion-img-btn:hover .variacion-img-thumb { border-color: var(--primary); }
+
+.variacion-img-quitar {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.15rem;
+    line-height: 1;
+    font-size: var(--fs-sm);
+}
+
+.variacion-img-quitar:hover { color: var(--danger); }
 
 .variacion-activo { justify-content: center; }
 

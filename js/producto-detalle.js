@@ -1,9 +1,12 @@
 // Página de detalle de producto con galería de imágenes y zoom
 
-import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, esProductoVariable, buscarVariante, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, placeholderImagenPublica, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
+import { formatearPrecio, mostrarNotificacion, obtenerProductos, generarHTMLTarjetaProducto, agregarAlCarritoBase, renderPrecioAnterior, tieneVariantes, esProductoVariable, buscarVariante, escaparHtml, claveItemCarrito, recortarTexto, obtenerNombreSitio, cargarConfiguracionGlobal, esModoTurnos } from './utils.js';
 import { suscribirRefrescoCatalogo } from './supabase.js';
 
 let imagenActualIndex = 0;
+// Imagen propia de la variación elegida (0061). Mientras tiene valor, manda
+// sobre la galería del producto; vacío = se ve la galería normal.
+let imagenVarianteUrl = '';
 let zoomActivo = false;
 let productos = []; // Se cargará dinámicamente
 
@@ -240,21 +243,38 @@ function renderizarDetalleProducto(producto) {
         ? producto.galeria 
         : [producto.imagen]).filter(Boolean);
 
+    // La galería se redibuja de cero y los selectores de variante vuelven a su
+    // estado inicial (sin combinación): la imagen de la variante elegida antes
+    // deja de estar vigente.
+    imagenVarianteUrl = '';
+
     // V-2: nombre y URLs son contenido administrado → escapar antes de HTML.
     const nombreSeguro = escaparHtml(recortarTexto(producto.nombre));
+
+    // Sin fotos propias del producto se muestra un bloque gris, pero como <img>:
+    // cada variación puede traer su foto (0061) y la galería tiene que poder
+    // mostrarla. El aspecto es idéntico al placeholder (misma clase).
+    const IMAGEN_VACIA = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    const srcPrincipal = imagenesGaleria.length ? imagenesGaleria[0] : IMAGEN_VACIA;
+    const clasePrincipal = imagenesGaleria.length
+        ? 'product-detail-image'
+        : 'product-detail-image public-image-placeholder';
+
+    // El aviso de "click para ampliar" solo tiene sentido si hay algo que
+    // ampliar: las fotos del producto o, en un variable, la que traiga la
+    // combinación elegida.
+    const mostrarAvisoZoom = imagenesGaleria.length > 0 || esVariable;
     
     container.innerHTML = `
         <div class="product-detail-grid">
             <div class="product-detail-image-container">
                 <!-- Imagen principal -->
                 <div class="main-image-wrapper">
-                    ${imagenesGaleria.length
-                        ? `<img src="${escaparHtml(imagenesGaleria[0])}"
-                             alt="${nombreSeguro}"
-                             class="product-detail-image"
-                             id="mainProductImage"
-                             onclick="toggleZoom()">`
-                        : placeholderImagenPublica('product-detail-image')}
+                    <img src="${escaparHtml(srcPrincipal)}"
+                         alt="${nombreSeguro}"
+                         class="${clasePrincipal}"
+                         id="mainProductImage"
+                         onclick="toggleZoom()">
                     
                     ${imagenesGaleria.length > 1 ? `
                         <button class="gallery-nav-btn prev-img" onclick="cambiarImagen(-1)" aria-label="Imagen anterior">
@@ -269,8 +289,8 @@ function renderizarDetalleProducto(producto) {
                         </div>
                     ` : ''}
                     
-                    ${imagenesGaleria.length ? `
-                    <div class="zoom-hint">
+                    ${mostrarAvisoZoom ? `
+                    <div class="zoom-hint${imagenesGaleria.length ? '' : ' oculto'}">
                         <i class="fa-solid fa-magnifying-glass-plus"></i>
                         <span>Click para ampliar</span>
                     </div>` : ''}
@@ -478,6 +498,9 @@ function actualizarVarianteUI() {
         }
     }
 
+    // La foto de la combinación elegida manda en la galería (0061).
+    sincronizarImagenVariante(producto);
+
     // Recalcular el tope de cantidad contra el stock de la combinación elegida.
     cantidadSeleccionada = 1;
     cambiarCantidad(0);
@@ -509,12 +532,37 @@ function seleccionarImagen(index) {
     actualizarImagenPrincipal();
 }
 
+// URL que debe mostrar la imagen principal hoy: la foto propia de la variación
+// elegida (0061) o, si no hay, la de la galería del producto.
+function urlImagenPrincipal() {
+    const productoId = obtenerIdProducto();
+    const producto = productos.find(p => p.id === productoId);
+    if (!producto) return '';
+
+    if (imagenVarianteUrl) return imagenVarianteUrl;
+
+    const galeria = (producto.galeria && producto.galeria.length > 0
+        ? producto.galeria
+        : [producto.imagen]).filter(Boolean);
+    if (!galeria.length) return '';
+    // Tope por si la galería se acortó (se editaron las imágenes del producto).
+    return galeria[Math.min(imagenActualIndex, galeria.length - 1)] || '';
+}
+
 // Actualizar imagen principal y miniaturas
 function actualizarImagenPrincipal() {
     const productoId = obtenerIdProducto();
     const producto = productos.find(p => p.id === productoId);
     
-    if (!producto || !producto.galeria) return;
+    if (!producto) return;
+
+    // Con la foto de la variación hay una sola imagen: el contador y las
+    // miniaturas de la galería del producto dejan de tener sentido.
+    const conImagenVariante = Boolean(imagenVarianteUrl);
+    const galeria = (producto.galeria && producto.galeria.length > 0
+        ? producto.galeria
+        : [producto.imagen]).filter(Boolean);
+    if (!conImagenVariante && galeria.length === 0) return;
     
     const mainImage = document.getElementById('mainProductImage');
     const imageCounter = document.getElementById('imageCounter');
@@ -524,23 +572,47 @@ function actualizarImagenPrincipal() {
         // Efecto de transición
         mainImage.style.opacity = '0';
         setTimeout(() => {
-            mainImage.src = producto.galeria[imagenActualIndex];
+            mainImage.src = urlImagenPrincipal();
             mainImage.style.opacity = '1';
         }, 200);
     }
     
     if (imageCounter) {
-        imageCounter.textContent = `${imagenActualIndex + 1} / ${producto.galeria.length}`;
+        imageCounter.textContent = conImagenVariante
+            ? '1 / 1'
+            : `${imagenActualIndex + 1} / ${galeria.length}`;
     }
     
     // Actualizar miniaturas activas
     thumbnails.forEach((thumb, idx) => {
-        if (idx === imagenActualIndex) {
+        if (!conImagenVariante && idx === imagenActualIndex) {
             thumb.classList.add('active');
         } else {
             thumb.classList.remove('active');
         }
     });
+}
+
+// La galería sigue a la combinación elegida (0061): si la variación tiene foto
+// propia, la imagen principal pasa a ser esa (y se ocultan miniaturas, flechas y
+// contador porque hay una sola imagen); si no tiene, o no hay combinación
+// elegida, se vuelve a la galería del producto.
+function sincronizarImagenVariante(producto) {
+    const variante = esProductoVariable(producto) ? varianteSeleccionada(producto) : null;
+    const nueva = (variante && variante.imagen) ? variante.imagen : '';
+    const cambio = nueva !== imagenVarianteUrl;
+    imagenVarianteUrl = nueva;
+
+    const contenedor = document.querySelector('.product-detail-image-container');
+    if (contenedor) contenedor.setAttribute('data-imagen-variante', nueva ? 'true' : 'false');
+
+    // El aviso de zoom solo se muestra si hay algo que ampliar: fotos propias del
+    // producto, o la de la variante elegida.
+    const aviso = document.querySelector('.zoom-hint');
+    const hayFotosPropias = Boolean(producto.galeria && producto.galeria.length > 0);
+    if (aviso) aviso.classList.toggle('oculto', !nueva && !hayFotosPropias);
+
+    if (cambio) actualizarImagenPrincipal();
 }
 
 // Toggle zoom en la imagen
@@ -550,10 +622,18 @@ function toggleZoom() {
     
     if (!producto) return;
     
-    const imagenesGaleria = (producto.galeria && producto.galeria.length > 0 
-        ? producto.galeria 
-        : [producto.imagen]).filter(Boolean);
+    // Con la foto de la variante elegida (0061) el zoom muestra esa sola imagen:
+    // sin flechas, sin contador y sin miniaturas.
+    const imagenesGaleria = imagenVarianteUrl
+        ? [imagenVarianteUrl]
+        : (producto.galeria && producto.galeria.length > 0 
+            ? producto.galeria 
+            : [producto.imagen]).filter(Boolean);
     if (!imagenesGaleria.length) return;
+
+    // La galería pudo acortarse (o achicarse a una sola imagen): nunca indexar
+    // fuera de rango.
+    const idxZoom = Math.min(imagenActualIndex, imagenesGaleria.length - 1);
 
     // V-2: nombre y URLs administradas → escapar antes de interpolar.
     const productoNombre = escaparHtml(recortarTexto(producto.nombre));
@@ -578,7 +658,7 @@ function toggleZoom() {
             ` : ''}
             
             <div class="zoom-image-wrapper">
-                <img src="${escaparHtml(imagenesGaleria[imagenActualIndex])}" 
+                <img src="${escaparHtml(imagenesGaleria[idxZoom])}" 
                      alt="${productoNombre}" 
                      class="zoom-image" 
                      id="zoomImage"
@@ -587,14 +667,14 @@ function toggleZoom() {
             
             ${imagenesGaleria.length > 1 ? `
                 <div class="zoom-counter">
-                    <span id="zoomCounter">${imagenActualIndex + 1} / ${imagenesGaleria.length}</span>
+                    <span id="zoomCounter">${idxZoom + 1} / ${imagenesGaleria.length}</span>
                 </div>
                 
                 <div class="zoom-thumbnails">
                     ${imagenesGaleria.map((img, idx) => `
                         <img src="${escaparHtml(img)}" 
                              alt="${productoNombre} - Vista ${idx + 1}" 
-                             class="zoom-thumbnail ${idx === imagenActualIndex ? 'active' : ''}" 
+                             class="zoom-thumbnail ${idx === idxZoom ? 'active' : ''}" 
                              onclick="event.stopPropagation(); seleccionarImagenZoom(${idx})">
                     `).join('')}
                 </div>
@@ -666,7 +746,13 @@ function actualizarImagenZoom() {
     const productoId = obtenerIdProducto();
     const producto = productos.find(p => p.id === productoId);
     
-    if (!producto || !producto.galeria) return;
+    if (!producto) return;
+    
+    const conImagenVariante = Boolean(imagenVarianteUrl);
+    const galeria = (producto.galeria && producto.galeria.length > 0
+        ? producto.galeria
+        : [producto.imagen]).filter(Boolean);
+    if (!conImagenVariante && !galeria.length) return;
     
     const zoomImage = document.getElementById('zoomImage');
     const zoomCounter = document.getElementById('zoomCounter');
@@ -677,7 +763,7 @@ function actualizarImagenZoom() {
         zoomImage.style.transform = 'scale(0.95)';
         
         setTimeout(() => {
-            zoomImage.src = producto.galeria[imagenActualIndex];
+            zoomImage.src = urlImagenPrincipal();
             zoomImage.style.opacity = '1';
             zoomImage.style.transform = 'scale(1)';
             
@@ -690,11 +776,13 @@ function actualizarImagenZoom() {
     }
     
     if (zoomCounter) {
-        zoomCounter.textContent = `${imagenActualIndex + 1} / ${producto.galeria.length}`;
+        zoomCounter.textContent = conImagenVariante
+            ? '1 / 1'
+            : `${imagenActualIndex + 1} / ${galeria.length}`;
     }
     
     zoomThumbnails.forEach((thumb, idx) => {
-        if (idx === imagenActualIndex) {
+        if (!conImagenVariante && idx === imagenActualIndex) {
             thumb.classList.add('active');
         } else {
             thumb.classList.remove('active');

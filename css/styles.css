@@ -2788,6 +2788,15 @@ footer p {
 /* Estilos adicionales para la galería de imágenes en producto-detalle.css */
 /* Agregar estos estilos al archivo styles.css existente */
 
+/* Imagen propia de la variación elegida (0061): la galería muestra sola esa
+   foto, así que sobran las miniaturas, las flechas y el contador. El atributo
+   `data-imagen-variante` lo pone js/producto-detalle.js. */
+.product-detail-image-container[data-imagen-variante="true"] .thumbnails-container,
+.product-detail-image-container[data-imagen-variante="true"] .gallery-nav-btn,
+.product-detail-image-container[data-imagen-variante="true"] .image-counter {
+    display: none;
+}
+
 /* Contenedor de imagen principal */
 .main-image-wrapper {
     position: relative;
@@ -3521,6 +3530,11 @@ footer p {
     opacity: 0.8;
     transition: opacity 0.3s;
 }
+
+/* Sin fotos propias del producto y sin combinación elegida no hay nada que
+   ampliar: el aviso queda oculto hasta que aparezca la foto de la variante
+   (0061). Lo alterna js/producto-detalle.js. */
+.zoom-hint.oculto { display: none; }
 
 .main-image-wrapper:hover .zoom-hint {
     opacity: 1;

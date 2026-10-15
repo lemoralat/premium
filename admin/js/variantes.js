@@ -62,9 +62,16 @@ export async function reemplazarAtributos(sb, productoId, atributos) {
 // Sincroniza las variaciones por combinación: las que ya existían se ACTUALIZAN
 // (conservan su id, así los pedidos viejos no pierden su variant_id) y solo se
 // borran las que desaparecieron.
+//
+// Devuelve `{ ids, eliminadas }`:
+//   · ids:       el id de cada variación, en el MISMO orden que `variaciones`.
+//                Lo usa el formulario para asociar la foto elegida en cada fila
+//                con su variante ya guardada (0061).
+//   · eliminadas: [{ id, imagen_storage_path }] de las que se borraron, para
+//                que quien llama pueda limpiar sus archivos de Storage.
 export async function sincronizarVariaciones(sb, productoId, variaciones) {
     const { data: existentes, error: errExistentes } = await sb.from('product_variants')
-        .select('id, combinacion').eq('product_id', productoId);
+        .select('id, combinacion, imagen_storage_path').eq('product_id', productoId);
     if (errExistentes) throw new Error(errExistentes.message);
 
     const idPorCombinacion = new Map(
@@ -75,6 +82,9 @@ export async function sincronizarVariaciones(sb, productoId, variaciones) {
     );
 
     const idsConservados = new Set();
+    // ids de cada combinación, en el MISMO orden que `variaciones`: el llamador
+    // los usa para saber a qué variante corresponde la foto de cada fila.
+    const ids = [];
     // 23505 = violación de único: por combinación repetida (o un SKU a mano que
     // ya esté en uso). Se explica con las etiquetas del combo, no el error crudo.
     const errorAmigable = (error, valores) => {
@@ -102,22 +112,26 @@ export async function sincronizarVariaciones(sb, productoId, variaciones) {
         if (idPorCombinacion.has(clave)) {
             const idVar = idPorCombinacion.get(clave);
             idsConservados.add(idVar);
+            ids.push(idVar);
             const { error } = await sb.from('product_variants').update(fila).eq('id', idVar);
             if (error) throw errorAmigable(error, v.combinacion);
         } else {
             const { data, error } = await sb.from('product_variants').insert(fila).select('id').single();
             if (error) throw errorAmigable(error, v.combinacion);
             idsConservados.add(data.id);
+            ids.push(data.id);
         }
         posVar++;
     }
 
-    const aBorrar = (existentes || [])
-        .map((v) => v.id)
-        .filter((vid) => !idsConservados.has(vid));
-    if (aBorrar.length) {
-        await sb.from('product_variants').delete().in('id', aBorrar);
+    const eliminadas = (existentes || [])
+        .filter((v) => !idsConservados.has(v.id))
+        .map((v) => ({ id: v.id, imagen_storage_path: v.imagen_storage_path || null }));
+    if (eliminadas.length) {
+        await sb.from('product_variants').delete().in('id', eliminadas.map((v) => v.id));
     }
+
+    return { ids, eliminadas };
 }
 
 // Aplica el estado de variantes del producto según su tipo:
@@ -126,14 +140,32 @@ export async function sincronizarVariaciones(sb, productoId, variaciones) {
 //     variaciones. Si siempre fue simple, NO toca las product_options
 //     históricas (productos con opciones del sistema viejo): ningún producto
 //     simple existente pierde datos.
+//
+// Devuelve { ids, eliminadas }: `ids` viene en el MISMO orden que `variaciones`
+// (así el panel sabe a qué variante pertenece la foto de cada fila) y
+// `eliminadas` son las variantes borradas (con su imagen, para poder limpiar el
+// archivo de Storage sin dejar huérfanos).
 export async function guardarVariantesProducto(sb, productoId, { tipo, tipoOriginal = 'simple', atributos = [], variaciones = [] }) {
     if (tipo === 'variable') {
         await reemplazarAtributos(sb, productoId, atributos);
-        await sincronizarVariaciones(sb, productoId, variaciones);
-    } else if (tipoOriginal === 'variable') {
+        return await sincronizarVariaciones(sb, productoId, variaciones);
+    }
+
+    if (tipoOriginal === 'variable') {
+        // Se leen antes de borrar: después ya no hay a quién preguntarle qué
+        // imágenes quedaron huérfanas.
+        const { data: existentes, error } = await sb.from('product_variants')
+            .select('id, imagen_storage_path').eq('product_id', productoId);
+        if (error) throw new Error(error.message);
         await sb.from('product_variants').delete().eq('product_id', productoId);
         await sb.from('product_options').delete().eq('product_id', productoId);
+        return {
+            ids: [],
+            eliminadas: (existentes || []).map((v) => ({ id: v.id, imagen_storage_path: v.imagen_storage_path || null }))
+        };
     }
+
+    return { ids: [], eliminadas: [] };
 }
 
 // ---------------------------------------------------------------------------

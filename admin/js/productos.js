@@ -22,7 +22,7 @@ let cardSinImagenes = false;
 
 // Estado del formulario abierto
 let variantesModal = [];        // atributos del producto variable: [{ opcion, valores }]
-let variacionesModal = [];      // combinaciones generadas: [{ clave, valores, precio, precioAnterior, stock, activo }]
+let variacionesModal = [];      // combinaciones generadas: [{ clave, valores, precio, precioAnterior, stock, activo, imagenPath, imagenFile, imagenUrl, imagenQuitar }]
 let tipoModal = 'simple';       // pestaña activa: 'simple' | 'variable'
 let tipoOriginal = 'simple';    // tipo con el que se abrió (para saber si hubo conversión)
 let caracteristicasModal = [];
@@ -50,7 +50,7 @@ export async function renderizar(contenedor) {
             category_id,
             categoria:categories(id, name),
             opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
-            variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion),
+            variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion, imagen_storage_path),
             imagenes:product_images(id, storage_path, es_principal, position)
         `).order('id', { ascending: true }),
         sb.from('categories').select('id, name, slug, active').eq('active', true).order('position', { ascending: true }),
@@ -332,7 +332,13 @@ function abrirModalProducto(idExistente) {
                 precio: v.precio != null ? String(v.precio) : '',
                 precioAnterior: v.precio_anterior != null ? String(v.precio_anterior) : '',
                 stock: v.stock != null ? String(v.stock) : '0',
-                activo: v.activo !== false
+                activo: v.activo !== false,
+                // Imagen propia de la variación (0061): la ruta ya guardada, más
+                // el archivo nuevo (si el admin elige otro) y si se quitó.
+                imagenPath: v.imagen_storage_path || '',
+                imagenFile: null,
+                imagenUrl: '',
+                imagenQuitar: false
             }))
         : [];
 
@@ -479,7 +485,7 @@ function abrirModalProducto(idExistente) {
             </div>
 
             <div class="admin-field full" data-tipo-panel="variable">
-                <label>Variaciones <span class="hint">(se generan solas a partir de los atributos; completá precio y stock de cada una, el SKU lo crea el sistema solo)</span></label>
+                <label>Variaciones <span class="hint">(se generan solas a partir de los atributos; completá precio y stock de cada una${cardSinImagenes ? '' : ', y podés subir una foto propia de la variación: al elegirla en la tienda, la galería la muestra'}. El SKU lo crea el sistema solo)</span></label>
                 <div class="variaciones-tabla-wrap" id="variacionesTabla"></div>
             </div>`}
 
@@ -677,7 +683,12 @@ function abrirModalProducto(idExistente) {
                     precio: p,
                     precio_anterior: pa,
                     stock: s,
-                    activo: v.activo !== false
+                    activo: v.activo !== false,
+                    // Imagen propia de la variación (0061): el archivo recién se
+                    // sube en guardarProducto, cuando ya existe el id.
+                    imagenPath: v.imagenPath || '',
+                    imagenFile: v.imagenFile || null,
+                    imagenQuitar: Boolean(v.imagenQuitar)
                 });
             }
 
@@ -969,13 +980,19 @@ function generarVariaciones() {
     variacionesModal = combos.map((valores) => {
         const clave = claveCombinacion(valores);
         const previa = previas.get(clave);
+        // Si la combinación ya existía se conserva ENTERA la fila (precio, stock
+        // y también su imagen): cambiar un atributo no pierde lo cargado.
         return previa || {
             clave,
             valores,
             precio: precioBase,
             precioAnterior: '',
             stock: '0',
-            activo: true
+            activo: true,
+            imagenPath: '',
+            imagenFile: null,
+            imagenUrl: '',
+            imagenQuitar: false
         };
     });
 
@@ -997,6 +1014,14 @@ function capturarVariaciones() {
     });
 }
 
+// URL que hay que previsualizar en la fila de una variación: el archivo nuevo
+// elegido, la imagen ya guardada (si no se quitó) o nada.
+function imagenPreviaVariacion(v) {
+    if (v.imagenFile) return v.imagenUrl || '';
+    if (v.imagenQuitar) return '';
+    return v.imagenPath ? urlPublica(v.imagenPath) : '';
+}
+
 function renderVariaciones() {
     const cont = $('#variacionesTabla');
     if (!cont) return;
@@ -1009,32 +1034,96 @@ function renderVariaciones() {
     // El encabezado de cada fila es la combinación de valores; no hace falta
     // repetir los nombres de los atributos (ya están arriba, en el repetidor).
     const atributos = atributosValidos();
+    // Modo "Sin imágenes" (0057): la tienda no muestra fotos, así que tampoco se
+    // ofrece subir la imagen de cada variación.
+    const conImagen = !cardSinImagenes;
 
     cont.innerHTML = `
-        <div class="variaciones-tabla">
+        <div class="variaciones-tabla ${conImagen ? '' : 'sin-imagen'}">
             <div class="variaciones-fila variaciones-head">
                 <span>Combinación</span>
+                ${conImagen ? '<span>Imagen</span>' : ''}
                 <span>Precio ($) *</span>
                 <span>Precio anterior ($)</span>
                 <span>Stock *</span>
                 <span>Activo</span>
             </div>
-            ${variacionesModal.map((v, idx) => `
+            ${variacionesModal.map((v, idx) => {
+                const previa = conImagen ? imagenPreviaVariacion(v) : '';
+                return `
                 <div class="variaciones-fila" data-variacion-row="${idx}">
                     <span class="variacion-etiqueta">${(v.valores || []).map((x) => esc(x)).join(' · ')}</span>
+                    ${conImagen ? `
+                    <span class="variacion-imagen">
+                        <label class="variacion-img-btn" title="${previa ? 'Cambiar la imagen de esta variación' : 'Subir una imagen para esta variación'}">
+                            <input type="file" data-campo="imagen" accept="image/jpeg,image/png,image/webp" aria-label="Imagen de la variación ${esc((v.valores || []).join(' · '))}">
+                            ${previa
+                                ? `<img src="${esc(previa)}" alt="" class="variacion-img-thumb">`
+                                : `<span class="variacion-img-vacio"><i class="fa-regular fa-image"></i></span>`}
+                        </label>
+                        ${previa ? `<button type="button" class="variacion-img-quitar" data-campo="imagenQuitar" title="Quitar la imagen" aria-label="Quitar la imagen de esta variación"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                    </span>` : ''}
                     <input type="number" data-campo="precio" min="0" step="1" placeholder="0" value="${esc(v.precio)}" aria-label="Precio">
                     <input type="number" data-campo="precioAnterior" min="0" step="1" placeholder="—" value="${esc(v.precioAnterior)}" aria-label="Precio anterior">
                     <input type="number" data-campo="stock" min="0" step="1" placeholder="0" value="${esc(v.stock)}" aria-label="Stock">
                     <label class="admin-check variacion-activo"><input type="checkbox" data-campo="activo" ${v.activo ? 'checked' : ''} aria-label="Activo"></label>
                 </div>
-            `).join('')}
+            `;
+            }).join('')}
         </div>
     `;
 
-    // Mantener el estado al escribir (y revalidar al salir del campo).
-    cont.querySelectorAll('[data-variacion-row] input').forEach((input) => {
+    // Mantener el estado al escribir (y revalidar al salir del campo). Se excluye
+    // el input de archivo (su valor lo maneja el listener de abajo).
+    cont.querySelectorAll('[data-variacion-row] input:not([type="file"])').forEach((input) => {
         input.addEventListener('input', () => capturarVariaciones());
     });
+
+    if (conImagen) {
+        // Subir/cambiar la foto de una variación. El archivo se optimiza y se
+        // sube a Storage recién al guardar (recién ahí existe el id de la
+        // variante, incluso para una recién creada): acá solo se guarda en el
+        // estado y se previsualiza.
+        cont.querySelectorAll('[data-campo="imagen"]').forEach((input) => {
+            input.addEventListener('change', async () => {
+                const fila = input.closest('[data-variacion-row]');
+                const idx = Number(fila?.dataset.variacionRow);
+                const archivo = input.files && input.files[0];
+                input.value = '';
+                if (!archivo || !variacionesModal[idx]) return;
+                try {
+                    const optimizada = await validarYOptimizarImagen(archivo, { maxLado: LIMITES_IMAGEN.producto });
+                    // Antes de redibujar hay que guardar lo que el admin escribió.
+                    capturarVariaciones();
+                    const v = variacionesModal[idx];
+                    if (v.imagenUrl) URL.revokeObjectURL(v.imagenUrl);
+                    v.imagenFile = optimizada && optimizada.size ? optimizada : archivo;
+                    v.imagenUrl = URL.createObjectURL(v.imagenFile);
+                    v.imagenQuitar = false;
+                    renderVariaciones();
+                } catch (error) {
+                    toast(error.message, 'error');
+                }
+            });
+        });
+
+        cont.querySelectorAll('[data-campo="imagenQuitar"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const idx = Number(btn.closest('[data-variacion-row]')?.dataset.variacionRow);
+                if (!variacionesModal[idx]) return;
+                capturarVariaciones();
+                const v = variacionesModal[idx];
+                if (v.imagenUrl) URL.revokeObjectURL(v.imagenUrl);
+                v.imagenFile = null;
+                v.imagenUrl = '';
+                // Si la variación ya tenía una imagen guardada, se marca para
+                // borrarla (fila + archivo) al guardar el producto.
+                v.imagenQuitar = Boolean(v.imagenPath);
+                renderVariaciones();
+            });
+        });
+    }
+
     // Re-render del encabezado si cambian los nombres de los atributos no hace
     // falta: la clave de cada fila sigue siendo sus valores.
     if (atributos.length === 0) {
@@ -1184,6 +1273,37 @@ function renderImagenes() {
 // Guardado
 // ============================================================================
 
+// Imagen propia de cada variación (migración 0061). `ids` viene en el MISMO
+// orden que `variaciones` (lo devuelve guardarVariantesProducto), así cada fila
+// sabe a qué variante pertenece. El archivo se sube recién acá porque hace falta
+// el id: una variante nueva lo recibe cuando se inserta.
+async function guardarImagenesVariantes(sb, productoId, variaciones, ids) {
+    for (let i = 0; i < variaciones.length; i++) {
+        const v = variaciones[i];
+        const idVariacion = ids[i];
+        if (!idVariacion) continue;
+
+        // 1) El admin eligió un archivo nuevo.
+        if (v.imagenFile) {
+            const rutaNueva = await subirImagenAdmin('products', `products/${productoId}/variantes`, v.imagenFile);
+            const { error } = await sb.from('product_variants')
+                .update({ imagen_storage_path: rutaNueva }).eq('id', idVariacion);
+            if (error) throw new Error(error.message);
+            // La imagen anterior se borra recién cuando la nueva ya está arriba.
+            if (v.imagenPath && v.imagenPath !== rutaNueva) await eliminarImagenAdmin(v.imagenPath);
+            continue;
+        }
+
+        // Imagen que estaba guardada y se quitó desde el formulario.
+        if (v.imagenQuitar && v.imagenPath) {
+            const { error } = await sb.from('product_variants')
+                .update({ imagen_storage_path: null }).eq('id', idVariacion);
+            if (error) throw new Error(error.message);
+            await eliminarImagenAdmin(v.imagenPath);
+        }
+    }
+}
+
 async function guardarProducto(payload, id, opciones = {}) {
     const { tipo = 'simple', tipoOriginal = 'simple', atributos = [], variaciones = [], enServicios = false } = opciones;
     const sb = await clienteAdmin();
@@ -1205,7 +1325,22 @@ async function guardarProducto(payload, id, opciones = {}) {
     //      variant_id). El SKU no se manda: lo genera la base (migración 0060).
     //    · Producto simple que ANTES era variable: se limpia todo. Si siempre
     //      fue simple, no se tocan las product_options históricas.
-    await guardarVariantesProducto(sb, productoId, { tipo, tipoOriginal, atributos, variaciones });
+    //    `ids` viene en el MISMO orden que `variaciones` y `eliminadas` son las
+    //    variantes que dejaron de existir (con su imagen, para limpiarla).
+    const { ids, eliminadas } = await guardarVariantesProducto(sb, productoId, { tipo, tipoOriginal, atributos, variaciones });
+
+    // 2b) Imagen propia de cada variación (migración 0061). Se sube recién acá
+    //     porque hace falta el id de la variante (una nueva lo recibe al
+    //     insertarse). `ids[i]` es la variante de `variaciones[i]`.
+    if (tipo === 'variable' && ids.length) {
+        await guardarImagenesVariantes(sb, productoId, variaciones, ids);
+    }
+
+    // 2c) Variantes que se borraron (combinación eliminada o producto que pasó a
+    //     simple): sus archivos no deben quedar huérfanos en Storage.
+    for (const v of eliminadas) {
+        if (v.imagen_storage_path) await eliminarImagenAdmin(v.imagen_storage_path);
+    }
 
     // 3) Imágenes
     // 3a) Borrar las marcadas (fila + archivo de Storage)
