@@ -40,10 +40,10 @@ export async function renderizarGestor(contenedor) {
             <button type="button" class="btn btn-primary" id="btnNuevaPregunta" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Agregar pregunta
             </button>
-        </div>
-        <p class="hint">Podés agregar hasta ${MAX_PREGUNTAS} preguntas. ${alTope
+            <p class="hint" style="margin-left:1rem;">Podés agregar hasta ${MAX_PREGUNTAS} preguntas. ${alTope
             ? 'Límite alcanzado: borrá alguna para crear otra (desactivar no libera lugar).'
             : `Te quedan ${quedan}.`}</p>
+        </div>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
                 <thead>
