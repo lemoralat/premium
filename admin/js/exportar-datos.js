@@ -8,6 +8,14 @@
 // ============================================================================
 
 import { clienteAdmin } from './admin-supabase.js';
+import {
+    guardarVariantesProducto,
+    calcularPrecioStock,
+    serializarAtributos,
+    serializarVariantes,
+    parsearAtributos,
+    parsearVariantes
+} from './variantes.js';
 
 // Separador de campo: ';' para que el archivo abra directo en Excel con
 // configuración regional es-AR (el separador de lista argentino es ';').
@@ -160,35 +168,72 @@ export function descargarCSV({ nombre, contenido }) {
 }
 
 // ----------------------------------------------------------------------------
-// PRODUCTOS (.csv) — columnas: id, nombre, categoría, precio, precio anterior,
-// stock, destacado, activo, descripción, duración estimada y horarios (solo en
-// modo turnos, migración 0053), características y fecha de creación. Orden: id asc.
+// PRODUCTOS (.csv) — columnas: id, tipo, nombre, categoría, precio, precio
+// anterior, stock, destacado, activo, descripción, atributos y variantes
+// (productos variables, 0059), duración estimada y horarios (solo en modo
+// turnos, 0053), características y fecha de creación. Orden: id asc.
+//
+// En un producto variable, precio y stock de la fila son el AGREGADO (mínimo y
+// suma de las variantes); las combinaciones reales viajan en las columnas
+// "atributos" y "variantes". El SKU no se exporta porque la base lo genera.
 // ----------------------------------------------------------------------------
 export async function exportarProductosCSV() {
     const sb = await clienteAdmin();
     const { data, error } = await sb.from('products').select(`
         id, nombre, descripcion_detallada, precio, precio_anterior, stock, activo,
-        destacado, created_at, caracteristicas, servicio_duracion_min, servicio_horarios,
-        categoria:categories(name)
+        destacado, created_at, caracteristicas, tipo,
+        servicio_duracion_min, servicio_horarios,
+        categoria:categories(name),
+        opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
+        variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion)
     `).order('id', { ascending: true });
     if (error) throw new Error(error.message);
 
-    const encabezados = ['id', 'nombre', 'categoría', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'duracion_estimada', 'horarios', 'caracteristicas', 'fecha_creacion'];
-    const filas = data.map((p) => [
-        p.id,
-        p.nombre,
-        p.categoria?.name || '',
-        numero(p.precio),
-        numero(p.precio_anterior),
-        p.stock,
-        siono(p.destacado),
-        siono(p.activo),
-        p.descripcion_detallada || '',
-        Number(p.servicio_duracion_min) > 0 ? Number(p.servicio_duracion_min) : '',
-        serializarHorarios(p.servicio_horarios),
-        Array.isArray(p.caracteristicas) ? p.caracteristicas.join(' | ') : '',
-        fechaISO(p.created_at)
-    ]);
+    const encabezados = ['id', 'tipo', 'nombre', 'categoría', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'atributos', 'variantes', 'duracion_estimada', 'horarios', 'caracteristicas', 'fecha_creacion'];
+    const filas = data.map((p) => {
+        const esVariable = p.tipo === 'variable';
+        // Atributos y variaciones, ya ordenados como se generaron.
+        const atributos = esVariable ? serializarAtributos(
+            (p.opciones || [])
+                .slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map((o) => ({
+                    opcion: o.opcion,
+                    valores: (o.valores || []).slice()
+                        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                        .map((v) => v.valor)
+                }))
+        ) : '';
+        const variantes = esVariable ? serializarVariantes(
+            (p.variantes || [])
+                .slice().sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map((v) => ({
+                    combinacion: Array.isArray(v.combinacion) ? v.combinacion.map(String) : [],
+                    precio: v.precio,
+                    precio_anterior: v.precio_anterior,
+                    stock: v.stock,
+                    activo: v.activo !== false
+                }))
+        ) : '';
+
+        return [
+            p.id,
+            esVariable ? 'variable' : 'simple',
+            p.nombre,
+            p.categoria?.name || '',
+            numero(p.precio),
+            numero(p.precio_anterior),
+            p.stock,
+            siono(p.destacado),
+            siono(p.activo),
+            p.descripcion_detallada || '',
+            atributos,
+            variantes,
+            Number(p.servicio_duracion_min) > 0 ? Number(p.servicio_duracion_min) : '',
+            serializarHorarios(p.servicio_horarios),
+            Array.isArray(p.caracteristicas) ? p.caracteristicas.join(' | ') : '',
+            fechaISO(p.created_at)
+        ];
+    });
 
     return {
         nombre: `productos_${fechaHoy()}.csv`,
@@ -259,7 +304,7 @@ export async function importarProductosCSV(file) {
     const cols = normalizarEncabezados(encabezado, sep);
 
     const map = {};
-    ['id', 'nombre', 'categoria', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'descripcion_detallada', 'duracion_estimada', 'horarios', 'caracteristicas'].forEach((k) => {
+    ['id', 'tipo', 'nombre', 'categoria', 'precio', 'precio_anterior', 'stock', 'destacado', 'activo', 'descripcion', 'descripcion_detallada', 'atributos', 'variantes', 'duracion_estimada', 'horarios', 'caracteristicas'].forEach((k) => {
         const i = cols.indexOf(k);
         if (i >= 0) map[k] = i;
     });
@@ -267,7 +312,7 @@ export async function importarProductosCSV(file) {
     // Diagnóstico explícito: si falta la columna clave, se informa qué llegó
     // y qué se espera, en vez de "procesar" cero filas sin aviso.
     if (map.nombre === undefined) {
-        throw new Error(`No se encontró la columna "nombre". Encabezado recibido: "${encabezado}". Columnas esperadas: id;nombre;categoría;precio;precio_anterior;stock;destacado;activo;descripcion;duracion_estimada;horarios;caracteristicas`);
+        throw new Error(`No se encontró la columna "nombre". Encabezado recibido: "${encabezado}". Columnas esperadas: id;tipo;nombre;categoría;precio;precio_anterior;stock;destacado;activo;descripcion;atributos;variantes;duracion_estimada;horarios;caracteristicas`);
     }
 
     // creadosConId: filas que traían un id que no existe y se crearon como
@@ -293,6 +338,21 @@ export async function importarProductosCSV(file) {
         if (error) tieneModo = false;
     }
 
+    // ¿Existen productos variables (0059/0060)? Si no, no se tocan atributos
+    // ni variaciones (archivos viejos o una BD sin migrar).
+    let tieneVariantes = true;
+    {
+        const { error } = await sb.from('product_variants').select('id').limit(1);
+        if (error) tieneVariantes = false;
+    }
+
+    // Tipo actual de cada producto existente (para detectar conversión).
+    const tipoPorId = new Map();
+    {
+        const { data } = await sb.from('products').select('id, tipo');
+        (data || []).forEach((p) => tipoPorId.set(String(p.id), p.tipo || 'simple'));
+    }
+
     for (const v of filas) {
         procesados++;
         try {
@@ -313,8 +373,39 @@ export async function importarProductosCSV(file) {
             const category_id = catName ? (categorias[catName.toLowerCase()] || null) : null;
             const id = limpiarCelda(v[map.id]);
 
+            // Productos variables (0059): el CSV trae "atributos" y "variantes".
+            // En modo turnos no hay variables (los servicios son siempre simples).
+            const tieneTipoCol = map.tipo !== undefined;
+            const tipoTxt = tieneTipoCol ? limpiarCelda(v[map.tipo]).toLowerCase() : 'simple';
+            const esVariable = modoWeb !== 'turnos' && tipoTxt === 'variable' && tieneVariantes;
+            const tipoExistente = id ? (tipoPorId.get(id) || 'simple') : 'simple';
+            // Limpia las variantes cuando un producto VARIABLE pasa a simple.
+            const limpiaVariable = esVariable
+                ? false
+                : (tieneTipoCol && tieneVariantes && tipoExistente === 'variable');
+
+            let atributos = [];
+            let variaciones = [];
+            if (esVariable) {
+                atributos = parsearAtributos(map.atributos !== undefined ? limpiarCelda(v[map.atributos]) : '');
+                variaciones = parsearVariantes(map.variantes !== undefined ? limpiarCelda(v[map.variantes]) : '');
+                if (atributos.length === 0 || variaciones.length === 0) {
+                    errores++; if (!primerError) primerError = `El producto "${nombre}" se marca como variable pero le faltan "atributos" o "variantes".`;
+                    continue;
+                }
+            }
+
             const base = { nombre, descripcion_detallada, precio, precio_anterior, stock, destacado, activo, category_id };
             if (tieneModo) base.modo = modoWeb;
+            if (tieneTipoCol) base.tipo = esVariable ? 'variable' : 'simple';
+            if (esVariable) {
+                // Precio y stock representativos salen de las combinaciones
+                // (espeja el trigger de la 0059; los pisa a la fila del CSV).
+                const agg = calcularPrecioStock(variaciones);
+                base.precio = agg.precio;
+                base.stock = agg.stock;
+                base.precio_anterior = null;
+            }
             // Campos de servicio y listas (0053): solo se escriben si el CSV trae
             // la columna, para no pisar duración/horarios/características al
             // importar un archivo que no las incluye.
@@ -328,6 +419,7 @@ export async function importarProductosCSV(file) {
                 base.caracteristicas = parsearLista(limpiarCelda(v[map.caracteristicas]));
             }
 
+            let productoId = null;
             if (id) {
                 // El id actualiza la fila existente. Si el id no existe (archivo
                 // exportado de otra instalación, o fila cargada a mano con id
@@ -335,17 +427,30 @@ export async function importarProductosCSV(file) {
                 const { data: actualizadas, error } = await sb.from('products').update(base).eq('id', Number(id)).select('id');
                 if (error) { errores++; if (!primerError) primerError = error.message; continue; }
                 if (actualizadas && actualizadas.length > 0) {
+                    productoId = Number(actualizadas[0].id);
                     actualizados++;
-                    continue;
+                } else {
+                    const { data: creado, error: errorInsert } = await sb.from('products').insert(base).select('id').single();
+                    if (errorInsert) { errores++; if (!primerError) primerError = errorInsert.message; continue; }
+                    productoId = creado.id;
+                    creados++;
+                    creadosConId++;
                 }
-                const { error: errorInsert } = await sb.from('products').insert(base);
-                if (errorInsert) { errores++; if (!primerError) primerError = errorInsert.message; continue; }
-                creados++;
-                creadosConId++;
             } else {
-                const { error } = await sb.from('products').insert(base);
+                const { data: creado, error } = await sb.from('products').insert(base).select('id').single();
                 if (error) { errores++; if (!primerError) primerError = error.message; continue; }
+                productoId = creado.id;
                 creados++;
+            }
+
+            // Atributos y variaciones (lógica compartida con el panel).
+            if (esVariable || limpiaVariable) {
+                await guardarVariantesProducto(sb, productoId, {
+                    tipo: esVariable ? 'variable' : 'simple',
+                    tipoOriginal: tipoExistente,
+                    atributos,
+                    variaciones
+                });
             }
         } catch (e) {
             errores++;
