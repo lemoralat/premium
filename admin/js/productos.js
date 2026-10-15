@@ -9,6 +9,7 @@ let categorias = [];
 let busqueda = '';
 let filtroCategoria = 'todas';
 let filtroActivo = 'todos';
+let filtroTipo = 'todos';          // 'todos' | 'simples' | 'variables'
 let seleccionados = new Set();
 
 // Tipo de web (settings.modo_web, migración 0051): en modo turnos los
@@ -74,9 +75,14 @@ function pintar(contenedor) {
     const filtrados = productos.filter((p) => {
         const porCategoria = filtroCategoria === 'todas' || (filtroCategoria === 'sin' && !p.category_id) || String(p.category_id) === String(filtroCategoria);
         const porActivo = filtroActivo === 'todos' || (filtroActivo === 'activos' && p.activo) || (filtroActivo === 'inactivos' && !p.activo);
+        // En modo turnos todos son simples y el filtro no se muestra: no aplica.
+        const porTipo = enServicios
+            || filtroTipo === 'todos'
+            || (filtroTipo === 'variables' && p.tipo === 'variable')
+            || (filtroTipo === 'simples' && p.tipo !== 'variable');
         const q = busqueda.toLowerCase();
         const porBusqueda = !q || String(p.nombre).toLowerCase().includes(q);
-        return porCategoria && porActivo && porBusqueda;
+        return porCategoria && porActivo && porTipo && porBusqueda;
     });
 
     const conSeleccion = seleccionados.size > 0;
@@ -102,6 +108,12 @@ function pintar(contenedor) {
                 <option value="activos" ${filtroActivo === 'activos' ? 'selected' : ''}>Solo activos</option>
                 <option value="inactivos" ${filtroActivo === 'inactivos' ? 'selected' : ''}>Solo inactivos</option>
             </select>
+            ${enServicios ? '' : `
+            <select id="prodFiltroTipo" class="admin-select-filtro" aria-label="Filtrar por tipo de producto">
+                <option value="todos">Todos los tipos</option>
+                <option value="simples" ${filtroTipo === 'simples' ? 'selected' : ''}>Solo simples</option>
+                <option value="variables" ${filtroTipo === 'variables' ? 'selected' : ''}>Solo variables</option>
+            </select>`}
             <span style="color:var(--text-muted); font-size:var(--fs-md);">${filtrados.length} de ${productos.length}</span>
         </div>
 
@@ -157,6 +169,11 @@ function pintar(contenedor) {
     });
     $('#prodFiltroActivo').addEventListener('change', (e) => {
         filtroActivo = e.target.value;
+        pintar(contenedor);
+    });
+    // Solo existe en modo venta (en turnos todo es simple, no se muestra).
+    $('#prodFiltroTipo')?.addEventListener('change', (e) => {
+        filtroTipo = e.target.value;
         pintar(contenedor);
     });
 
