@@ -448,8 +448,6 @@ function actualizarVarianteUI() {
     const stockEl = document.getElementById('productStockDisplay');
     const btn = document.getElementById('btnAddCart');
 
-    const disponible = variante && variante.activo && variante.stock > 0;
-
     if (priceEl) {
         priceEl.innerHTML = variante
             ? `${renderPrecioAnterior({ precio: variante.precio, precioAnterior: variante.precioAnterior })}$${formatearPrecio(variante.precio)}`
