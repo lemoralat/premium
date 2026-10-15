@@ -473,7 +473,7 @@ export async function renderizar(contenedor) {
             try {
                 conCarga(boton, promesaFn(file))
                     .then((res) => {
-                        const resumen = mensajeOk(res.procesados, res.creados, res.actualizados, res.errores || 0);
+                        const resumen = mensajeOk(res.procesados, res.creados, res.actualizados, res.errores || 0, res.creadosConId || 0);
                         if (res.errores > 0) {
                             // Mostrar el error real: sin esto, un fallo de inserción
                             // (p. ej. columna faltante) pasaba como "procesado".
@@ -493,7 +493,7 @@ export async function renderizar(contenedor) {
     importar(
         $('#btnImportarProductos'),
         importarProductosCSV,
-        (p, c, a, e) => `${esTurnos ? 'Servicios' : 'Productos'} procesados: ${p} (creados: ${c}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
+        (p, c, a, e, cid) => `${esTurnos ? 'Servicios' : 'Productos'} procesados: ${p} (creados: ${c}${cid ? `, ${cid} por id inexistente` : ''}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
     );
     importar(
         $('#btnImportarPedidos'),

@@ -229,7 +229,9 @@ export async function importarProductosCSV(file) {
         throw new Error(`No se encontró la columna "nombre". Encabezado recibido: "${encabezado}". Columnas esperadas: id;nombre;categoría;precio;precio_anterior;stock;destacado;activo;descripcion`);
     }
 
-    let procesados = 0, creados = 0, actualizados = 0, errores = 0, primerError = '';
+    // creadosConId: filas que traían un id que no existe y se crearon como
+    // nuevos ítems (se informa en el resumen para que no sea sorpresa).
+    let procesados = 0, creados = 0, actualizados = 0, errores = 0, primerError = '', creadosConId = 0;
     const filas = rest.map((l) => parsearLineaCSV(l, sep))
         .filter((c) => c.some((x) => limpiarCelda(x) !== ''));
 
@@ -274,16 +276,19 @@ export async function importarProductosCSV(file) {
             if (tieneModo) base.modo = modoWeb;
 
             if (id) {
-                // El id solo actualiza una fila EXISTENTE. Si no hay match, se
-                // reporta (antes contaba como "actualizado" sin tocar nada).
+                // El id actualiza la fila existente. Si el id no existe (archivo
+                // exportado de otra instalación, o fila cargada a mano con id
+                // viejo), se CREA en su lugar: ninguna fila se descarta en silencio.
                 const { data: actualizadas, error } = await sb.from('products').update(base).eq('id', Number(id)).select('id');
                 if (error) { errores++; if (!primerError) primerError = error.message; continue; }
-                if (!actualizadas || actualizadas.length === 0) {
-                    errores++;
-                    if (!primerError) primerError = `No existe un ítem con id ${id}. Dejá la columna "id" vacía para crear filas nuevas.`;
+                if (actualizadas && actualizadas.length > 0) {
+                    actualizados++;
                     continue;
                 }
-                actualizados++;
+                const { error: errorInsert } = await sb.from('products').insert(base);
+                if (errorInsert) { errores++; if (!primerError) primerError = errorInsert.message; continue; }
+                creados++;
+                creadosConId++;
             } else {
                 const { error } = await sb.from('products').insert(base);
                 if (error) { errores++; if (!primerError) primerError = error.message; continue; }
@@ -294,7 +299,7 @@ export async function importarProductosCSV(file) {
             if (!primerError) primerError = e.message;
         }
     }
-    return { procesados, creados, actualizados, errores, mensaje: primerError };
+    return { procesados, creados, actualizados, errores, creadosConId, mensaje: primerError };
 }
 
 export async function importarPedidosCSV(file) {
