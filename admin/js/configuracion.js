@@ -493,7 +493,7 @@ export async function renderizar(contenedor) {
     importar(
         $('#btnImportarProductos'),
         importarProductosCSV,
-        (p, c, a, e, cid) => `${esTurnos ? 'Servicios' : 'Productos'} procesados: ${p} (creados: ${c}${cid ? `, ${cid} por id inexistente` : ''}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
+        (p, c, a, e, cid) => `${esTurnos ? 'Servicios' : 'Productos'} procesados: ${p} (creados: ${c}${cid ? ` (${cid} con id inexistente)` : ''}, actualizados: ${a}${e ? `, errores: ${e}` : ''}).`
     );
     importar(
         $('#btnImportarPedidos'),
