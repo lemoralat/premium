@@ -463,6 +463,12 @@ export async function renderizar(contenedor) {
         </div>
 
         <div class="admin-card">
+            <h2>${enTurnos ? 'Últimas solicitudes' : 'Últimas órdenes'}</h2>
+            <p class="card-sub">${enTurnos ? 'Las solicitudes de turno más recientes' : 'Los pedidos más recientes de la tienda'}</p>
+            ${enTurnos ? tablaTurnos(ordenes) : tablaOrdenes(ordenes)}
+        </div>
+
+        <div class="admin-card">
             <h2>${enTurnos ? 'Ingresos estimados (30 días)' : 'Ingresos últimos 30 días'}</h2>
             <p class="card-sub">${enTurnos ? 'Estimación por precios de los servicios (sin cancelados)' : 'Ventas diarias confirmadas (sin cancelados)'}</p>
             ${!hayVentas30
@@ -520,12 +526,6 @@ export async function renderizar(contenedor) {
                 <p class="card-sub">Últimos 30 días</p>
                 ${tablaCupones(topCupones)}`}
             </div>
-        </div>
-
-        <div class="admin-card">
-            <h2>${enTurnos ? 'Últimas solicitudes' : 'Últimas órdenes'}</h2>
-            <p class="card-sub">${enTurnos ? 'Las solicitudes de turno más recientes' : 'Los pedidos más recientes de la tienda'}</p>
-            ${enTurnos ? tablaTurnos(ordenes) : tablaOrdenes(ordenes)}
         </div>
 
         <div class="dashboard-dos-col">

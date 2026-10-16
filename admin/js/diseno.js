@@ -41,8 +41,7 @@ const RECURSOS_IMAGEN = [
         toastQuitar: 'Favicon quitado.',
         confirmarQuitar: '¿Quitar el favicon? Se usará el logo de Lemora por defecto.',
         // Sin favicon cargado se muestra el logo de Lemora como preview (default de la tienda)
-        defaultPreview: '../img/lemora.svg',
-        captionVacio: 'Si no lo cambias, se usará el ícono de Lemora.'
+        defaultPreview: '../img/lemora.svg'
     },
     {
         recurso: 'og', columna: 'og_image_path', carpeta: 'og',
@@ -52,8 +51,7 @@ const RECURSOS_IMAGEN = [
         toastQuitar: 'Imagen para compartir quitada.',
         confirmarQuitar: '¿Quitar la imagen para compartir? Se usará la imagen por defecto de la tienda.',
         // Sin imagen cargada se muestra la OpenGraph.png de la tienda como preview (default)
-        defaultPreview: '../img/OpenGraph.png',
-        captionVacio: 'Si no subís una imagen, se usará la de Lemora por defecto.'
+        defaultPreview: '../img/OpenGraph.png'
     }
 ];
 
@@ -332,16 +330,12 @@ function campoImagen(r, pathActual) {
 }
 
 // HTML del estado vacío del preview. Para recursos con defaultPreview (el
-// favicon y la imagen OpenGraph) se muestra la imagen de respaldo de Lemora;
-// el resto mantiene el placeholder textual. El texto lo define cada recurso
-// (`captionVacio`); si no, cae al texto genérico del favicon/logotipo.
-function campoVacioHTML(r, caption) {
-    const texto = caption || r.captionVacio || (r.defaultPreview
-        ? 'Si no lo cambias, se usará el ícono de Lemora.'
-        : 'Sin archivo<br><small>Se seguirá usando el logotipo actual.</small>');
+// favicon y la imagen OpenGraph) se muestra la imagen de respaldo de Lemora,
+// sin texto; el resto mantiene el placeholder textual.
+function campoVacioHTML(r) {
     return r.defaultPreview
-        ? `<span class="diseno-preview-vacio"><img src="${esc(r.defaultPreview)}" alt="" class="diseno-preview-defecto"><small>${esc(texto)}</small></span>`
-        : `<span class="diseno-preview-vacio">${texto}</span>`;
+        ? `<span class="diseno-preview-vacio"><img src="${esc(r.defaultPreview)}" alt="" class="diseno-preview-defecto"></span>`
+        : '<span class="diseno-preview-vacio">Sin archivo<br><small>Se seguirá usando el logotipo actual.</small></span>';
 }
 
 function bordeOpcion(b, actual) {
