@@ -949,7 +949,7 @@ td.td-expandir .pedido-acciones {
 
 .admin-imagenes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 0.7rem;
 }
 
@@ -959,7 +959,7 @@ td.td-expandir .pedido-acciones {
     border-radius: 8px;
     overflow: hidden;
     background: var(--bg);
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 3;
 }
 
 .admin-img-card.principal { border-color: var(--primary); }
