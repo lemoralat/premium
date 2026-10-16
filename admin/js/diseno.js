@@ -41,15 +41,19 @@ const RECURSOS_IMAGEN = [
         toastQuitar: 'Favicon quitado.',
         confirmarQuitar: '¿Quitar el favicon? Se usará el logo de Lemora por defecto.',
         // Sin favicon cargado se muestra el logo de Lemora como preview (default de la tienda)
-        defaultPreview: '../img/lemora.svg'
+        defaultPreview: '../img/lemora.svg',
+        captionVacio: 'Si no lo cambias, se usará el ícono de Lemora.'
     },
     {
         recurso: 'og', columna: 'og_image_path', carpeta: 'og',
         label: 'Imagen para compartir en redes sociales',
-        hint: 'Es la imagen que aparece cuando alguien comparte el enlace de tu tienda en redes sociales o WhatsApp..',
+        hint: 'Es la imagen que aparece cuando alguien comparte el enlace de tu tienda en redes sociales o WhatsApp.',
         toastOk: 'Imagen para compartir actualizada.',
         toastQuitar: 'Imagen para compartir quitada.',
-        confirmarQuitar: '¿Quitar la imagen para compartir? Se usará el archivo por defecto de la tienda.'
+        confirmarQuitar: '¿Quitar la imagen para compartir? Se usará la imagen por defecto de la tienda.',
+        // Sin imagen cargada se muestra la OpenGraph.png de la tienda como preview (default)
+        defaultPreview: '../img/OpenGraph.png',
+        captionVacio: 'Si no subís una imagen, se usará la de Lemora por defecto.'
     }
 ];
 
@@ -328,10 +332,11 @@ function campoImagen(r, pathActual) {
 }
 
 // HTML del estado vacío del preview. Para recursos con defaultPreview (el
-// favicon) se muestra la imagen de respaldo de Lemora; el resto mantiene el
-// placeholder textual.
+// favicon y la imagen OpenGraph) se muestra la imagen de respaldo de Lemora;
+// el resto mantiene el placeholder textual. El texto lo define cada recurso
+// (`captionVacio`); si no, cae al texto genérico del favicon/logotipo.
 function campoVacioHTML(r, caption) {
-    const texto = caption || (r.defaultPreview
+    const texto = caption || r.captionVacio || (r.defaultPreview
         ? 'Si no lo cambias, se usará el ícono de Lemora.'
         : 'Sin archivo<br><small>Se seguirá usando el logotipo actual.</small>');
     return r.defaultPreview

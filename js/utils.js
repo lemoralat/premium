@@ -97,7 +97,7 @@ export const CONFIG_DISENO = {
     logoUrl: '',            // URL pública del logotipo (vacío ⇒ logo por defecto)
     logoTamano: 'small',     // small | medium | large → height 40/60/80px en .logo
     faviconUrl: '',         // URL pública del favicon (vacío ⇒ favicon por defecto)
-    ogImageUrl: '',         // URL pública de la imagen OpenGraph (vacío ⇒ por defecto)
+    ogImageUrl: '',         // URL pública de la imagen OpenGraph (vacío ⇒ img/OpenGraph.png)
     cardImageFormat: '1:1', // 1:1 | 3:2 | 4:5 para los cards de catálogo
     colorPrincipal: '#000000',
     estiloBordes: 'redondeado' // redondeado | circular | recto
