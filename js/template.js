@@ -24,13 +24,20 @@ function renderHeader(activePage = '', categorias = [], hayPreguntas = true, hay
     // vendiendo con carrito normal (ver carrito.js/formulario.js).
 
     // Generar HTML del submenú de categorías
-    // V-2: el nombre de categoría es contenido administrado → escapar el texto
-    // y slugificar el fragmento para que coincida con el id de las secciones.
+    // V-2: el nombre de categoría es contenido administrado → escapar el texto.
+    // Cada categoría real enlaza a su página individual (/categoria?slug=…). El
+    // pseudo-grupo "Sin categoría" (productos sin categoría asignada) no tiene
+    // página propia: sigue anclando a su sección del inicio.
     const submenuHTML = categorias.length > 0 ? `
         <ul class="submenu">
-            ${categorias.map(cat => `
-                <li><a href="/#cat-${slugificar(cat)}">${escaparHtml(cat)}</a></li>
-            `).join('')}
+            ${categorias.map(cat => {
+                const href = cat.slug
+                    ? `/categoria?slug=${encodeURIComponent(cat.slug)}`
+                    : `/#cat-${slugificar(cat.nombre)}`;
+                return `
+                <li><a href="${href}">${escaparHtml(cat.nombre)}</a></li>
+            `;
+            }).join('')}
         </ul>
     ` : '';
 
@@ -349,7 +356,16 @@ async function initTemplate(activePage = '') {
     const hayWhatsApp = Boolean(WHATSAPP_CONFIG.number);
     try {
         const [productos, faq] = await Promise.all([obtenerProductos(), obtenerPreguntasFrecuentes()]);
-        categorias = [...new Set(productos.map(p => p.categoria))].filter(Boolean);
+        // Cada entrada del submenú lleva el nombre visible y el slug real de la
+        // categoría (mapeado desde el producto): con slug → página individual;
+        // sin slug ("Sin categoría") → ancla a la sección del inicio.
+        const porNombre = new Map();
+        for (const p of productos) {
+            if (p.categoria && !porNombre.has(p.categoria)) {
+                porNombre.set(p.categoria, { nombre: p.categoria, slug: p.categoriaSlug || '' });
+            }
+        }
+        categorias = [...porNombre.values()];
         productosRef = productos;
         // El menú "Productos/Servicios" se oculta si no hay ninguno activo
         // (obtenerProductos ya filtra activo = true).

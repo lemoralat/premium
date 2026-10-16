@@ -508,6 +508,9 @@ td.td-expandir .pedido-acciones {
 
 .btn:hover { background: var(--bg); text-decoration: none; }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+/* .btn declara display: inline-flex, que le gana al [hidden] del navegador:
+   sin esta regla un botón con el atributo hidden seguiría visible. */
+.btn[hidden] { display: none; }
 
 .btn-primary {
     background: var(--primary);
@@ -1100,6 +1103,16 @@ td.td-expandir .pedido-acciones {
 
 .admin-preview--avatar .admin-preview-image {
     object-fit: cover;
+}
+
+/* Banner de la página de categoría: preview ancho y bajo (proporción de banda). */
+.admin-preview--banner {
+    width: 100%;
+    max-width: 420px;
+    height: 110px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-alt);
 }
 
 .admin-img-upload {

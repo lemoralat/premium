@@ -4,7 +4,7 @@
 // devuelve { ok, datos }. Con Supabase caído, las secciones quedan vacías,
 // ocultas o con su contenido estático por defecto; no hay datos alternativos.
 import {
-    cargarProductos, cargarCupones, cargarResenas, cargarCarrusel, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, cargarTurnosOcupados, urlImagen
+    cargarProductos, cargarCategorias, cargarCupones, cargarResenas, cargarCarrusel, cargarBanners, cargarConfiguracion, cargarIconosPie, cargarPreguntasFrecuentes, cargarMarquee, cargarTurnosOcupados, urlImagen
 } from './supabase.js';
 
 // Configuración de descuentos (se refresca desde Supabase settings)
@@ -321,6 +321,14 @@ export async function obtenerProductos() {
     // Sin Supabase: catálogo vacío (el resto de la web sigue funcionando).
     mostrarNotificacion('No pudimos cargar el catálogo. Por favor, recarga la página.', 'error');
     return [];
+}
+
+// ================= CATEGORÍAS =================
+// Categorías activas para la página individual (categoria.html?slug=…). Sin
+// Supabase responde [] (la página muestra su estado vacío, sin datos alternativos).
+export async function obtenerCategorias() {
+    const remoto = await cargarCategorias();
+    return remoto.ok ? remoto.datos : [];
 }
 
 // ================= CUPONES =================

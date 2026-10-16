@@ -11,7 +11,7 @@
 // Además de generar env.generated.js, este script resuelve el MODELO
 // MULTI-CLIENTE (un solo repo sirve a todas las tiendas):
 //
-//   1. Los 8 HTML raíz y robots.txt están commiteados con el placeholder
+//   1. Los 9 HTML raíz y robots.txt están commiteados con el placeholder
 //      `TU-DOMINIO.com`. El build lo reemplaza por el dominio real del
 //      cliente (variable SITIO_URL) antes de desplegar.
 //   2. Genera sitemap.xml con ese mismo dominio.
@@ -78,6 +78,7 @@ const ARCHIVOS_CON_DOMINIO = [
     'faq.html',
     'favoritos.html',
     'producto.html',
+    'categoria.html',
     'robots.txt'
 ];
 

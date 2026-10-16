@@ -203,6 +203,8 @@ export const LIMITES_IMAGEN = Object.freeze({
     bannerLogo: 1024,
     avatar: 512,
     icono: 1024,
+    // Banner de la página de categoría (imagen de fondo a ancho completo).
+    categoria: 1920,
     branding: 1024,
     favicon: 256,
     openGraph: 1024

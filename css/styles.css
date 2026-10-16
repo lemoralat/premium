@@ -5455,3 +5455,125 @@ body.diseno-recto {
 .turno-resumen .turno-total {
     margin-top: 0.4rem;
 }
+
+/* ============================================================================
+   PÁGINA DE CATEGORÍA (categoria.html) — plantilla compartida por todas las
+   categorías: banner a ancho completo + barra de orden + grilla reutilizada
+   (.products-grid / .product-card).
+   ============================================================================ */
+
+/* Banner: 100% del ancho y 400px de alto, con el nombre centrado sobre la
+   imagen de fondo configurable. Sin imagen, el fondo es el color de marca. */
+.category-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 400px;
+    padding: var(--space-md);
+    background-color: var(--primary-solid);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+/* Superposición oscura sobre la foto (si hay) para garantizar la legibilidad
+   del título, sin importar cuán clara sea la imagen. */
+.category-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.3));
+}
+
+.category-banner:not(.category-banner--con-imagen) .category-banner-overlay {
+    background: none;
+}
+
+.category-banner-title {
+    position: relative;
+    z-index: var(--z-base);
+    max-width: var(--container-sm);
+    margin: 0;
+    text-align: center;
+    color: var(--text-on-primary);
+    font-size: var(--fs-h1);
+    font-weight: 600;
+    line-height: 1.2;
+    text-wrap: balance;
+}
+
+.category-page {
+    padding-top: var(--space-md);
+    padding-bottom: var(--space-lg);
+}
+
+/* Barra de ordenamiento */
+.category-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+}
+
+/* .category-toolbar declara display: flex y .products-grid display: grid, que
+   le ganan al [hidden] del navegador: hay que ocultarlos de forma explícita. */
+.category-toolbar[hidden],
+.category-page .products-grid[hidden] {
+    display: none;
+}
+
+.category-toolbar label {
+    font-size: var(--fs-label);
+    color: var(--secondary-color);
+}
+
+.category-sort {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-family: inherit;
+    font-size: var(--fs-button);
+    color: var(--text-color);
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--curva-sm);
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.category-sort:hover,
+.category-sort:focus-visible {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Estado vacío: categoría sin productos, o slug inexistente. */
+.category-empty {
+    max-width: var(--container-sm);
+    margin: var(--space-md) auto;
+    text-align: center;
+    color: var(--secondary-color);
+    font-size: var(--fs-body);
+}
+
+.category-empty a {
+    color: var(--primary-color);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.category-empty a:hover {
+    text-decoration: underline;
+}
+
+/* Móvil: el banner se achica para no comerse la pantalla. */
+@media (max-width: 767px) {
+    .category-banner {
+        height: 220px;
+    }
+
+    .category-toolbar {
+        justify-content: space-between;
+    }
+}

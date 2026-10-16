@@ -264,8 +264,9 @@ export async function cargarProductos() {
             .select(`
                 id, nombre, descripcion_detallada, precio, precio_anterior,
                 stock, caracteristicas, activo, destacado, tipo,
+                created_at,
                 servicio_duracion_min, servicio_horarios,
-                categoria:categories(id, name),
+                categoria:categories(id, name, slug),
                 opciones:product_options(id, opcion, position, valores:product_option_values(id, valor, position)),
                 variantes:product_variants(id, precio, precio_anterior, stock, activo, position, combinacion, imagen_storage_path),
                 imagenes:product_images(id, storage_path, es_principal, position)
@@ -360,6 +361,10 @@ function mapaProducto(p) {
         precioAnterior: p.precio_anterior != null ? Number(p.precio_anterior) : null,
         // Sin categoría (o con nombre vacío) → etiqueta explícita, nunca ''.
         categoria: p.categoria?.name?.trim() || CATEGORIA_SIN_ASIGNAR,
+        // Slug real de la categoría (para enlazar a su página individual). Vacío
+        // en el pseudo-grupo "Sin categoría" (productos sin categoría asignada).
+        categoriaSlug: p.categoria?.slug || '',
+        createdAt: p.created_at || null,
         tipo,
         atributos,
         variantes,
@@ -374,6 +379,46 @@ function mapaProducto(p) {
         imagen: imagenUrl || '',
         galeria: galeriaUrls.length > 0 ? galeriaUrls : (imagenUrl ? [imagenUrl] : [])
     };
+}
+
+// ============================================================================
+// CATEGORÍAS
+// ============================================================================
+// Categorías activas, para la página individual de cada una
+// (categoria.html?slug=…). La RLS solo expone las activas (0001). La imagen es
+// el banner opcional (categories.imagen_path, 0062; vacío ⇒ el banner usa el
+// color de marca).
+export async function cargarCategorias() {
+    const sb = await obtenerClienteSupabase();
+    if (!sb) return { ok: false };
+
+    const cacheado = leerCache('categorias');
+    if (cacheado) return { ok: true, datos: cacheado };
+
+    try {
+        const { data, error } = await sb
+            .from('categories')
+            .select('id, name, slug, imagen_path')
+            .eq('active', true)
+            .order('position', { ascending: true });
+
+        if (error) throw error;
+
+        const categorias = (data || []).map((c) => ({
+            id: c.id,
+            // Trim para que el nombre coincida exactamente con el que expone
+            // mapaProducto (p.categoria?.name?.trim()), que es la clave de agrupación.
+            name: (c.name || '').trim(),
+            slug: (c.slug || '').trim(),
+            imagen: urlImagen({ storage_path: c.imagen_path }) || ''
+        }));
+
+        cachear('categorias', categorias);
+        return { ok: true, datos: categorias };
+    } catch (error) {
+        console.warn('⚠️ Supabase: no se pudieron cargar las categorías. La página de categoría no puede renderizarse.', error);
+        return { ok: false, error };
+    }
 }
 
 // ============================================================================
