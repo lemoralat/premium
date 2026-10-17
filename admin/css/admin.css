@@ -1210,6 +1210,90 @@ td.td-expandir .pedido-acciones {
 .estado-realizado { background: var(--success-bg); color: var(--success); }
 .estado-cancelado { background: var(--estado-cancelado-bg); color: var(--text-muted); }
 
+/* ============================================================================
+   CLIENTES
+   ============================================================================ */
+/* La entrada Clientes del menú sólo existe en modo venta (se oculta en modo
+   turnos desde admin-app.js). El atributo hidden debe ganarle al
+   display:flex de .admin-nav a. */
+.admin-nav a[hidden] { display: none; }
+
+.cli-filtro-fechas {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.cli-filtro-fechas label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.cli-filtro-fechas input[type="date"] {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: var(--fs-md);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.cli-contador { margin: 0; color: var(--text-muted); }
+
+.cli-nota {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    margin: 0 0 1rem;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.cli-nota i { margin-top: 0.15rem; color: var(--primary); }
+
+.cli-cliente { display: flex; flex-direction: column; gap: 0.1rem; }
+.cli-cliente span { font-size: var(--fs-sm); color: var(--text-muted); }
+
+.cli-detalle {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.4rem 0 1.2rem;
+    font-size: var(--fs-md);
+}
+.cli-detalle-item { display: flex; align-items: flex-start; gap: 0.55rem; }
+.cli-detalle-item i { width: 16px; margin-top: 0.15rem; text-align: center; color: var(--text-muted); }
+.cli-detalle-item span { white-space: pre-line; }
+.cli-sin-datos { margin: 0; color: var(--text-muted); }
+
+.cli-resumen-titulo { margin: 0 0 0.6rem; font-size: var(--fs-lg); }
+.cli-resumen {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+.cli-resumen > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-alt);
+}
+.cli-resumen span { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+    .cli-filtro-fechas { flex-direction: column; align-items: stretch; }
+    .cli-filtro-fechas label { justify-content: space-between; }
+    .cli-filtro-fechas .btn { width: 100%; }
+}
+
 .admin-stock-bajo { color: var(--danger); font-weight: 600; }
 .admin-stock-medio { color: var(--warning); font-weight: 600; }
 .admin-stock-ok { color: var(--success); font-weight: 600; }

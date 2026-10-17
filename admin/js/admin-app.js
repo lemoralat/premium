@@ -14,6 +14,7 @@ import * as diseno from './diseno.js';
 import * as productos from './productos.js';
 import * as categorias from './categorias.js';
 import * as pedidos from './pedidos.js';
+import * as clientes from './clientes.js';
 import * as turnos from './turnos.js';
 import * as cupones from './cupones.js';
 import * as carrusel from './carrusel.js';
@@ -29,6 +30,7 @@ const secciones = {
     productos:     { ...productos,     titulo: 'Productos' },
     categorias:    { ...categorias,    titulo: 'Categorías' },
     pedidos:       { ...pedidos,       titulo: 'Pedidos' },
+    clientes:      { ...clientes,      titulo: 'Clientes' },
     turnos:        { ...turnos,        titulo: 'Turnos' },
     cupones:       { ...cupones,       titulo: 'Descuentos' },
     carrusel:      { ...carrusel,       titulo: 'Carrusel' },
@@ -63,6 +65,18 @@ async function navegar() {
             toast(modoWebPanel === 'turnos'
                 ? 'La tienda está en modo turnos: los pedidos no se utilizan en este modo.'
                 : 'La tienda está en modo venta: los turnos no se utilizan en este modo.');
+            window.location.hash = '#/dashboard';
+            navegando = false;
+            return;
+        }
+    }
+
+    // Clientes se arma con los pedidos (orders.cliente): no existe en modo
+    // turnos. Un enlace o bookmark directo a #/clientes se redirige.
+    if (nombre === 'clientes') {
+        if (modoWebPanel === null) await leerModoWebPanel();
+        if (modoWebPanel === 'turnos') {
+            toast('La tienda está en modo turnos: los clientes con pedidos no se utilizan en este modo.');
             window.location.hash = '#/dashboard';
             navegando = false;
             return;
@@ -239,6 +253,10 @@ function adaptarMenuAlModo(mw) {
             .filter((n) => n.nodeType === Node.TEXT_NODE)
             .forEach((n) => { n.nodeValue = esTurnos ? ' Turnos' : ' Pedidos'; });
     }
+
+    // Clientes sólo tiene sentido en modo venta (se deriva de los pedidos).
+    const enlaceClientes = document.querySelector('#adminNav [data-nav="clientes-venta"]');
+    if (enlaceClientes) enlaceClientes.hidden = esTurnos;
 }
 
 async function leerModoWebPanel() {
