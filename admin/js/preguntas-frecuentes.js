@@ -36,13 +36,13 @@ export async function renderizarGestor(contenedor) {
     const quedan = MAX_PREGUNTAS - preguntas.length;
 
     contenedor.innerHTML = `
-        <div class="admin-toolbar admin-toolbar--derecha">
+        <div class="admin-toolbar admin-toolbar--texto">
+            <p class="hint">Podés agregar hasta ${MAX_PREGUNTAS} preguntas. ${alTope
+            ? 'Límite alcanzado: borrá alguna para crear otra (desactivar no libera lugar).'
+            : `Te quedan ${quedan}.`}</p>
             <button type="button" class="btn btn-primary" id="btnNuevaPregunta" ${alTope ? 'disabled title="Límite alcanzado"' : ''}>
                 <i class="fa-solid fa-plus"></i> Agregar pregunta
             </button>
-            <p class="hint" style="margin-left:1rem;">Podés agregar hasta ${MAX_PREGUNTAS} preguntas. ${alTope
-            ? 'Límite alcanzado: borrá alguna para crear otra (desactivar no libera lugar).'
-            : `Te quedan ${quedan}.`}</p>
         </div>
         <div class="admin-tabla-wrap">
             <table class="admin-tabla">
