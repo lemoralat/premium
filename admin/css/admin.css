@@ -128,7 +128,7 @@ img { max-width: 100%; }
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    padding: 0.52rem 0.85rem;
+    padding: 0.54rem 0.85rem;
     border-radius: 8px;
     color: var(--text);
     font-weight: 500;
