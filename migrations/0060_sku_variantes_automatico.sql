@@ -12,6 +12,10 @@
 --     ninguna variante quede sin SKU, venga del panel o de un CSV.
 --   · Un SKU que YA tenga valor NO se pisa: solo se completa cuando está vacío.
 --
+-- `set search_path = public, pg_temp` (igual que el resto de las funciones
+-- propias, 0049): la 0064 lo reafirma sobre la base viva, y queda acá para que
+-- re-ejecutar esta migración no reintroduzca el aviso 0011 del linter.
+--
 -- ORDEN: aplicar DESPUÉS de 0059 (usa public.product_variants).
 -- ============================================================================
 
@@ -23,6 +27,7 @@ begin;
 create or replace function public.generar_sku_variante()
 returns trigger
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
     if new.sku is null or btrim(new.sku) = '' then
