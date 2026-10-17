@@ -195,7 +195,7 @@ function pintar(contenedor) {
             <i class="fa-solid fa-circle-info"></i>
             ${esEliminados
                 ? 'Estos clientes los sacaste de la lista. Sus pedidos siguen intactos; podés restaurarlos cuando quieras.'
-                : `Se listan los clientes con al menos un pedido confirmado (Procesando, Enviado o Entregado)${hayFecha ? ' dentro del rango de fechas elegido' : ''}.
+                : `Se listan los clientes con al menos un pedido confirmado${hayFecha ? ' dentro del rango de fechas elegido' : ''}.
                    Quitar un cliente sólo lo saca de esta lista: <strong>sus pedidos no se borran</strong>.`}
         </p>
 
