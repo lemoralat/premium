@@ -1256,6 +1256,9 @@ td.td-expandir .pedido-acciones {
 }
 .cli-nota i { margin-top: 0.15rem; color: var(--primary); }
 
+.cli-nota--aviso { color: var(--warning); }
+.cli-nota--aviso i { color: var(--warning); }
+
 .cli-cliente { display: flex; flex-direction: column; gap: 0.1rem; }
 .cli-cliente span { font-size: var(--fs-sm); color: var(--text-muted); }
 
