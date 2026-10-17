@@ -1362,6 +1362,9 @@ td.td-expandir .pedido-acciones {
     padding: 1.5rem 1.5rem 1.75rem;
 }
 
+/* Variante ancha del panel: para listas densas como el inventario por categoría. */
+.admin-modal-panel--ancho { max-width: 880px; }
+
 .admin-modal-close {
     position: absolute;
     top: 0.9rem;
@@ -1421,6 +1424,141 @@ body.admin-modal-abierto { overflow: hidden; }
 .admin-modal .admin-modal-panel { animation: adminModalPanelIn 0.22s cubic-bezier(0.21, 1.02, 0.73, 1) both; }
 .admin-modal.admin-modal-cerrando { animation: adminModalFadeOut 0.16s ease-in forwards; }
 .admin-modal.admin-modal-cerrando .admin-modal-panel { animation: adminModalPanelOut 0.16s ease-in forwards; }
+
+/* ============================================================================
+   INVENTARIO POR CATEGORÍA (modal del panel de categorías)
+   ============================================================================ */
+.inv-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    max-height: 58vh;
+    overflow-y: auto;
+    padding-right: 0.15rem;
+}
+
+.inv-prod {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    background: var(--surface);
+}
+
+.inv-prod-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    flex-wrap: wrap;
+}
+
+.inv-prod-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.inv-prod-info strong { font-size: var(--fs-md); }
+
+.inv-prod-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.inv-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--surface-alt);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.inv-tag--oculto { background: var(--estado-cancelado-bg); }
+
+.inv-stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+}
+
+.inv-stock > span { font-size: var(--fs-sm); color: var(--text-muted); }
+
+.inv-stock input {
+    width: 5.5rem;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--fs-md);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.inv-stock input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Color por nivel de stock: gana al color base del input (misma especificidad
+   que .inv-stock input + una clase, más específico). */
+.inv-stock input.admin-stock-bajo { color: var(--danger); }
+.inv-stock input.admin-stock-medio { color: var(--warning); }
+.inv-stock input.admin-stock-ok { color: var(--success); }
+
+/* Campo editado desde que se abrió el modal. */
+.inv-stock input.inv-cambiado {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.inv-variaciones {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.7rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.35rem;
+}
+
+.inv-variacion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0;
+    border-bottom: 1px dashed var(--border);
+}
+
+.inv-variacion:last-child { border-bottom: none; }
+
+.inv-variacion-nom {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: var(--fs-sm);
+}
+
+.inv-prod .hint { margin: 0.3rem 0 0; }
+
+/* En móvil el panel ya es pantalla completa y scrollea entero: se evita el
+   scroll anidado de la lista y los campos ocupan todo el ancho. */
+@media (max-width: 640px) {
+    .inv-lista { max-height: none; overflow: visible; }
+    .inv-prod-cab,
+    .inv-variacion { flex-direction: column; align-items: stretch; }
+    .inv-stock { justify-content: space-between; }
+    .inv-stock input { width: 6.5rem; }
+}
 
 /* ============================================================================
    TOASTS

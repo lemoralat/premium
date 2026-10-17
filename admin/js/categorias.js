@@ -5,7 +5,7 @@
 // (categoria.html?slug=…). Es opcional: sin imagen, el banner usa el color de
 // marca. El archivo vive en el bucket "branding" (carpeta "categorias").
 
-import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
+import { $, esc, toast, confirmarBorrado, conCarga, abrirModal, cerrarModal, estadoCargando, estadoVacio, urlPublica, validarYOptimizarImagen, subirImagenAdmin, eliminarImagenAdmin, placeholderImagen, mostrarPreviewImagen, LIMITES_IMAGEN } from './admin-ui.js';
 import { clienteAdmin, leerModoWeb } from './admin-supabase.js';
 
 let categorias = [];
@@ -38,6 +38,9 @@ export async function renderizar(contenedor) {
     `;
 
     $('#btnNuevaCategoria').addEventListener('click', () => abrirModalCategoria(null));
+    contenedor.querySelectorAll('[data-inventario]').forEach((btn) => {
+        btn.addEventListener('click', () => abrirModalInventario(Number(btn.dataset.inventario)));
+    });
     contenedor.querySelectorAll('[data-editar]').forEach((btn) => {
         btn.addEventListener('click', () => abrirModalCategoria(Number(btn.dataset.editar)));
     });
@@ -59,8 +62,9 @@ function filas() {
                 ? '<span class="estado-badge estado-entregado">Activa</span>'
                 : '<span class="estado-badge estado-cancelado">Inactiva</span>'}</td>
             <td class="td-acciones">
-                <button type="button" class="btn btn-sm" data-editar="${esc(c.id)}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(c.id)}"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn btn-sm" data-editar="${esc(c.id)}" title="Editar" aria-label="Editar ${esc(c.name)}"><i class="fa-solid fa-pen"></i></button>
+                ${esTurnos ? '' : `<button type="button" class="btn btn-sm" data-inventario="${esc(c.id)}" title="Gestionar inventario" aria-label="Gestionar inventario de ${esc(c.name)}"><i class="fa-solid fa-boxes-stacked"></i></button>`}
+                <button type="button" class="btn btn-sm btn-danger" data-borrar="${esc(c.id)}" title="Eliminar" aria-label="Eliminar ${esc(c.name)}"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>
     `).join('');
@@ -231,4 +235,219 @@ async function borrarCategoria(id, contenedor) {
     if (categoria?.imagen_path) await eliminarImagenAdmin(categoria.imagen_path);
     toast('Categoría eliminada.');
     renderizar(contenedor);
+}
+
+// ============================================================================
+// Inventario por categoría
+//
+// Alcance: solo productos. El botón no se muestra en modo turnos (ahí todo el
+// catálogo son servicios) y, en modo venta, cada ítem del catálogo es un
+// producto. El stock de un producto simple vive en `products.stock`; el de un
+// producto variable es la suma de sus variaciones (`product_variants.stock`),
+// que la base recalcula sola con el trigger de la 0059 al guardar la variante.
+// ============================================================================
+
+function claseStock(n) {
+    const v = Number(n) || 0;
+    return v === 0 ? 'admin-stock-bajo' : v < 5 ? 'admin-stock-medio' : 'admin-stock-ok';
+}
+
+function abrirModalInventario(idCategoria) {
+    const categoria = categorias.find((c) => c.id === idCategoria);
+    if (!categoria) return;
+
+    const overlay = abrirModal(`
+        <h2>Inventario</h2>
+        <p class="modal-sub">Stock de los productos de «${esc(categoria.name)}»</p>
+        <div id="invContenido"></div>
+    `, { clasePanel: 'admin-modal-panel--ancho' });
+
+    const cont = $('#invContenido', overlay);
+    estadoCargando(cont, 'Cargando inventario…');
+    cargarInventario(overlay, categoria, cont);
+}
+
+async function cargarInventario(overlay, categoria, cont) {
+    let items = [];
+    try {
+        const sb = await clienteAdmin();
+        const { data, error } = await sb.from('products')
+            .select(`
+                id, nombre, tipo, stock, activo,
+                variantes:product_variants(id, stock, activo, combinacion, position)
+            `)
+            .eq('category_id', categoria.id)
+            .order('nombre', { ascending: true });
+        if (error) throw new Error(error.message);
+        items = data || [];
+    } catch (error) {
+        if (cont.isConnected) estadoVacio(cont, 'No se pudo cargar el inventario', error.message);
+        return;
+    }
+
+    // El modal pudo cerrarse mientras cargaba.
+    if (!cont.isConnected) return;
+
+    if (!items.length) {
+        cont.innerHTML = `
+            <div class="admin-empty">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <h3>Sin productos en esta categoría</h3>
+                <p>Todavía no hay productos asignados a «${esc(categoria.name)}». Asignalos desde la sección Productos para gestionar su inventario.</p>
+            </div>
+        `;
+        return;
+    }
+
+    cont.innerHTML = `
+        <form class="admin-form" id="invForm" novalidate>
+            <div class="inv-lista">
+                ${items.map((p) => (p.tipo === 'variable' ? filaInventarioVariable(p) : filaInventarioSimple(p))).join('')}
+            </div>
+            <div class="admin-modal-acciones">
+                <button type="button" class="btn" data-cerrar-modal>Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar inventario</button>
+            </div>
+        </form>
+    `;
+
+    const form = $('#invForm', overlay);
+
+    form.querySelectorAll('input[data-stock]').forEach((input) => {
+        input.addEventListener('input', () => refrescarCampoInventario(input));
+    });
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const boton = form.querySelector('button[type="submit"]');
+        conCarga(boton, guardarInventario(form))
+            .then((guardados) => {
+                if (!guardados) { toast('No había cambios para guardar.'); return; }
+                cerrarModal();
+                toast(guardados === 1 ? 'Inventario actualizado.' : `Inventario actualizado (${guardados} cambios).`);
+            })
+            .catch((error) => toast(error.message, 'error'));
+    });
+}
+
+// Etiquetas de contexto de un producto (id, tipo y visibilidad).
+function metadatosProducto(p) {
+    return `
+        <span class="inv-tag">#${esc(p.id)}</span>
+        <span class="inv-tag">${p.tipo === 'variable' ? 'Producto variable' : 'Producto simple'}</span>
+        ${p.activo ? '' : '<span class="inv-tag inv-tag--oculto"><i class="fa-solid fa-eye-slash"></i> No visible</span>'}
+    `;
+}
+
+// Campo de stock reutilizable por producto simple y por variación.
+function campoStock({ valor, etiquetaAria, productoId, varianteId = null }) {
+    const stock = Number(valor) || 0;
+    return `
+        <label class="inv-stock">
+            <span>Stock</span>
+            <input type="number" min="0" step="1" inputmode="numeric"
+                   value="${stock}" data-original="${stock}" data-stock="${esc(varianteId ?? productoId)}"
+                   data-producto="${esc(productoId)}"
+                   ${varianteId != null ? `data-variante="${esc(varianteId)}"` : ''}
+                   class="${claseStock(stock)}"
+                   aria-label="Stock de ${esc(etiquetaAria)}">
+        </label>`;
+}
+
+function filaInventarioSimple(p) {
+    return `
+        <div class="inv-prod" data-producto="${esc(p.id)}">
+            <div class="inv-prod-cab">
+                <div class="inv-prod-info">
+                    <strong>${esc(p.nombre)}</strong>
+                    <span class="inv-prod-meta">${metadatosProducto(p)}</span>
+                </div>
+                ${campoStock({ valor: p.stock, etiquetaAria: p.nombre, productoId: p.id })}
+            </div>
+        </div>`;
+}
+
+function filaInventarioVariable(p) {
+    const variantes = [...(p.variantes || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    const total = variantes.filter((v) => v.activo).reduce((n, v) => n + (Number(v.stock) || 0), 0);
+
+    const detalle = variantes.length
+        ? variantes.map((v) => {
+            const etiqueta = (v.combinacion || []).map(String).join(' · ') || `Variación #${v.id}`;
+            return `
+                <div class="inv-variacion" data-activo="${v.activo ? '1' : '0'}">
+                    <span class="inv-variacion-nom">
+                        ${esc(etiqueta)}
+                        ${v.activo ? '' : '<span class="inv-tag inv-tag--oculto">Inactiva</span>'}
+                    </span>
+                    ${campoStock({ valor: v.stock, etiquetaAria: `${p.nombre} ${etiqueta}`, productoId: p.id, varianteId: v.id })}
+                </div>`;
+        }).join('')
+        : '<p class="hint">Este producto variable todavía no tiene variaciones guardadas.</p>';
+
+    return `
+        <div class="inv-prod inv-prod--variable" data-producto="${esc(p.id)}">
+            <div class="inv-prod-cab">
+                <div class="inv-prod-info">
+                    <strong>${esc(p.nombre)}</strong>
+                    <span class="inv-prod-meta">
+                        ${metadatosProducto(p)}
+                        <span class="inv-tag"><i class="fa-solid fa-layer-group"></i> <span data-total>${total}</span> en total</span>
+                    </span>
+                </div>
+            </div>
+            <div class="inv-variaciones">${detalle}</div>
+        </div>`;
+}
+
+// Refresca el resaltado del campo, su color por nivel y el total del producto
+// variable (solo suma variaciones activas, igual que la base).
+function refrescarCampoInventario(input) {
+    const original = Number(input.dataset.original);
+    const crudo = input.value.trim();
+    const valor = crudo === '' ? NaN : Number(crudo);
+
+    input.classList.toggle('inv-cambiado', Number.isFinite(valor) && valor !== original);
+    input.classList.remove('admin-stock-bajo', 'admin-stock-medio', 'admin-stock-ok');
+    if (Number.isFinite(valor)) input.classList.add(claseStock(valor));
+
+    const producto = input.closest('.inv-prod--variable');
+    if (producto) {
+        const total = [...producto.querySelectorAll('.inv-variacion[data-activo="1"] input[data-stock]')]
+            .reduce((n, i) => n + (Number(i.value) || 0), 0);
+        const etiqueta = producto.querySelector('[data-total]');
+        if (etiqueta) etiqueta.textContent = total;
+    }
+}
+
+// Persiste solo los campos que cambiaron. Devuelve cuántos se guardaron.
+async function guardarInventario(form) {
+    const simples = [];
+    const variantes = [];
+
+    for (const input of form.querySelectorAll('input[data-stock]')) {
+        const crudo = input.value.trim();
+        const valor = Number(crudo);
+        if (crudo === '' || !Number.isInteger(valor) || valor < 0) {
+            input.focus();
+            throw new Error('El stock debe ser un número entero igual o mayor a 0.');
+        }
+        if (valor === Number(input.dataset.original)) continue;
+        if (input.dataset.variante) variantes.push({ id: Number(input.dataset.variante), stock: valor });
+        else simples.push({ id: Number(input.dataset.producto), stock: valor });
+    }
+
+    if (!simples.length && !variantes.length) return 0;
+
+    const sb = await clienteAdmin();
+    for (const c of simples) {
+        const { error } = await sb.from('products').update({ stock: c.stock }).eq('id', c.id);
+        if (error) throw new Error(error.message);
+    }
+    for (const c of variantes) {
+        // El trigger de la 0059 recalcula products.stock (suma) tras este update.
+        const { error } = await sb.from('product_variants').update({ stock: c.stock }).eq('id', c.id);
+        if (error) throw new Error(error.message);
+    }
+    return simples.length + variantes.length;
 }

@@ -299,7 +299,9 @@ export async function eliminarImagenAdmin(storagePath) {
 }
 
 // ---------- Modales ----------
-export function abrirModal(html) {
+// `clasePanel` permite variantes de ancho del panel (ej. listas más densas);
+// por defecto no agrega ninguna, así el resto de los modales no cambia.
+export function abrirModal(html, { clasePanel = '' } = {}) {
     const existente = $('#adminModal');
     if (existente) existente.remove();
 
@@ -308,7 +310,7 @@ export function abrirModal(html) {
     overlay.className = 'admin-modal';
     overlay.innerHTML = `
         <div class="admin-modal-backdrop" data-cerrar-modal></div>
-        <div class="admin-modal-panel">
+        <div class="admin-modal-panel ${esc(clasePanel)}">
             <button type="button" class="admin-modal-close" data-cerrar-modal aria-label="Cerrar">
                 <i class="fa-solid fa-xmark"></i>
             </button>
